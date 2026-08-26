@@ -1,0 +1,1 @@
+dev.xyat.kineticarmory.compat.kubejs.KineticArmoryKubeJSPlugin
