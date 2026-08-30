@@ -41,8 +41,18 @@ public class ArmorConfig {
             readValues();
             rebuildEntityRuleCache();
         } catch (Exception e) {
+            discardBrokenConfig();
             KineticArmory.LOGGER.error("ArmorConfig Load Failed", e);
         }
+    }
+
+    private static void discardBrokenConfig() {
+        if (configData == null) return;
+        try {
+            configData.close();
+        } catch (Throwable ignored) {
+        }
+        configData = null;
     }
 
     private static void setupConfig() {
@@ -103,16 +113,17 @@ public class ArmorConfig {
     }
 
     public static void save() {
+        if (configData == null) {
+            throw new IllegalStateException("Armor sets config is not loaded");
+        }
         entityFilterMode = normalizeMode(entityFilterMode);
         allowedEntities = sanitizeRules(allowedEntities);
-        if (configData != null) {
-            configData.set("armorsets.enableSets", enableSets);
-            configData.set("armorsets.potionRefreshInterval", potionRefreshInterval);
-            configData.set("armorsets.syncOnReload", syncOnReload);
-            configData.set("armorsets.entityFilterMode", entityFilterMode);
-            configData.set("armorsets.allowedEntities", allowedEntities);
-            configData.save();
-        }
+        configData.set("armorsets.enableSets", enableSets);
+        configData.set("armorsets.potionRefreshInterval", potionRefreshInterval);
+        configData.set("armorsets.syncOnReload", syncOnReload);
+        configData.set("armorsets.entityFilterMode", entityFilterMode);
+        configData.set("armorsets.allowedEntities", allowedEntities);
+        configData.save();
         rebuildEntityRuleCache();
     }
 
