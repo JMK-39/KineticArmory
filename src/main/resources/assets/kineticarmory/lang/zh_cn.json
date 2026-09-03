@@ -386,7 +386,7 @@
   "gui.kineticarmory.predicate.param.hint": "§f%s",
   "gui.kineticarmory.predicate.type.empty_type": "未选择",
   "cfg.kineticarmory.armorsets.tip_key.tooltip": "查看套装详情时默认按住的按键：shift、ctrl、alt 或 none。",
-  "gui.kineticarmory.module.name": "KineticArmory",
+  "gui.kineticarmory.module.name": "动力套装系统",
   "gui.kineticarmory.module.function": "套装系统",
   "gui.kineticarmory.module.tooltip": "管理装备套装、套装属性、套装效果以及套装编辑功能。"
 }
