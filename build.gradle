@@ -192,7 +192,7 @@ tasks.named('jar', Jar).configure {
         destinationDirectory = file(customOutputDir)
     }
 
-    archiveFileName.set("${pModId}.jar")
+    archiveFileName.set("${pModId}-${project.version}.jar")
 
     manifest {
         attributes([
