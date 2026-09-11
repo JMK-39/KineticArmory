@@ -40,8 +40,6 @@ config/kineticcore/armorsets/
 
 ### 运行环境
 
-- Minecraft 1.20.1
-- Minecraft Forge 47.x
 - Java 17
 - KineticCore：必须
 - Curios：必须
@@ -157,13 +155,11 @@ config/kineticcore/armorsets/
 
 ### 依赖与可选兼容
 
-| 模组 ID | 要求 | 版本范围 | 侧别 |
-|---|---|---|---|
-| `forge` | 必须 | `${forge_version_range}` | `BOTH` |
-| `minecraft` | 必须 | `${minecraft_version_range}` | `BOTH` |
-| `kineticcore` | 必须 | `${kineticcore_version_range}` | `BOTH` |
-| `curios` | 必须 | `${curios_version_range}` | `BOTH` |
-| `kubejs` | 可选 | `${kubejs_version_range}` | `BOTH` |
+| 模组 ID | 关系 |
+|---|---|
+| `kineticcore` | 必须 |
+| `curios` | 必须 |
+| `kubejs` | 可选 |
 
 ## English
 
@@ -195,8 +191,6 @@ config/kineticcore/armorsets/
 
 ### Requirements
 
-- Minecraft 1.20.1
-- Minecraft Forge 47.x
 - Java 17
 - KineticCore: required
 - Curios: required
@@ -312,18 +306,8 @@ Primary configuration/data paths:
 
 ### Dependencies and Optional Integrations
 
-| Mod ID | Requirement | Version range | Side |
-|---|---|---|---|
-| `forge` | Required | `${forge_version_range}` | `BOTH` |
-| `minecraft` | Required | `${minecraft_version_range}` | `BOTH` |
-| `kineticcore` | Required | `${kineticcore_version_range}` | `BOTH` |
-| `curios` | Required | `${curios_version_range}` | `BOTH` |
-| `kubejs` | Optional | `${kubejs_version_range}` | `BOTH` |
-
-## 开源协议与版权 (License)
-
-Copyright (C) 2024-2026 XYAT.
-
-本项目基于 **GNU Lesser General Public License v3.0 (LGPLv3)** 协议开源。
-
-This project is open-sourced under the **GNU Lesser General Public License v3.0 (LGPLv3)**.
+| Mod ID | Relationship |
+|---|---|
+| `kineticcore` | Required |
+| `curios` | Required |
+| `kubejs` | Optional |
