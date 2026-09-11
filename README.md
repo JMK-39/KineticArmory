@@ -1,8 +1,167 @@
 # KineticArmory
 
-[简体中文](#简体中文) | [English](#english)
+[English](#english) | [简体中文](#简体中文)
+
+## English
+
+**Project separation:** This mod is an independent gameplay add-on built on KineticCore. KineticCore is the shared base API and infrastructure layer; the actual gameplay content and feature implementation described in this README are provided by this project.
+
+This add-on cannot be safely merged into KineticCore or another Kinetic project. It has its own feature scope, dependencies, configuration, release cycle, and user audience, so combining them would couple unrelated gameplay systems and make installation and maintenance less flexible.
+
+### Overview
+
+**KineticArmory** is the Kinetic armor-set and dynamic-condition mod for modpack authors and server administrators. It provides a complete workflow for armor-set definitions, conditional evaluation, effect execution, visual editing, and player-facing tooltips while using KineticCore's configuration, networking, and GUI APIs.
+
+### Key Features
+
+- Visual armor-set editor.
+- Multiple equipment variants per slot with NBT-aware matching.
+- Piece-count bonus tiers.
+- Dynamic predicates with ANY / ALL / MIN / NOT logic.
+- Attributes, potion effects, attack modifiers, immunities and damage conversion.
+- Commands triggered by armor-set activation/deactivation.
+- Global and per-set entity filtering.
+- Armor-set support for non-player living entities.
+- Auto-generated tooltips based on the real server configuration.
+- Server-authoritative armor evaluation and configuration persistence.
+- Optional KubeJS armor-set change events.
+
+### Configuration
+
+```text
+config/kineticcore/armorsets.toml
+config/kineticcore/armorsets_client.toml
+config/kineticcore/armorsets/
+```
+
+### Requirements
+
+- Java 17
+- KineticCore: required
+- Curios: required
+- KubeJS: optional
+
+## Complete Functional Reference
+
+### Detailed Configuration Reference
+
+| Item | Description |
+|---|---|
+| **Armor Set Settings** | Server-owned global armor set behavior. This page is available only for the local installation or an integrated server. |
+| **general** | Controls armor-set detection, potion refresh frequency, and reload synchronization. |
+| **Armor Set Client Preferences** | Local tooltip preferences for this client. These settings do not modify the connected server. |
+| **Armor Set Visual Editor** | Manage armor-set JSON files and entity rules through the authenticated server editor. |
+| **Open Armor Set Editor** | Requests the current server snapshot and opens the visual editor. Operator permission level 2 is required. |
+| **Enable Armor Sets** | Enable or disable custom armor set detection and bonus logic. |
+| **Check Interval (Seconds)** | Time between equipment-state checks, with a minimum of 0.05 seconds. |
+| **Force Sync** | Whether to sync data to all online players when admin reloads. |
+| **Tip Shortcut Key** | Default key held to show armor-set details: shift, ctrl, alt, or none. |
+
+### GUI and Editor Reference
+
+| Item | Description |
+|---|---|
+| **Edit Set Commands** | Tip: Start with / to execute command silently, without / to send as player chat |
+| **mode** | Whitelist: only entities added on the left proceed to armor set checks.<br>Blacklist: entities added on the left skip armor set checks. |
+| **set toggle** | When enabled, this armor set only works for mobs added on the left.<br>When disabled, entity type is unrestricted. |
+| **Entity Rules** | Global Armor Set Entity Rules<br>Current mode: %s<br>Clicking first reads the current server config, then opens the entity menu.<br>Players are always allowed and bypass the global entity filter. |
+| **Blacklist Mode** | Filter Mode<br>Blacklist: entities on the left cannot activate armor set effects; all other entities are allowed.<br>Players are always allowed and ignore this list.<br>Left Click: switch to Whitelist mode.<br>Empty blacklist: no non-player entities are restricted. |
+| **Whitelist Mode** | Filter Mode<br>Whitelist: only entities on the left can activate armor set effects.<br>Players are always allowed and do not need to be listed.<br>Left Click: switch to Blacklist mode.<br>Empty whitelist: blocks all non-player entities from activating armor sets. |
+| **enabled** | Per-Set Entity Limit<br>Enabled: this armor set only works for entities listed on the left.<br>Players must still satisfy this set's player restriction and equipment requirements.<br>Left Click: disable this set's entity limit.<br>Empty list: this set will not work for any non-player entity. |
+| **disabled** | Per-Set Entity Limit<br>Disabled: this set does not perform an extra per-set entity-list check.<br>It is still restricted by the master switch and global entity rules.<br>Left Click: enable the limit and allow only entities listed on the left. |
+| **save global** | Save Global Entity Rules<br>Saves the current filter mode and entity list to the server config.<br>The filter cache is rebuilt and synchronized immediately. |
+| **save set** | Save Set Entity Rules<br>Saves this set's entity-limit switch and allowed entity list.<br>Per-set entity lists always use whitelist semantics. |
+| **back** | Back<br>Does not save unsaved changes made on this screen. |
+| **Remove All** | Remove Current Results<br>Removes only entities in the left panel's current search results.<br>Entities not matched by the current search are unaffected. |
+| **Add All** | Add Current Results<br>Adds every entity in the right panel's current search results to the rule list.<br>Useful with name, ID, @mod, or #tag searches for bulk selection. |
+| **Active Entities** | Armor Set Active Entities<br>Choose which entities this armor set can affect.<br>When entity limiting is enabled, only entities on the left can use this set's effects.<br>When disabled, no extra entity-type restriction is applied, but the master switch and global rules still apply. |
+| **Rotation Speed** | Enter the model hover rotation speed percentage, from 0%-500%. 0% disables rotation. |
+| **direction** | Click to switch the entity model rotation direction. The numeric field still controls rotation speed from 0%-500%. |
+| **mode** | Click to toggle logical combinations:<br>[Match ANY] Activates if at least 1 condition is met.<br>[Match ALL] Activates only when ALL conditions are met.<br>[Match MIN X] Activates when met conditions reach X.<br><br>💡 Advanced: Creating 'Disable Rules' with Inversions<br>Combine with the [NOT] button for logical inversion!<br>E.g. If you want: "Disable flight when Raining AND in Water"<br>1. Set Mode to: [Match ANY]<br>2. Add Condition: [NOT] Raining<br>3. Add Condition: [NOT] In Water<br>(De Morgan's Laws: Flight stays active as long as it's NOT raining OR you are NOT in water) |
+
+### Editable Fields, Modes and Categories
+
+- Curio
+- Curio Slots (Extended)
+- Rejected Curios (Blocks set if worn)
+- Rejected Curio Slot
+- Helmet Slot
+- Chestplate Slot
+- Leggings Slot
+- Boots Slot
+- Main Hand
+- Off Hand
+- Match MIN %s
+- Match MIN
+- Whitelist Mode
+- Blacklist Mode
+- Blacklist
+- Whitelist
+- Filter Mode: Blacklist
+- Filter Mode: Whitelist
+- Match ALL
+- Match ANY
+- Attribute Range
+- Clear Weather
+- Climbing
+- Daytime
+- In Dimension
+- Exp Level Range
+- Falling
+- Food Range
+- Health Range
+- In Air
+- In Water
+- Moon Phase
+- Left Mouse Click
+- Left Mouse Hold
+- Right Mouse Click
+- Right Mouse Hold
+- Nighttime
+- On Block
+- On Fire
+- Potion Level Range
+- Raining
+- Rising
+- Sneaking
+- Speed Range
+- Game Stage
+- Thundering
+- Time Range
+- %s %s
+- Not selected
+
+### Configuration Keys and Defaults
+
+| Key | Default |
+|---|---|
+| `armorsets.defaultTipKey` | `"shift"` |
+| `armorsets.enableSets` | `true` |
+| `armorsets.entityFilterMode` | `"BLACKLIST"` |
+| `armorsets.potionRefreshInterval` | `20` |
+| `armorsets.syncOnReload` | `true` |
+
+### Configuration and Data Paths
+
+Primary configuration/data paths:
+
+- `config/kineticcore/armorsets.toml`
+- `config/kineticcore/armorsets/`
+- `config/kineticcore/armorsets_client.toml`
+
+### Dependencies and Optional Integrations
+
+| Mod ID | Relationship |
+|---|---|
+| `kineticcore` | Required |
+| `curios` | Required |
+| `kubejs` | Optional |
 
 ## 简体中文
+
+**项目独立性：** 本模组是基于 KineticCore 开发的独立玩法附属。KineticCore 是整个系列共用的基础 API 与底层设施；本 README 所述的实际玩法内容和功能实现均由本项目提供。
+
+本附属不能简单合并进 KineticCore 或其他 Kinetic 项目。它拥有独立的功能范围、依赖、配置、更新周期和适用玩家，强行合并会让互不相关的玩法系统彼此耦合，也会降低安装与维护的灵活性。
 
 ### 模组定位
 
@@ -160,154 +319,3 @@ config/kineticcore/armorsets/
 | `kineticcore` | 必须 |
 | `curios` | 必须 |
 | `kubejs` | 可选 |
-
-## English
-
-### Overview
-
-**KineticArmory** is the Kinetic armor-set and dynamic-condition mod for modpack authors and server administrators. It provides a complete workflow for armor-set definitions, conditional evaluation, effect execution, visual editing, and player-facing tooltips while using KineticCore's configuration, networking, and GUI APIs.
-
-### Key Features
-
-- Visual armor-set editor.
-- Multiple equipment variants per slot with NBT-aware matching.
-- Piece-count bonus tiers.
-- Dynamic predicates with ANY / ALL / MIN / NOT logic.
-- Attributes, potion effects, attack modifiers, immunities and damage conversion.
-- Commands triggered by armor-set activation/deactivation.
-- Global and per-set entity filtering.
-- Armor-set support for non-player living entities.
-- Auto-generated tooltips based on the real server configuration.
-- Server-authoritative armor evaluation and configuration persistence.
-- Optional KubeJS armor-set change events.
-
-### Configuration
-
-```text
-config/kineticcore/armorsets.toml
-config/kineticcore/armorsets_client.toml
-config/kineticcore/armorsets/
-```
-
-### Requirements
-
-- Java 17
-- KineticCore: required
-- Curios: required
-- KubeJS: optional
-
-## Complete Functional Reference
-
-### Detailed Configuration Reference
-
-| Item | Description |
-|---|---|
-| **Armor Set Settings** | Server-owned global armor set behavior. This page is available only for the local installation or an integrated server. |
-| **general** | Controls armor-set detection, potion refresh frequency, and reload synchronization. |
-| **Armor Set Client Preferences** | Local tooltip preferences for this client. These settings do not modify the connected server. |
-| **Armor Set Visual Editor** | Manage armor-set JSON files and entity rules through the authenticated server editor. |
-| **Open Armor Set Editor** | Requests the current server snapshot and opens the visual editor. Operator permission level 2 is required. |
-| **Enable Armor Sets** | Enable or disable custom armor set detection and bonus logic. |
-| **Check Interval (Seconds)** | Time between equipment-state checks, with a minimum of 0.05 seconds. |
-| **Force Sync** | Whether to sync data to all online players when admin reloads. |
-| **Tip Shortcut Key** | Default key held to show armor-set details: shift, ctrl, alt, or none. |
-
-### GUI and Editor Reference
-
-| Item | Description |
-|---|---|
-| **Edit Set Commands** | Tip: Start with / to execute command silently, without / to send as player chat |
-| **mode** | Whitelist: only entities added on the left proceed to armor set checks.<br>Blacklist: entities added on the left skip armor set checks. |
-| **set toggle** | When enabled, this armor set only works for mobs added on the left.<br>When disabled, entity type is unrestricted. |
-| **Entity Rules** | Global Armor Set Entity Rules<br>Current mode: %s<br>Clicking first reads the current server config, then opens the entity menu.<br>Players are always allowed and bypass the global entity filter. |
-| **Blacklist Mode** | Filter Mode<br>Blacklist: entities on the left cannot activate armor set effects; all other entities are allowed.<br>Players are always allowed and ignore this list.<br>Left Click: switch to Whitelist mode.<br>Empty blacklist: no non-player entities are restricted. |
-| **Whitelist Mode** | Filter Mode<br>Whitelist: only entities on the left can activate armor set effects.<br>Players are always allowed and do not need to be listed.<br>Left Click: switch to Blacklist mode.<br>Empty whitelist: blocks all non-player entities from activating armor sets. |
-| **enabled** | Per-Set Entity Limit<br>Enabled: this armor set only works for entities listed on the left.<br>Players must still satisfy this set's player restriction and equipment requirements.<br>Left Click: disable this set's entity limit.<br>Empty list: this set will not work for any non-player entity. |
-| **disabled** | Per-Set Entity Limit<br>Disabled: this set does not perform an extra per-set entity-list check.<br>It is still restricted by the master switch and global entity rules.<br>Left Click: enable the limit and allow only entities listed on the left. |
-| **save global** | Save Global Entity Rules<br>Saves the current filter mode and entity list to the server config.<br>The filter cache is rebuilt and synchronized immediately. |
-| **save set** | Save Set Entity Rules<br>Saves this set's entity-limit switch and allowed entity list.<br>Per-set entity lists always use whitelist semantics. |
-| **back** | Back<br>Does not save unsaved changes made on this screen. |
-| **Remove All** | Remove Current Results<br>Removes only entities in the left panel's current search results.<br>Entities not matched by the current search are unaffected. |
-| **Add All** | Add Current Results<br>Adds every entity in the right panel's current search results to the rule list.<br>Useful with name, ID, @mod, or #tag searches for bulk selection. |
-| **Active Entities** | Armor Set Active Entities<br>Choose which entities this armor set can affect.<br>When entity limiting is enabled, only entities on the left can use this set's effects.<br>When disabled, no extra entity-type restriction is applied, but the master switch and global rules still apply. |
-| **Rotation Speed** | Enter the model hover rotation speed percentage, from 0%-500%. 0% disables rotation. |
-| **direction** | Click to switch the entity model rotation direction. The numeric field still controls rotation speed from 0%-500%. |
-| **mode** | Click to toggle logical combinations:<br>[Match ANY] Activates if at least 1 condition is met.<br>[Match ALL] Activates only when ALL conditions are met.<br>[Match MIN X] Activates when met conditions reach X.<br><br>💡 Advanced: Creating 'Disable Rules' with Inversions<br>Combine with the [NOT] button for logical inversion!<br>E.g. If you want: "Disable flight when Raining AND in Water"<br>1. Set Mode to: [Match ANY]<br>2. Add Condition: [NOT] Raining<br>3. Add Condition: [NOT] In Water<br>(De Morgan's Laws: Flight stays active as long as it's NOT raining OR you are NOT in water) |
-
-### Editable Fields, Modes and Categories
-
-- Curio
-- Curio Slots (Extended)
-- Rejected Curios (Blocks set if worn)
-- Rejected Curio Slot
-- Helmet Slot
-- Chestplate Slot
-- Leggings Slot
-- Boots Slot
-- Main Hand
-- Off Hand
-- Match MIN %s
-- Match MIN
-- Whitelist Mode
-- Blacklist Mode
-- Blacklist
-- Whitelist
-- Filter Mode: Blacklist
-- Filter Mode: Whitelist
-- Match ALL
-- Match ANY
-- Attribute Range
-- Clear Weather
-- Climbing
-- Daytime
-- In Dimension
-- Exp Level Range
-- Falling
-- Food Range
-- Health Range
-- In Air
-- In Water
-- Moon Phase
-- Left Mouse Click
-- Left Mouse Hold
-- Right Mouse Click
-- Right Mouse Hold
-- Nighttime
-- On Block
-- On Fire
-- Potion Level Range
-- Raining
-- Rising
-- Sneaking
-- Speed Range
-- Game Stage
-- Thundering
-- Time Range
-- %s %s
-- Not selected
-
-### Configuration Keys and Defaults
-
-| Key | Default |
-|---|---|
-| `armorsets.defaultTipKey` | `"shift"` |
-| `armorsets.enableSets` | `true` |
-| `armorsets.entityFilterMode` | `"BLACKLIST"` |
-| `armorsets.potionRefreshInterval` | `20` |
-| `armorsets.syncOnReload` | `true` |
-
-### Configuration and Data Paths
-
-Primary configuration/data paths:
-
-- `config/kineticcore/armorsets.toml`
-- `config/kineticcore/armorsets/`
-- `config/kineticcore/armorsets_client.toml`
-
-### Dependencies and Optional Integrations
-
-| Mod ID | Relationship |
-|---|---|
-| `kineticcore` | Required |
-| `curios` | Required |
-| `kubejs` | Optional |
