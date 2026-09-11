@@ -4,31 +4,31 @@ import dev.xyat.kineticarmory.util.ColorText;
 import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
 import dev.xyat.kineticarmory.armorsets.data.ArmorTipGenerator;
 import dev.xyat.kineticarmory.armorsets.predicate.client.ConditionListScreen;
-import dev.xyat.kineticcore.api.client.GuiRenderUtil;
-import dev.xyat.kineticcore.api.client.GuiToastUtil;
-import dev.xyat.kineticcore.api.client.RegistryDictUtil;
-import dev.xyat.kineticcore.api.client.ScaledScreen;
-import dev.xyat.kineticcore.api.client.gui.AutoCompleteBox;
-import dev.xyat.kineticcore.api.client.gui.AutoCompleteBoxGroup;
-import dev.xyat.kineticcore.api.client.gui.NumericAutoCompleteBox;
+import dev.xyat.kineticcore.api.client.theme.GuiTheme;
+import dev.xyat.kineticcore.api.client.overlay.GuiOverlay;
+import dev.xyat.kineticcore.api.client.search.KineticSearch;
+import dev.xyat.kineticcore.api.client.screen.KineticScreen;
+import dev.xyat.kineticcore.api.client.widget.KineticWidgets.AutoCompleteBox;
+import dev.xyat.kineticcore.api.client.widget.KineticWidgets.AutoCompleteBoxGroup;
+import dev.xyat.kineticcore.api.client.widget.KineticWidgets.NumericAutoCompleteBox;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 
-public class DamageConversionEditor extends ScaledScreen {
+public class DamageConversionEditor extends KineticScreen {
     private final AutoCompleteBoxGroup inputGroup =
             new AutoCompleteBoxGroup();
-    private final ScaledScreen parent; private final ArmorDataConfig config; private final ArmorDataConfig.DamageConversionData data; private final boolean isNew;
+    private final KineticScreen parent; private final ArmorDataConfig config; private final ArmorDataConfig.DamageConversionData data; private final boolean isNew;
     private AutoCompleteBox srcInput, tgtInput;
     private NumericAutoCompleteBox ratioInput, chanceInput;
     private String oldTip = null;
     private String tempSrc = null, tempTgt = null, tempRatio = null, tempChance = null;
 
-    public DamageConversionEditor(ScaledScreen p, ArmorDataConfig c, ArmorDataConfig.DamageConversionData d) {
+    public DamageConversionEditor(KineticScreen p, ArmorDataConfig c, ArmorDataConfig.DamageConversionData d) {
         super(ColorText.translatable("gui.kineticarmory.armorsets.editor.dmg_convert.title"));
-        configureResponsiveCanvas(
+        useCanvas(
                 640f,
                 360f,
                 6
@@ -46,12 +46,12 @@ public class DamageConversionEditor extends ScaledScreen {
         if (chanceInput != null) tempChance = chanceInput.getValue();
     }
 
-    @Override protected void initScaled() {
-        int cx = vWidth / 2; int cy = vHeight / 2 - 50;
-        srcInput = new AutoCompleteBox(font, cx - 125, cy - 30, 110, 20, Component.empty(), RegistryDictUtil::getDamageDict);
+    @Override protected void buildUi() {
+        int cx = canvasWidth / 2; int cy = canvasHeight / 2 - 50;
+        srcInput = new AutoCompleteBox(font, cx - 125, cy - 30, 110, 20, Component.empty(), KineticSearch::getDamageDict);
         srcInput.setValue(tempSrc != null ? tempSrc : (isNew ? "" : (data.sourceType != null ? data.sourceType : "")));
 
-        tgtInput = new AutoCompleteBox(font, cx + 15, cy - 30, 110, 20, Component.empty(), RegistryDictUtil::getSpecificDamageDict);
+        tgtInput = new AutoCompleteBox(font, cx + 15, cy - 30, 110, 20, Component.empty(), KineticSearch::getSpecificDamageDict);
         tgtInput.setValue(tempTgt != null ? tempTgt : (isNew ? "" : (data.targetType != null ? data.targetType : "")));
 
         ratioInput = NumericAutoCompleteBox.decimal(font, cx - 125, cy - 5, 110, 20, Component.empty(), ArrayList::new, true, null, null);
@@ -68,10 +68,10 @@ public class DamageConversionEditor extends ScaledScreen {
         addRenderableWidget(Button.builder(ColorText.translatable("gui.kineticarmory.armorsets.save"), b -> {
             if (syncToData()) return;
             if (data.sourceType.isEmpty() || data.targetType.isEmpty()) {
-                GuiToastUtil.showToast(ColorText.translatable("msg.kineticarmory.armorsets.empty_field")); return;
+                GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.armorsets.empty_field")); return;
             }
             if (data.targetType.startsWith("#") || data.targetType.equalsIgnoreCase("all")) {
-                GuiToastUtil.showToast(ColorText.translatable("msg.kineticarmory.armorsets.convert_target_error")); return;
+                GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.armorsets.convert_target_error")); return;
             }
 
             if (!isNew && oldTip != null) config.tips.remove(oldTip);
@@ -111,7 +111,7 @@ public class DamageConversionEditor extends ScaledScreen {
         Double chance = chanceInput == null ? null : chanceInput.getDoubleValue();
 
         if (ratio == null || chance == null) {
-            GuiToastUtil.showToast(
+            GuiOverlay.toast(
                     ColorText.translatable("msg.kineticarmory.common.invalid_number")
             );
             return true;
@@ -129,11 +129,11 @@ public class DamageConversionEditor extends ScaledScreen {
         }
     }
 
-    @Override protected void renderScaledBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        int cx = vWidth / 2; int cy = vHeight / 2 - 50; GuiRenderUtil.drawStandardPanel(g, cx - 140, cy - 60, 280, 145);
+    @Override protected void renderCanvasBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
+        int cx = canvasWidth / 2; int cy = canvasHeight / 2 - 50; GuiTheme.panel(g, cx - 140, cy - 60, 280, 145);
         g.drawCenteredString(font, title, cx, cy - 50, 0xFFFFFF);
     }
-    @Override protected void renderScaledForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {
+    @Override protected void renderCanvasForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {
         renderInputHint(g, srcInput, "gui.kineticarmory.armorsets.input.source_type");
         renderInputHint(g, tgtInput, "gui.kineticarmory.armorsets.input.target_type");
         renderInputHint(g, ratioInput, "gui.kineticarmory.armorsets.input.ratio");
@@ -141,7 +141,7 @@ public class DamageConversionEditor extends ScaledScreen {
         inputGroup.renderSuggestions(g, mx, my);
     }
     @Override
-    protected boolean universalMouseScrolled(
+    protected boolean canvasMouseScrolled(
             double mouseX,
             double mouseY,
             double delta
@@ -150,7 +150,7 @@ public class DamageConversionEditor extends ScaledScreen {
             return true;
         }
 
-        return super.universalMouseScrolled(
+        return super.canvasMouseScrolled(
                 mouseX,
                 mouseY,
                 delta
@@ -158,7 +158,7 @@ public class DamageConversionEditor extends ScaledScreen {
     }
 
     @Override
-    protected boolean universalMouseClicked(
+    protected boolean canvasMouseClicked(
             double mouseX,
             double mouseY,
             int button
@@ -171,7 +171,7 @@ public class DamageConversionEditor extends ScaledScreen {
         }
 
         boolean handled =
-                super.universalMouseClicked(
+                super.canvasMouseClicked(
                         mouseX,
                         mouseY,
                         button
@@ -186,7 +186,7 @@ public class DamageConversionEditor extends ScaledScreen {
     }
 
     @Override
-    protected boolean universalMouseDragged(
+    protected boolean canvasMouseDragged(
             double mouseX,
             double mouseY,
             int button,
@@ -200,7 +200,7 @@ public class DamageConversionEditor extends ScaledScreen {
             return true;
         }
 
-        return super.universalMouseDragged(
+        return super.canvasMouseDragged(
                 mouseX,
                 mouseY,
                 button,
@@ -210,7 +210,7 @@ public class DamageConversionEditor extends ScaledScreen {
     }
 
     @Override
-    protected boolean universalMouseReleased(
+    protected boolean canvasMouseReleased(
             double mouseX,
             double mouseY,
             int button
@@ -219,7 +219,7 @@ public class DamageConversionEditor extends ScaledScreen {
             return true;
         }
 
-        return super.universalMouseReleased(
+        return super.canvasMouseReleased(
                 mouseX,
                 mouseY,
                 button

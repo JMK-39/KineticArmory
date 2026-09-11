@@ -1,12 +1,14 @@
 package dev.xyat.kineticarmory.armorsets.predicate.client;
 
+import dev.xyat.kineticcore.api.client.overlay.GuiOverlay;
 import dev.xyat.kineticarmory.util.ColorText;
 import dev.xyat.kineticarmory.armorsets.predicate.ConditionData;
 import dev.xyat.kineticarmory.armorsets.predicate.ConditionTypeUtil;
 import dev.xyat.kineticarmory.armorsets.predicate.IConditionOwner;
-import dev.xyat.kineticcore.api.client.GuiRenderUtil;
-import dev.xyat.kineticcore.api.client.ScaledScreen;
-import dev.xyat.kineticcore.api.client.ScrollUtil;
+import dev.xyat.kineticcore.api.client.theme.GuiTheme;
+import dev.xyat.kineticcore.api.client.screen.KineticScreen;
+import dev.xyat.kineticcore.api.client.widget.KineticWidgets.Scroll;
+import dev.xyat.kineticcore.api.client.widget.KineticWidgets.SmoothSelectionList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -19,8 +21,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ConditionListScreen extends ScaledScreen {
-    private final ScaledScreen parent;
+public class ConditionListScreen extends KineticScreen {
+    private final KineticScreen parent;
     private final IConditionOwner owner;
     private final List<ConditionData> conditions;
     protected ConditionListWidget listWidget;
@@ -31,12 +33,12 @@ public class ConditionListScreen extends ScaledScreen {
     private int delayedTooltipX = 0;
     private int delayedTooltipY = 0;
 
-    public ConditionListScreen(ScaledScreen parent, IConditionOwner owner) {
+    public ConditionListScreen(KineticScreen parent, IConditionOwner owner) {
         super(ColorText.translatable("gui.kineticarmory.predicate.list_title"));
         this.parent = parent;
         this.owner = owner;
         this.conditions = owner.getConditions();
-        configureResponsiveCanvas(
+        useCanvas(
                 640f,
                 360f,
                 6
@@ -62,8 +64,8 @@ public class ConditionListScreen extends ScaledScreen {
         }
     }
 
-    @Override protected void initScaled() {
-        int cx = vWidth / 2; int cy = vHeight / 2; int guiW = 400; int guiH = 220; int y0 = cy - guiH / 2;
+    @Override protected void buildUi() {
+        int cx = canvasWidth / 2; int cy = canvasHeight / 2; int guiW = 400; int guiH = 220; int y0 = cy - guiH / 2;
 
         this.listWidget = new ConditionListWidget(this.minecraft, guiW, guiH - 60, y0 + 30, y0 + guiH - 30, 24);
         this.listWidget.setLeftPos(cx - guiW / 2); this.addWidget(listWidget);
@@ -104,22 +106,22 @@ public class ConditionListScreen extends ScaledScreen {
         }).bounds(startX + (btnW + gap) * 2, bottomY, btnW, 20).build());
     }
 
-    @Override protected void renderScaledBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        int cx = vWidth / 2; int cy = vHeight / 2; int guiW = 400; int guiH = 220;
-        GuiRenderUtil.drawStandardPanel(g, cx - guiW / 2 - 10, cy - guiH / 2 - 10, guiW + 20, guiH + 20);
+    @Override protected void renderCanvasBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
+        int cx = canvasWidth / 2; int cy = canvasHeight / 2; int guiW = 400; int guiH = 220;
+        GuiTheme.panel(g, cx - guiW / 2 - 10, cy - guiH / 2 - 10, guiW + 20, guiH + 20);
         g.drawCenteredString(font, title, cx, cy - guiH / 2 + 5, 0xFFFFFF);
-        renderScissorCorrectedList(listWidget, g, mx, my, pt);
+        renderScaledList(listWidget, g, mx, my, pt);
         if (conditions.isEmpty()) g.drawCenteredString(font, ColorText.translatable("gui.kineticarmory.predicate.empty"), cx, cy, 0xAAAAAA);
     }
 
-    @Override protected void renderScaledForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {
+    @Override protected void renderCanvasForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {
         if (delayedTooltip != null && !delayedTooltip.isEmpty()) {
-            g.renderTooltip(font, delayedTooltip, java.util.Optional.empty(), delayedTooltipX, delayedTooltipY);
+            GuiOverlay.requestTooltip(delayedTooltip, delayedTooltipX, delayedTooltipY);
             delayedTooltip = null;
         }
     }
 
-    @Override protected boolean universalMouseClicked(double mx, double my, int btn) {
+    @Override protected boolean canvasMouseClicked(double mx, double my, int btn) {
         if (minCountInput != null && minCountInput.visible) {
             if (minCountInput.mouseClicked(mx, my, btn)) {
                 this.setFocused(minCountInput);
@@ -129,7 +131,7 @@ public class ConditionListScreen extends ScaledScreen {
                 this.setFocused(null);
             }
         }
-        return super.universalMouseClicked(mx, my, btn);
+        return super.canvasMouseClicked(mx, my, btn);
     }
 
     @Override public boolean keyPressed(int k, int s, int m) {
@@ -146,7 +148,7 @@ public class ConditionListScreen extends ScaledScreen {
         return super.charTyped(c, m);
     }
 
-    class ConditionListWidget extends ObjectSelectionList<ConditionListWidget.Entry> {
+    class ConditionListWidget extends SmoothSelectionList<ConditionListWidget.Entry> {
         private final int listTop;
         private final int listBottom;
 
@@ -165,17 +167,17 @@ public class ConditionListScreen extends ScaledScreen {
             if (this.getMaxScroll() > 0) {
                 int height = Math.max(1, listBottom - listTop);
                 int thumbH = Math.max(20, (int) ((float) height * height / this.getMaxPosition()));
-                ScrollUtil.renderScrollbar(
+                Scroll.renderScrollbar(
                         g,
                         mx,
                         my,
-                        this.getScrollbarPosition(),
+                        this.getScrollbarPosition() + 2,
                         listTop,
-                        6,
+                        4,
                         height,
                         thumbH,
                         (int) Math.ceil(this.getMaxScroll()),
-                        (int) Math.round(this.getScrollAmount()),
+                        this.getScrollAmount(),
                         false
                 );
             }

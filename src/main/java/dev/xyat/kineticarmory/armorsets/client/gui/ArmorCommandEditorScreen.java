@@ -2,10 +2,11 @@ package dev.xyat.kineticarmory.armorsets.client.gui;
 
 import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
 import dev.xyat.kineticarmory.armorsets.predicate.client.ConditionListScreen;
-import dev.xyat.kineticcore.api.client.GuiRenderUtil;
-import dev.xyat.kineticcore.api.client.GuiToastUtil;
-import dev.xyat.kineticcore.api.client.ScaledScreen;
-import dev.xyat.kineticcore.api.client.ScrollUtil;
+import dev.xyat.kineticcore.api.client.theme.GuiTheme;
+import dev.xyat.kineticcore.api.client.overlay.GuiOverlay;
+import dev.xyat.kineticcore.api.client.screen.KineticScreen;
+import dev.xyat.kineticcore.api.client.widget.KineticWidgets.Scroll;
+import dev.xyat.kineticcore.api.client.widget.KineticWidgets.SmoothSelectionList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -19,8 +20,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-public class ArmorCommandEditorScreen extends ScaledScreen {
-    private final ScaledScreen parent;
+public class ArmorCommandEditorScreen extends KineticScreen {
+    private final KineticScreen parent;
     private final ArmorDataConfig config;
     private EditBox input;
     private CommandSuggestions commandSuggestions;
@@ -36,11 +37,11 @@ public class ArmorCommandEditorScreen extends ScaledScreen {
     private int editingIndex = -1;
     private String tempInput = null;
 
-    public ArmorCommandEditorScreen(ScaledScreen parent, ArmorDataConfig config) {
+    public ArmorCommandEditorScreen(KineticScreen parent, ArmorDataConfig config) {
         super(Component.translatable("gui.kineticarmory.armorsets.commands.title"));
         this.parent = parent;
         this.config = config;
-        configureResponsiveCanvas(
+        useCanvas(
                 640f,
                 360f,
                 6
@@ -54,10 +55,10 @@ public class ArmorCommandEditorScreen extends ScaledScreen {
     }
 
     @Override
-    protected void initScaled() {
-        int cx = this.vWidth / 2;
-        int guiW = Math.min(this.vWidth - 20, 800);
-        int guiH = this.vHeight - 55;
+    protected void buildUi() {
+        int cx = this.canvasWidth / 2;
+        int guiW = Math.min(this.canvasWidth - 20, 800);
+        int guiH = this.canvasHeight - 55;
         int x0 = cx - guiW / 2;
         int y0 = 20;
 
@@ -104,7 +105,7 @@ public class ArmorCommandEditorScreen extends ScaledScreen {
                 cancelEdit();
                 activeList.refresh();
                 deactiveList.refresh();
-                GuiToastUtil.showToast(Component.translatable("msg.kineticarmory.common.saved"));
+                GuiOverlay.toast(Component.translatable("msg.kineticarmory.common.saved"));
             }
         }).bounds(x0 + guiW - 145, inputY, 65, 20).build();
         this.addRenderableWidget(btnSaveEdit);
@@ -125,10 +126,10 @@ public class ArmorCommandEditorScreen extends ScaledScreen {
         this.addWidget(deactiveList);
 
         int actionBtnW = 80;
-        int bottomBtnY = this.vHeight - 25;
+        int bottomBtnY = this.canvasHeight - 25;
 
         this.addRenderableWidget(Button.builder(Component.translatable("gui.kineticarmory.armorsets.save"), b -> {
-            GuiToastUtil.showToast(Component.translatable("msg.kineticarmory.common.saved"));
+            GuiOverlay.toast(Component.translatable("msg.kineticarmory.common.saved"));
             if (minecraft != null) minecraft.setScreen(parent);
         }).bounds(cx - actionBtnW - 5, bottomBtnY, actionBtnW, 20).build());
 
@@ -138,7 +139,7 @@ public class ArmorCommandEditorScreen extends ScaledScreen {
 
         Screen dummyScreen = new Screen(Component.empty()) {};
         if (this.minecraft != null) {
-            dummyScreen.init(this.minecraft, this.vWidth, inputY + 12);
+            dummyScreen.init(this.minecraft, this.canvasWidth, inputY + 12);
         }
 
         if (this.minecraft != null) {
@@ -188,30 +189,30 @@ public class ArmorCommandEditorScreen extends ScaledScreen {
     }
 
     @Override
-    protected boolean universalMouseClicked(double mx, double my, int btn) {
+    protected boolean canvasMouseClicked(double mx, double my, int btn) {
         if (this.commandSuggestions != null && this.commandSuggestions.mouseClicked(mx, my, btn)) {
             return true;
         }
-        return super.universalMouseClicked(mx, my, btn);
+        return super.canvasMouseClicked(mx, my, btn);
     }
 
     @Override
-    protected boolean universalMouseScrolled(double mx, double my, double d) {
+    protected boolean canvasMouseScrolled(double mx, double my, double d) {
         if (this.commandSuggestions != null && this.commandSuggestions.mouseScrolled(Mth.clamp(d, -1.0, 1.0))) {
             return true;
         }
-        return super.universalMouseScrolled(mx, my, d);
+        return super.canvasMouseScrolled(mx, my, d);
     }
 
     @Override
-    protected void renderScaledBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        int cx = this.vWidth / 2;
-        int guiW = Math.min(this.vWidth - 20, 800);
-        int guiH = this.vHeight - 55;
+    protected void renderCanvasBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
+        int cx = this.canvasWidth / 2;
+        int guiW = Math.min(this.canvasWidth - 20, 800);
+        int guiH = this.canvasHeight - 55;
         int x0 = cx - guiW / 2;
         int y0 = 20;
 
-        GuiRenderUtil.drawStandardPanel(g, x0, y0, guiW, guiH);
+        GuiTheme.panel(g, x0, y0, guiW, guiH);
         g.drawCenteredString(this.font, this.title, cx, 5, 0xFFFFFF);
 
         g.drawCenteredString(this.font, Component.translatable("gui.kineticarmory.armorsets.commands.activation_label"), x0 + guiW/4, y0 + 10, 0xFFFFFF);
@@ -219,8 +220,8 @@ public class ArmorCommandEditorScreen extends ScaledScreen {
 
         g.fill(cx - 1, y0 + 25, cx + 1, y0 + guiH - 35, 0xFF555555);
 
-        renderScissorCorrectedList(activeList, g, mx, my, pt);
-        renderScissorCorrectedList(deactiveList, g, mx, my, pt);
+        renderScaledList(activeList, g, mx, my, pt);
+        renderScaledList(deactiveList, g, mx, my, pt);
 
         if (this.commandSuggestions != null) {
             g.pose().pushPose();
@@ -230,7 +231,7 @@ public class ArmorCommandEditorScreen extends ScaledScreen {
         }
     }
 
-    class CommandListWidget extends ObjectSelectionList<CommandListWidget.Entry> {
+    class CommandListWidget extends SmoothSelectionList<CommandListWidget.Entry> {
         private final int listTop, listBottom;
         private final List<ArmorDataConfig.CommandData> commandList;
 
@@ -246,17 +247,17 @@ public class ArmorCommandEditorScreen extends ScaledScreen {
                 int barX = this.getScrollbarPosition();
                 int height = listBottom - listTop;
                 int thumbH = Math.max(20, (int) ((float) height * height / this.getMaxPosition()));
-                ScrollUtil.renderScrollbar(
+                Scroll.renderScrollbar(
                         g,
                         mx,
                         my,
-                        barX,
+                        barX + 2,
                         listTop,
-                        6,
+                        4,
                         height,
                         thumbH,
                         (int) Math.ceil(this.getMaxScroll()),
-                        (int) Math.round(this.getScrollAmount()),
+                        this.getScrollAmount(),
                         false
                 );
             }

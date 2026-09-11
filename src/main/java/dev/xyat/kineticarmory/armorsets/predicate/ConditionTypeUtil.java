@@ -1,6 +1,6 @@
 package dev.xyat.kineticarmory.armorsets.predicate;
 
-import dev.xyat.kineticcore.api.client.RegistryDictUtil;
+import dev.xyat.kineticcore.api.client.search.KineticSearch;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
@@ -59,8 +59,8 @@ public class ConditionTypeUtil {
                 }
                 yield Arrays.asList("minecraft:overworld", "minecraft:the_nether", "minecraft:the_end");
             }
-            case ATTRIBUTE -> RegistryDictUtil.getAttributeDict();
-            case POTION -> RegistryDictUtil.getPotionDict();
+            case ATTRIBUTE -> KineticSearch.attributeDictionary();
+            case POTION -> KineticSearch.potionDictionary();
             default -> Collections.emptyList();
         };
     }

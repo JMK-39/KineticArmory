@@ -4,13 +4,12 @@ import dev.xyat.kineticarmory.util.ColorText;
 import dev.xyat.kineticarmory.armorsets.Network.ArmorNetwork;
 import dev.xyat.kineticarmory.armorsets.client.ArmorClientSnapshot;
 import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
-import dev.xyat.kineticcore.api.client.AdvancedSearchUtil;
-import dev.xyat.kineticcore.api.client.GuiToastUtil;
-import dev.xyat.kineticcore.api.client.PinyinUtil;
-import dev.xyat.kineticcore.api.client.ScaledScreen;
-import dev.xyat.kineticcore.api.client.ScrollUtil;
-import dev.xyat.kineticcore.api.client.entity.EntityPreviewRenderer;
-import dev.xyat.kineticcore.api.client.gui.ConfigScrollbarTheme;
+import dev.xyat.kineticcore.api.client.search.KineticSearch;
+import dev.xyat.kineticcore.api.client.overlay.GuiOverlay;
+import dev.xyat.kineticcore.api.client.screen.KineticScreen;
+import dev.xyat.kineticcore.api.client.widget.KineticWidgets.Scroll;
+import dev.xyat.kineticcore.api.client.widget.KineticWidgets.EntityPreviewRenderer;
+import dev.xyat.kineticcore.api.client.theme.GuiTheme;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -33,7 +32,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-public class ArmorEntityFilterScreen extends ScaledScreen {
+public class ArmorEntityFilterScreen extends KineticScreen {
     private static final int V_WIDTH = 640;
     private static final int V_HEIGHT = 360;
     private static final int LEFT_X = 8;
@@ -51,7 +50,7 @@ public class ArmorEntityFilterScreen extends ScaledScreen {
     private static int rotationSpeedPercent = 100;
     private static boolean clockwiseRotation = true;
 
-    private final ScaledScreen parent;
+    private final KineticScreen parent;
     private final ArmorDataConfig armorSet;
     private final boolean global;
     private final Set<String> selectedIds = new HashSet<>();
@@ -75,7 +74,7 @@ public class ArmorEntityFilterScreen extends ScaledScreen {
     private boolean draggingRightScroll;
     private List<Component> deferredTooltip;
 
-    public ArmorEntityFilterScreen(ScaledScreen parent) {
+    public ArmorEntityFilterScreen(KineticScreen parent) {
         super(ColorText.translatable("gui.kineticarmory.armorsets.entity_filter.global_title"));
         this.parent = parent;
         this.armorSet = null;
@@ -88,7 +87,7 @@ public class ArmorEntityFilterScreen extends ScaledScreen {
         setupScale();
     }
 
-    public ArmorEntityFilterScreen(ScaledScreen parent, ArmorDataConfig armorSet) {
+    public ArmorEntityFilterScreen(KineticScreen parent, ArmorDataConfig armorSet) {
         super(ColorText.translatable("gui.kineticarmory.armorsets.entity_filter.set_title"));
         this.parent = parent;
         this.armorSet = armorSet;
@@ -103,7 +102,7 @@ public class ArmorEntityFilterScreen extends ScaledScreen {
     }
 
     private void setupScale() {
-        configureResponsiveCanvas(
+        useCanvas(
                 V_WIDTH,
                 V_HEIGHT,
                 6
@@ -126,7 +125,7 @@ public class ArmorEntityFilterScreen extends ScaledScreen {
 
         Component name = ColorText.translatable(type.getDescriptionId());
         String displayName = name.getString();
-        String searchData = id + " " + displayName + " " + PinyinUtil.getSearchData(displayName);
+        String searchData = id + " " + displayName + " " + KineticSearch.pinyin(displayName);
 
         allEntities.add(new EntityEntryData(
                 type,
@@ -249,7 +248,7 @@ public class ArmorEntityFilterScreen extends ScaledScreen {
     }
 
     @Override
-    protected void initScaled() {
+    protected void buildUi() {
         int topY = 18;
         int modeW = 142;
         int speedButtonW = 72;
@@ -433,7 +432,7 @@ public class ArmorEntityFilterScreen extends ScaledScreen {
         }
 
         if (notifyInvalid) {
-            GuiToastUtil.showToast(
+            GuiOverlay.toast(
                     "armorsets_rotation_speed_invalid",
                     ColorText.translatable("msg.kineticarmory.armorsets.rotation_speed.invalid")
             );
@@ -547,7 +546,7 @@ public class ArmorEntityFilterScreen extends ScaledScreen {
                             .contains(tagQuery));
         }
 
-        return AdvancedSearchUtil.match(data.searchData(), query);
+        return KineticSearch.match(data.searchData(), query);
     }
 
     private void addFiltered() {
@@ -636,7 +635,7 @@ public class ArmorEntityFilterScreen extends ScaledScreen {
     }
 
     @Override
-    protected void renderScaledBackground(
+    protected void renderCanvasBackground(
             @NotNull GuiGraphics g,
             int mx,
             int my,
@@ -728,7 +727,7 @@ public class ArmorEntityFilterScreen extends ScaledScreen {
     }
 
     @Override
-    protected void renderScaledForeground(
+    protected void renderCanvasForeground(
             @NotNull GuiGraphics g,
             int mx,
             int my,
@@ -806,12 +805,7 @@ public class ArmorEntityFilterScreen extends ScaledScreen {
 
         if (deferredTooltip != null
                 && !deferredTooltip.isEmpty()) {
-            g.renderComponentTooltip(
-                    this.font,
-                    deferredTooltip,
-                    mx,
-                    my
-            );
+            GuiOverlay.requestTooltip(deferredTooltip, mx, my);
         }
     }
 
@@ -877,7 +871,7 @@ public class ArmorEntityFilterScreen extends ScaledScreen {
                     : 0xFF252525;
 
             int outline = hovered
-                    ? 0xFF88DDFF
+                    ? 0xFFAAAAAA
                     : addedSide
                     ? 0xFF55DD88
                     : 0xFF555555;
@@ -965,14 +959,14 @@ public class ArmorEntityFilterScreen extends ScaledScreen {
         );
 
         if (maxScroll > 0) {
-            int thumbH = ScrollUtil.calculateThumbHeight(
+            int thumbH = Scroll.calculateThumbHeight(
                     GRID_H,
                     VISIBLE_ROWS,
                     totalRows,
                     20
             );
 
-            ConfigScrollbarTheme.render(
+            GuiTheme.scrollbar(
                     g,
                     mouseX,
                     mouseY,
@@ -1007,9 +1001,9 @@ public class ArmorEntityFilterScreen extends ScaledScreen {
                 boxY,
                 boxW,
                 boxH,
-                this.guiScale,
-                this.offsetX,
-                this.offsetY,
+                this.canvasScale,
+                this.canvasX,
+                this.canvasY,
                 hovered
         );
 
@@ -1079,12 +1073,12 @@ public class ArmorEntityFilterScreen extends ScaledScreen {
     }
 
     @Override
-    protected boolean universalMouseClicked(
+    protected boolean canvasMouseClicked(
             double mx,
             double my,
             int btn
     ) {
-        boolean handled = super.universalMouseClicked(
+        boolean handled = super.canvasMouseClicked(
                 mx,
                 my,
                 btn
@@ -1213,7 +1207,7 @@ public class ArmorEntityFilterScreen extends ScaledScreen {
     }
 
     @Override
-    protected boolean universalMouseDragged(
+    protected boolean canvasMouseDragged(
             double mx,
             double my,
             int btn,
@@ -1236,7 +1230,7 @@ public class ArmorEntityFilterScreen extends ScaledScreen {
             return true;
         }
 
-        return super.universalMouseDragged(
+        return super.canvasMouseDragged(
                 mx,
                 my,
                 btn,
@@ -1246,7 +1240,7 @@ public class ArmorEntityFilterScreen extends ScaledScreen {
     }
 
     @Override
-    protected boolean universalMouseReleased(
+    protected boolean canvasMouseReleased(
             double mx,
             double my,
             int btn
@@ -1259,7 +1253,7 @@ public class ArmorEntityFilterScreen extends ScaledScreen {
             return true;
         }
 
-        return super.universalMouseReleased(
+        return super.canvasMouseReleased(
                 mx,
                 my,
                 btn
@@ -1267,7 +1261,7 @@ public class ArmorEntityFilterScreen extends ScaledScreen {
     }
 
     @Override
-    protected boolean universalMouseScrolled(
+    protected boolean canvasMouseScrolled(
             double mx,
             double my,
             double delta
@@ -1325,7 +1319,7 @@ public class ArmorEntityFilterScreen extends ScaledScreen {
             }
         }
 
-        return super.universalMouseScrolled(
+        return super.canvasMouseScrolled(
                 mx,
                 my,
                 delta
@@ -1348,14 +1342,14 @@ public class ArmorEntityFilterScreen extends ScaledScreen {
         );
 
         if (maxScroll > 0) {
-            int thumbH = ScrollUtil.calculateThumbHeight(
+            int thumbH = Scroll.calculateThumbHeight(
                     GRID_H,
                     VISIBLE_ROWS,
                     totalRows,
                     20
             );
 
-            int value = ScrollUtil.calculateScrollOffset(
+            int value = Scroll.calculateScrollOffset(
                     my,
                     GRID_Y,
                     GRID_H,

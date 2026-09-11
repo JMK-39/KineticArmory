@@ -3,10 +3,11 @@ package dev.xyat.kineticarmory.armorsets.client.gui;
 import dev.xyat.kineticarmory.armorsets.client.ArmorCache;
 import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
 import dev.xyat.kineticarmory.armorsets.data.ArmorTipGenerator;
-import dev.xyat.kineticcore.api.client.GuiRenderUtil;
-import dev.xyat.kineticcore.api.client.GuiToastUtil;
-import dev.xyat.kineticcore.api.client.ScaledScreen;
-import dev.xyat.kineticcore.api.client.ScrollUtil;
+import dev.xyat.kineticcore.api.client.theme.GuiTheme;
+import dev.xyat.kineticcore.api.client.overlay.GuiOverlay;
+import dev.xyat.kineticcore.api.client.screen.KineticScreen;
+import dev.xyat.kineticcore.api.client.widget.KineticWidgets.Scroll;
+import dev.xyat.kineticcore.api.client.widget.KineticWidgets.SmoothSelectionList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -26,8 +27,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class ArmorTipEditorScreen extends ScaledScreen {
-    private final ScaledScreen parent;
+public class ArmorTipEditorScreen extends KineticScreen {
+    private final KineticScreen parent;
     private final ArmorDataConfig config;
     private final List<TipRow> displayRows = new ArrayList<>();
     private TipListWidget listWidget;
@@ -46,13 +47,13 @@ public class ArmorTipEditorScreen extends ScaledScreen {
     private static final int[] COLORS = { 0x000000, 0x0000AA, 0x00AA00, 0x00AAAA, 0xAA0000, 0xAA00AA, 0xFFAA00, 0x5555FF, 0x55FF55, 0x55FFFF, 0xFF5555, 0xFF55FF, 0xFFFF55, 0xFFFFFF };
     private static final String[] CODES = {"0", "1", "2", "3", "4", "5", "6", "9", "a", "b", "c", "d", "e", "f"};
 
-    public ArmorTipEditorScreen(ScaledScreen parent, ArmorDataConfig config) {
+    public ArmorTipEditorScreen(KineticScreen parent, ArmorDataConfig config) {
         super(Component.translatable("gui.kineticarmory.armorsets.btn_edit_tips"));
         this.parent = parent;
         this.config = config;
         this.config.initNullFields();
         ensureManualTipLayout();
-        configureResponsiveCanvas(
+        useCanvas(
                 640f,
                 360f,
                 6
@@ -66,9 +67,9 @@ public class ArmorTipEditorScreen extends ScaledScreen {
     }
 
     @Override
-    protected void initScaled() {
-        int cx = this.vWidth / 2;
-        int guiW = this.vWidth - 20;
+    protected void buildUi() {
+        int cx = this.canvasWidth / 2;
+        int guiW = this.canvasWidth - 20;
         int x0 = cx - guiW / 2;
         int y0 = 35;
 
@@ -107,7 +108,7 @@ public class ArmorTipEditorScreen extends ScaledScreen {
                 data.text = input.getValue();
                 cancelEdit();
                 listWidget.refresh();
-                GuiToastUtil.showToast(Component.translatable("msg.kineticarmory.common.saved"));
+                GuiOverlay.toast(Component.translatable("msg.kineticarmory.common.saved"));
             }
         }).bounds(x0 + guiW - 115, y0, 55, 20).build();
         this.btnModify.visible = false;
@@ -134,15 +135,15 @@ public class ArmorTipEditorScreen extends ScaledScreen {
         }
 
         int listTop = y0 + 45;
-        int listBottom = this.vHeight - 35;
+        int listBottom = this.canvasHeight - 35;
         this.listWidget = new TipListWidget(this.minecraft, guiW, listBottom - listTop, listTop, listBottom, 22);
         this.listWidget.setLeftPos(x0);
         this.addWidget(listWidget);
 
         int actionBtnW = 80;
-        int bottomBtnY = this.vHeight - 25;
+        int bottomBtnY = this.canvasHeight - 25;
 
-        this.addRenderableWidget(Button.builder(Component.translatable("gui.kineticarmory.armorsets.save"), b -> GuiToastUtil.showToast(Component.translatable("msg.kineticarmory.common.saved"))).bounds(cx - actionBtnW - 5, bottomBtnY, actionBtnW, 20).build());
+        this.addRenderableWidget(Button.builder(Component.translatable("gui.kineticarmory.armorsets.save"), b -> GuiOverlay.toast(Component.translatable("msg.kineticarmory.common.saved"))).bounds(cx - actionBtnW - 5, bottomBtnY, actionBtnW, 20).build());
         this.addRenderableWidget(Button.builder(Component.translatable("gui.kineticarmory.armorsets.back"), b -> {
             if (minecraft != null) minecraft.setScreen(parent);
         }).bounds(cx + 5, bottomBtnY, actionBtnW, 20).build());
@@ -314,15 +315,15 @@ public class ArmorTipEditorScreen extends ScaledScreen {
     }
 
     @Override
-    protected boolean universalMouseDragged(double mx, double my, int btn, double dx, double dy) {
+    protected boolean canvasMouseDragged(double mx, double my, int btn, double dx, double dy) {
         if (draggingIndex != -1 && Screen.hasControlDown()) {
             return true;
         }
-        return super.universalMouseDragged(mx, my, btn, dx, dy);
+        return super.canvasMouseDragged(mx, my, btn, dx, dy);
     }
 
     @Override
-    protected boolean universalMouseReleased(double mx, double my, int btn) {
+    protected boolean canvasMouseReleased(double mx, double my, int btn) {
         if (draggingIndex != -1 && btn == 0) {
             int insertAt = resolveLayoutInsertIndex(hoverTargetIndex);
             ensureManualTipLayout();
@@ -338,7 +339,7 @@ public class ArmorTipEditorScreen extends ScaledScreen {
             hoverTargetIndex = -1;
             return true;
         }
-        return super.universalMouseReleased(mx, my, btn);
+        return super.canvasMouseReleased(mx, my, btn);
     }
 
     private int resolveLayoutInsertIndex(int displayIndex) {
@@ -348,7 +349,7 @@ public class ArmorTipEditorScreen extends ScaledScreen {
     }
 
     @Override
-    protected boolean universalMouseClicked(double mx, double my, int btn) {
+    protected boolean canvasMouseClicked(double mx, double my, int btn) {
         if (this.input != null) {
             if (!this.input.isMouseOver(mx, my)) {
                 this.input.setFocused(false);
@@ -357,26 +358,26 @@ public class ArmorTipEditorScreen extends ScaledScreen {
                 this.setFocused(this.input);
             }
         }
-        return super.universalMouseClicked(mx, my, btn);
+        return super.canvasMouseClicked(mx, my, btn);
     }
 
     @Override
-    protected void renderScaledBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        int cx = this.vWidth / 2;
-        int guiW = this.vWidth - 20;
+    protected void renderCanvasBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
+        int cx = this.canvasWidth / 2;
+        int guiW = this.canvasWidth - 20;
         int x0 = cx - guiW / 2;
 
-        GuiRenderUtil.drawStandardPanel(g, x0 - 5, 5, guiW + 10, this.vHeight - 10);
+        GuiTheme.panel(g, x0 - 5, 5, guiW + 10, this.canvasHeight - 10);
         g.drawCenteredString(this.font, this.title, cx, 8, 0xFFFFFF);
 
         String dragHint = Component.translatable("gui.kineticarmory.armorsets.tips.drag_hint").getString();
         g.drawString(this.font, dragHint, x0 + 5, 20, 0xFFFFFF);
 
-        renderScissorCorrectedList(listWidget, g, mx, my, pt);
+        renderScaledList(listWidget, g, mx, my, pt);
     }
 
     @Override
-    protected void renderScaledForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {
+    protected void renderCanvasForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {
         if (draggingIndex != -1 && draggingText != null) {
             hoverTargetIndex = -1;
             if (my >= listWidget.getTop() && my <= listWidget.getBottom()) {
@@ -469,7 +470,7 @@ public class ArmorTipEditorScreen extends ScaledScreen {
         return row != null && editingIndex == row.layoutIndex();
     }
 
-    class TipListWidget extends ObjectSelectionList<TipListWidget.Entry> {
+    class TipListWidget extends SmoothSelectionList<TipListWidget.Entry> {
         private final int listTop, listBottom;
 
         public TipListWidget(Minecraft mc, int w, int h, int t, int b, int ih) {
@@ -489,17 +490,17 @@ public class ArmorTipEditorScreen extends ScaledScreen {
                 int barX = this.getScrollbarPosition();
                 int height = listBottom - listTop;
                 int thumbH = Math.max(20, (int) ((float) height * height / this.getMaxPosition()));
-                ScrollUtil.renderScrollbar(
+                Scroll.renderScrollbar(
                         g,
                         mx,
                         my,
-                        barX,
+                        barX + 2,
                         listTop,
-                        6,
+                        4,
                         height,
                         thumbH,
                         (int) Math.ceil(this.getMaxScroll()),
-                        (int) Math.round(this.getScrollAmount()),
+                        this.getScrollAmount(),
                         false
                 );
             }

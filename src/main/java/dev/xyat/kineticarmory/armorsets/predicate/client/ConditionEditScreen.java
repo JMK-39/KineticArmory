@@ -3,12 +3,12 @@ package dev.xyat.kineticarmory.armorsets.predicate.client;
 import dev.xyat.kineticarmory.util.ColorText;
 import dev.xyat.kineticarmory.armorsets.predicate.ConditionData;
 import dev.xyat.kineticarmory.armorsets.predicate.ConditionTypeUtil;
-import dev.xyat.kineticcore.api.client.GuiRenderUtil;
-import dev.xyat.kineticcore.api.client.GuiToastUtil;
-import dev.xyat.kineticcore.api.client.ItemSelectorScreen;
-import dev.xyat.kineticcore.api.client.ScaledScreen;
-import dev.xyat.kineticcore.api.client.gui.AutoCompleteBox;
-import dev.xyat.kineticcore.api.client.gui.NumericEditBox;
+import dev.xyat.kineticcore.api.client.theme.GuiTheme;
+import dev.xyat.kineticcore.api.client.overlay.GuiOverlay;
+import dev.xyat.kineticcore.api.client.selector.ItemSelectorScreen;
+import dev.xyat.kineticcore.api.client.screen.KineticScreen;
+import dev.xyat.kineticcore.api.client.widget.KineticWidgets.AutoCompleteBox;
+import dev.xyat.kineticcore.api.client.widget.KineticWidgets.NumericEditBox;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.HashSet;
 import java.util.Set;
 
-public class ConditionEditScreen extends ScaledScreen {
+public class ConditionEditScreen extends KineticScreen {
     private final ConditionListScreen parent;
     private final List<ConditionData> parentList;
     private final ConditionData data;
@@ -51,7 +51,7 @@ public class ConditionEditScreen extends ScaledScreen {
         this.parentList = parentList;
         this.data = data;
         this.isNew = isNew;
-        configureResponsiveCanvas(
+        useCanvas(
                 640f,
                 360f,
                 6
@@ -59,8 +59,8 @@ public class ConditionEditScreen extends ScaledScreen {
         if (data.params != null) this.currentParamValues.putAll(data.params);
     }
 
-    @Override protected void initScaled() {
-        int cx = vWidth / 2; int cy = vHeight / 2;
+    @Override protected void buildUi() {
+        int cx = canvasWidth / 2; int cy = canvasHeight / 2;
 
         typeInput = new AutoCompleteBox(font, cx - 120, cy - 50, 240, 20, Component.empty(), ConditionTypeUtil::getSuggestions);
         typeInput.setValue((data.type != null && !data.type.isEmpty()) ? data.type.toUpperCase() : "");
@@ -96,8 +96,8 @@ public class ConditionEditScreen extends ScaledScreen {
         invalidParams.clear();
 
         currentSchema = ConditionTypeUtil.getParamSchema(newType);
-        int cx = vWidth / 2;
-        int currentY = (vHeight / 2) - 10;
+        int cx = canvasWidth / 2;
+        int currentY = (canvasHeight / 2) - 10;
 
         for (ConditionTypeUtil.ParamDef def : currentSchema) {
             String initialVal = currentParamValues.getOrDefault(def.key(), def.defaultVal());
@@ -162,7 +162,7 @@ public class ConditionEditScreen extends ScaledScreen {
         saveBtn.setY(currentY + 10);
         backBtn.setY(currentY + 10);
 
-        int panelStartY = (vHeight / 2) - 70;
+        int panelStartY = (canvasHeight / 2) - 70;
         int buttonsBottomY = saveBtn.getY() + saveBtn.getHeight();
         dynamicPanelHeight = (buttonsBottomY + 15) - panelStartY;
     }
@@ -181,18 +181,18 @@ public class ConditionEditScreen extends ScaledScreen {
 
     private void saveAndClose() {
         String typeStr = ConditionTypeUtil.getRawType(typeInput.getValue());
-        if (typeStr.isEmpty()) { GuiToastUtil.showToast(ColorText.translatable("msg.kineticarmory.predicate.empty_type")); return; }
+        if (typeStr.isEmpty()) { GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.predicate.empty_type")); return; }
 
         if ("STAGE".equals(typeStr)) {
             String stageVal = currentParamValues.getOrDefault("stage", "");
             if (stageVal.isEmpty()) {
-                GuiToastUtil.showToast(ColorText.translatable("msg.kineticarmory.predicate.invalid_stage"));
+                GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.predicate.invalid_stage"));
                 return;
             }
         }
 
         if (!invalidParams.isEmpty()) {
-            GuiToastUtil.showToast(ColorText.translatable("msg.kineticarmory.predicate.invalid_seconds"));
+            GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.predicate.invalid_seconds"));
             return;
         }
 
@@ -202,21 +202,21 @@ public class ConditionEditScreen extends ScaledScreen {
         if (minecraft != null) minecraft.setScreen(parent);
     }
 
-    @Override protected void renderScaledBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        int cx = vWidth / 2; int cy = vHeight / 2;
+    @Override protected void renderCanvasBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
+        int cx = canvasWidth / 2; int cy = canvasHeight / 2;
         int panelY = cy - 70;
-        GuiRenderUtil.drawStandardPanel(g, cx - 140, panelY, 280, dynamicPanelHeight);
+        GuiTheme.panel(g, cx - 140, panelY, 280, dynamicPanelHeight);
 
         g.drawCenteredString(font, title, cx, panelY + 10, 0xFFFFFF);
         g.drawString(font, ColorText.translatable("gui.kineticarmory.predicate.type"), cx - 120, cy - 62, 0xAAAAAA);
     }
 
-    @Override protected void renderScaledForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        int cx = vWidth / 2;
+    @Override protected void renderCanvasForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {
+        int cx = canvasWidth / 2;
 
         for (int i = 0; i < currentSchema.size(); i++) {
             ConditionTypeUtil.ParamDef def = currentSchema.get(i);
-            int y = (vHeight / 2) - 10 + i * 45;
+            int y = (canvasHeight / 2) - 10 + i * 45;
 
             String label = ConditionTypeUtil.getTranslatedParamName(def.key());
             if (isSecondsParam(ConditionTypeUtil.getRawType(typeInput.getValue()), def.key())) {
@@ -233,12 +233,7 @@ public class ConditionEditScreen extends ScaledScreen {
             if (mx >= cx - 120 && mx <= cx + 120 && my >= y && my <= y + 10) {
                 String hint = ConditionTypeUtil.getTranslatedParamHint(def.key());
                 if (!hint.isEmpty() && !hint.startsWith("gui.")) {
-                    g.renderTooltip(
-                            font,
-                            ColorText.translatable("gui.kineticarmory.predicate.param.hint", hint),
-                            mx,
-                            my
-                    );
+                    GuiOverlay.requestTooltip(ColorText.translatable("gui.kineticarmory.predicate.param.hint", hint), mx, my);
                 }
             }
         }
@@ -249,29 +244,29 @@ public class ConditionEditScreen extends ScaledScreen {
         }
     }
 
-    @Override protected boolean universalMouseScrolled(double x, double y, double d) {
+    @Override protected boolean canvasMouseScrolled(double x, double y, double d) {
         if(typeInput.handleMouseScrolled(d)) return true;
         for (AutoCompleteBox box : dynamicAcBoxes) if (box.visible && box.handleMouseScrolled(d)) return true;
-        return super.universalMouseScrolled(x, y, d);
+        return super.canvasMouseScrolled(x, y, d);
     }
 
-    @Override protected boolean universalMouseDragged(double mx, double my, int btn, double dx, double dy) {
+    @Override protected boolean canvasMouseDragged(double mx, double my, int btn, double dx, double dy) {
         if (typeInput != null && typeInput.handleMouseDragged(mx, my)) return true;
         for (AutoCompleteBox box : dynamicAcBoxes) if (box.visible && box.handleMouseDragged(mx, my)) return true;
-        return super.universalMouseDragged(mx, my, btn, dx, dy);
+        return super.canvasMouseDragged(mx, my, btn, dx, dy);
     }
 
-    @Override protected boolean universalMouseReleased(double mx, double my, int btn) {
+    @Override protected boolean canvasMouseReleased(double mx, double my, int btn) {
         if (typeInput != null && typeInput.handleMouseReleased(btn)) return true;
         for (AutoCompleteBox box : dynamicAcBoxes) if (box.visible && box.handleMouseReleased(btn)) return true;
-        return super.universalMouseReleased(mx, my, btn);
+        return super.canvasMouseReleased(mx, my, btn);
     }
 
-    @Override protected boolean universalMouseClicked(double x, double y, int b) {
+    @Override protected boolean canvasMouseClicked(double x, double y, int b) {
         boolean handled = (typeInput != null && typeInput.handleMouseClick(x, y)) ||
                 dynamicAcBoxes.stream().anyMatch(box -> box.visible && box.handleMouseClick(x, y));
 
-        boolean res = super.universalMouseClicked(x, y, b);
+        boolean res = super.canvasMouseClicked(x, y, b);
 
         boolean clickedInput = (typeInput != null && typeInput.isMouseOver(x, y)) ||
                 dynamicAcBoxes.stream().anyMatch(box -> box.visible && box.isMouseOver(x, y)) ||

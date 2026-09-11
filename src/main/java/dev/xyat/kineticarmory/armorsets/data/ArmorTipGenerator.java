@@ -2,7 +2,7 @@ package dev.xyat.kineticarmory.armorsets.data;
 
 import dev.xyat.kineticarmory.armorsets.predicate.ConditionData;
 import dev.xyat.kineticarmory.armorsets.predicate.ConditionTypeUtil;
-import dev.xyat.kineticcore.api.client.RegistryDictUtil;
+import dev.xyat.kineticcore.api.client.search.KineticSearch;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -225,7 +225,7 @@ public class ArmorTipGenerator {
     }
 
     public static String genImmTip(ArmorDataConfig.DamageImmunityData d) {
-        String name = RegistryDictUtil.extractNameFromDictionary(d.damageType, RegistryDictUtil.getDamageDict());
+        String name = KineticSearch.dictionaryName(d.damageType, KineticSearch.damageDictionary());
         if (d.multiplier == 0.0) {
             return applyLineWrap(Component.translatable("tip.kineticarmory.armorsets.prefix.immunity", "§a" + name).getString() + getCondTxt(d.conditions, d.conditionMatchMode, d.conditionMinCount));
         } else {
@@ -250,8 +250,8 @@ public class ArmorTipGenerator {
     }
 
     public static String genConvTip(ArmorDataConfig.DamageConversionData d) {
-        String srcName = RegistryDictUtil.extractNameFromDictionary(d.sourceType, RegistryDictUtil.getDamageDict());
-        String tgtName = RegistryDictUtil.extractNameFromDictionary(d.targetType, RegistryDictUtil.getSpecificDamageDict());
+        String srcName = KineticSearch.dictionaryName(d.sourceType, KineticSearch.damageDictionary());
+        String tgtName = KineticSearch.dictionaryName(d.targetType, KineticSearch.specificDamageDictionary());
         String chanceStr = "§e" + (int)(d.chance * 100);
         String ratioStr = "§e" + (int)(d.ratio * 100);
         return applyLineWrap(Component.translatable("tip.kineticarmory.armorsets.prefix.convert", chanceStr, "§c" + srcName, "§d" + tgtName, ratioStr).getString() + getCondTxt(d.conditions, d.conditionMatchMode, d.conditionMinCount));

@@ -3,12 +3,12 @@ package dev.xyat.kineticarmory.armorsets.client.gui;
 import dev.xyat.kineticarmory.util.ColorText;
 import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
 import dev.xyat.kineticarmory.armorsets.data.ArmorTipGenerator;
-import dev.xyat.kineticcore.api.client.GuiRenderUtil;
-import dev.xyat.kineticcore.api.client.GuiToastUtil;
-import dev.xyat.kineticcore.api.client.ScaledScreen;
-import dev.xyat.kineticcore.api.client.gui.HighZButton;
-import dev.xyat.kineticcore.api.client.gui.NumericEditBox;
-import dev.xyat.kineticcore.api.client.gui.GridScrollController;
+import dev.xyat.kineticcore.api.client.theme.GuiTheme;
+import dev.xyat.kineticcore.api.client.overlay.GuiOverlay;
+import dev.xyat.kineticcore.api.client.screen.KineticScreen;
+import dev.xyat.kineticcore.api.client.widget.KineticWidgets.HighZButton;
+import dev.xyat.kineticcore.api.client.widget.KineticWidgets.NumericEditBox;
+import dev.xyat.kineticcore.api.client.widget.KineticWidgets.GridScrollController;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.network.chat.Component;
@@ -21,15 +21,15 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
-public class ArmorPieceBonusScreen extends ScaledScreen {
+public class ArmorPieceBonusScreen extends KineticScreen {
     private static final Pattern ICON_PATTERN = Pattern.compile("\\[(item|effect):([^]]+)]");
     private static final Pattern COLOR_PATTERN = Pattern.compile("§[0-9a-fk-or]", Pattern.CASE_INSENSITIVE);
     private static final int PANEL_PADDING = 14;
     private static final int ROW_H = 25;
     private static final int VISIBLE_ROWS = 10;
-    private static final int SCROLL_W = 6;
+    private static final int SCROLL_W = 4;
 
-    private final ScaledScreen parent;
+    private final KineticScreen parent;
     private final ArmorDataConfig config;
     private final List<PieceEffectEntry> effects = new ArrayList<>();
 
@@ -52,11 +52,11 @@ public class ArmorPieceBonusScreen extends ScaledScreen {
     private int rightW;
     private int rightH;
 
-    public ArmorPieceBonusScreen(ScaledScreen parent, ArmorDataConfig config) {
+    public ArmorPieceBonusScreen(KineticScreen parent, ArmorDataConfig config) {
         super(ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.title"));
         this.parent = parent;
         this.config = config;
-        configureResponsiveCanvas(
+        useCanvas(
                 640f,
                 360f,
                 6
@@ -73,13 +73,13 @@ public class ArmorPieceBonusScreen extends ScaledScreen {
     }
 
     @Override
-    protected void initScaled() {
+    protected void buildUi() {
         config.initNullFields();
         config.preparePieceBonusData();
         rebuildEffects();
 
-        int panelW = vWidth - PANEL_PADDING * 2;
-        int panelH = vHeight - PANEL_PADDING * 2;
+        int panelW = canvasWidth - PANEL_PADDING * 2;
+        int panelH = canvasHeight - PANEL_PADDING * 2;
         int controlY = PANEL_PADDING + 36;
         int inputX = PANEL_PADDING + 12;
         int doneX = PANEL_PADDING + panelW - 92;
@@ -210,7 +210,7 @@ public class ArmorPieceBonusScreen extends ScaledScreen {
         loadSelectedValue();
         clampScrolls();
         warningMessage = null;
-        GuiToastUtil.showToast(ColorText.translatable("msg.kineticarmory.common.saved"));
+        GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.common.saved"));
     }
 
     private boolean putSelectedValue(ArmorDataConfig.PieceBonusGroup group) {
@@ -248,7 +248,7 @@ public class ArmorPieceBonusScreen extends ScaledScreen {
         loadSelectedValue();
         clampScrolls();
         warningMessage = null;
-        GuiToastUtil.showToast(ColorText.translatable("msg.kineticarmory.common.saved"));
+        GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.common.saved"));
     }
 
     private int parsePiecesFromInput() {
@@ -382,7 +382,7 @@ public class ArmorPieceBonusScreen extends ScaledScreen {
             loadSelectedValue();
             clampScrolls();
             warningMessage = null;
-            GuiToastUtil.showToast(ColorText.translatable("msg.kineticarmory.common.saved"));
+            GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.common.saved"));
             return;
         }
         selectedPieces = option.pieces();
@@ -417,9 +417,9 @@ public class ArmorPieceBonusScreen extends ScaledScreen {
     }
 
     @Override
-    protected void renderScaledBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        drawStrongPanel(g, PANEL_PADDING, PANEL_PADDING, vWidth - PANEL_PADDING * 2, vHeight - PANEL_PADDING * 2, 0xFF1C1C1C);
-        g.drawCenteredString(font, title, vWidth / 2, PANEL_PADDING + 10, 0xFFFFFF);
+    protected void renderCanvasBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
+        drawStrongPanel(g, PANEL_PADDING, PANEL_PADDING, canvasWidth - PANEL_PADDING * 2, canvasHeight - PANEL_PADDING * 2, 0xFF1C1C1C);
+        g.drawCenteredString(font, title, canvasWidth / 2, PANEL_PADDING + 10, 0xFFFFFF);
         drawStrongPanel(g, leftX, leftY, leftW, leftH, 0xDD050505);
         drawStrongPanel(g, rightX, rightY, rightW, rightH, 0xDD050505);
         renderEffectRows(g, mx, my);
@@ -427,7 +427,7 @@ public class ArmorPieceBonusScreen extends ScaledScreen {
     }
 
     @Override
-    protected void renderScaledForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {
+    protected void renderCanvasForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {
         if (pieceInput != null && !pieceInput.isFocused() && pieceInput.getValue().isEmpty()) {
             String hint = ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.input_hint").getString();
             g.drawString(font, font.plainSubstrByWidth(hint, pieceInput.getWidth() - 8), pieceInput.getX() + 4, pieceInput.getY() + 6, 0xFFAAAAAA, false);
@@ -444,11 +444,11 @@ public class ArmorPieceBonusScreen extends ScaledScreen {
         }
         g.drawString(font, ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.effect_list_title"), leftX, leftY - 13, 0xFFFFAA00, false);
         g.drawString(font, ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.tier_list_title"), rightX, rightY - 13, 0xFFFFAA00, false);
-        if (warningMessage != null) g.drawCenteredString(font, warningMessage, vWidth / 2, PANEL_PADDING + 24, 0xFFFF5555);
+        if (warningMessage != null) g.drawCenteredString(font, warningMessage, canvasWidth / 2, PANEL_PADDING + 24, 0xFFFF5555);
     }
 
     private void drawStrongPanel(GuiGraphics g, int x, int y, int w, int h, int bgColor) {
-        GuiRenderUtil.drawPanel(g, x, y, w, h, bgColor, 0xFF8A8A8A);
+        GuiTheme.panel(g, x, y, w, h, bgColor, 0xFF8A8A8A);
         g.renderOutline(x + 1, y + 1, w - 2, h - 2, 0xFF3A3A3A);
     }
 
@@ -464,11 +464,14 @@ public class ArmorPieceBonusScreen extends ScaledScreen {
             g.drawCenteredString(font, ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.empty_effects"), leftX + leftW / 2, leftY + 16, 0xFFAAAAAA);
             return;
         }
-        int count = Math.min(visible, effects.size() - effectScroll.offset());
+        int first = effectScroll.smoothIndexOffset();
+        int shift = effectScroll.visualShift(ROW_H);
+        int count = Math.min(visible + 1, effects.size() - first);
+        enableCanvasScissor(g, leftX, leftY, leftX + leftW - 10, leftY + leftH);
         for (int i = 0; i < count; i++) {
-            int index = effectScroll.offset() + i;
+            int index = first + i;
             PieceEffectEntry effect = effects.get(index);
-            int y = leftY + i * ROW_H;
+            int y = leftY + i * ROW_H - shift;
             boolean hover = isInside(mx, my, leftX, y, leftW - 10, ROW_H);
             boolean selected = effect == selectedEffect;
             g.fill(leftX + 1, y + 1, leftX + leftW - 10, y + ROW_H - 1, selected ? 0xAA775500 : (hover ? 0x88444444 : 0x88222222));
@@ -478,6 +481,7 @@ public class ArmorPieceBonusScreen extends ScaledScreen {
             String summary = buildEffectSummary(effect);
             if (!summary.isEmpty()) drawTrimmedText(g, summary, leftX + 6, y + 16, leftW - 22, 0xFF55FF55);
         }
+        g.disableScissor();
         effectScroll.render(
                 g, mx, my,
                 leftX + leftW - SCROLL_W - 2,
@@ -496,12 +500,15 @@ public class ArmorPieceBonusScreen extends ScaledScreen {
             g.drawCenteredString(font, ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.empty_tiers"), rightX + rightW / 2, rightY + 16, 0xFFAAAAAA);
             return;
         }
-        int count = Math.min(visible, tiers.size() - tierScroll.offset());
+        int first = tierScroll.smoothIndexOffset();
+        int shift = tierScroll.visualShift(ROW_H);
+        int count = Math.min(visible + 1, tiers.size() - first);
+        enableCanvasScissor(g, rightX, rightY, rightX + rightW - 10, rightY + rightH);
         for (int i = 0; i < count; i++) {
-            int index = tierScroll.offset() + i;
+            int index = first + i;
             TierOption option = tiers.get(index);
             ArmorDataConfig.PieceBonusGroup group = option.group();
-            int y = rightY + i * ROW_H;
+            int y = rightY + i * ROW_H - shift;
             boolean hover = isInside(mx, my, rightX, y, rightW - 10, ROW_H);
             boolean rowSelected = option.pieces() == selectedPieces;
             boolean enabled = selectedEffect != null && containsEffect(group, selectedEffect);
@@ -517,6 +524,7 @@ public class ArmorPieceBonusScreen extends ScaledScreen {
                 g.drawString(font, font.plainSubstrByWidth(valueText, valueW), rightX + rightW - valueW - 18, y + 9, enabled ? 0xFFFFFF55 : 0xFFAAAAAA, false);
             }
         }
+        g.disableScissor();
         tierScroll.render(
                 g, mx, my,
                 rightX + rightW - SCROLL_W - 2,
@@ -555,7 +563,7 @@ public class ArmorPieceBonusScreen extends ScaledScreen {
     }
 
     private boolean isInside(double mx, double my, int x, int y, int w, int h) {
-        return GuiRenderUtil.isHovering(mx, my, x, y, w, h);
+        return GuiTheme.hovering(mx, my, x, y, w, h);
     }
 
     private void clampScrolls() {
@@ -596,7 +604,7 @@ public class ArmorPieceBonusScreen extends ScaledScreen {
     }
 
     @Override
-    protected boolean universalMouseClicked(double mx, double my, int btn) {
+    protected boolean canvasMouseClicked(double mx, double my, int btn) {
         if (pieceInput != null && pieceInput.isMouseOver(mx, my)) {
             setFocused(pieceInput);
             pieceInput.setFocused(true);
@@ -616,7 +624,8 @@ public class ArmorPieceBonusScreen extends ScaledScreen {
         if (tryStartScrollDrag(mx, my, rightX + rightW - SCROLL_W - 2, rightY + 2, rightH - 4, false)) return true;
 
         if (isInside(mx, my, leftX, leftY, leftW - 10, leftH)) {
-            int row = (int)((my - leftY) / ROW_H) + effectScroll.offset();
+            int row = effectScroll.smoothIndexOffset()
+                    + (int) ((my - leftY + effectScroll.visualShift(ROW_H)) / ROW_H);
             if (row >= 0 && row < effects.size()) {
                 selectEffect(effects.get(row));
                 return true;
@@ -625,7 +634,8 @@ public class ArmorPieceBonusScreen extends ScaledScreen {
 
         if (isInside(mx, my, rightX, rightY, rightW - 10, rightH)) {
             List<TierOption> tiers = buildTierOptions();
-            int row = (int)((my - rightY) / ROW_H) + tierScroll.offset();
+            int row = tierScroll.smoothIndexOffset()
+                    + (int) ((my - rightY + tierScroll.visualShift(ROW_H)) / ROW_H);
             if (row >= 0 && row < tiers.size()) {
                 TierOption option = tiers.get(row);
                 selectTier(option);
@@ -634,7 +644,7 @@ public class ArmorPieceBonusScreen extends ScaledScreen {
             }
         }
 
-        return super.universalMouseClicked(mx, my, btn);
+        return super.canvasMouseClicked(mx, my, btn);
     }
 
     private boolean tryStartScrollDrag(double mx, double my, int x, int y, int h, boolean effectList) {
@@ -651,21 +661,21 @@ public class ArmorPieceBonusScreen extends ScaledScreen {
     }
 
     @Override
-    protected boolean universalMouseDragged(double mx, double my, int btn, double dx, double dy) {
+    protected boolean canvasMouseDragged(double mx, double my, int btn, double dx, double dy) {
         if (effectScroll.drag(my, leftY + 2, leftH - 4, 18)) return true;
         if (tierScroll.drag(my, rightY + 2, rightH - 4, 18)) return true;
-        return super.universalMouseDragged(mx, my, btn, dx, dy);
+        return super.canvasMouseDragged(mx, my, btn, dx, dy);
     }
 
     @Override
-    protected boolean universalMouseReleased(double mx, double my, int btn) {
+    protected boolean canvasMouseReleased(double mx, double my, int btn) {
         boolean handled = effectScroll.release(btn);
         handled = tierScroll.release(btn) || handled;
-        return handled || super.universalMouseReleased(mx, my, btn);
+        return handled || super.canvasMouseReleased(mx, my, btn);
     }
 
     @Override
-    protected boolean universalMouseScrolled(double mx, double my, double delta) {
+    protected boolean canvasMouseScrolled(double mx, double my, double delta) {
         if (isInside(mx, my, leftX, leftY, leftW, leftH)) {
             effectScroll.update(
                     effects.size(),
@@ -682,7 +692,7 @@ public class ArmorPieceBonusScreen extends ScaledScreen {
             if (tierScroll.scroll(delta)) return true;
         }
 
-        return super.universalMouseScrolled(mx, my, delta);
+        return super.canvasMouseScrolled(mx, my, delta);
     }
 
     private record PieceEffectEntry(String key, String text, double baseValue, boolean valueEditable) {}

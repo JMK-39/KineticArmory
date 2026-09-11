@@ -3,6 +3,9 @@ package dev.xyat.kineticarmory.armorsets.Network;
 import dev.xyat.kineticarmory.armorsets.client.ArmorCache;
 import dev.xyat.kineticarmory.armorsets.client.ArmorClientSnapshot;
 import dev.xyat.kineticarmory.armorsets.client.ArmorTooltip;
+import dev.xyat.kineticcore.api.client.overlay.GuiOverlay;
+import dev.xyat.kineticcore.config.client.KTConfigApi;
+import dev.xyat.kineticarmory.armorsets.config.ArmorConfigGui;
 import dev.xyat.kineticarmory.armorsets.logic.ClientDynamicTracker;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -11,6 +14,7 @@ import dev.xyat.kineticarmory.armorsets.client.gui.ArmorEntityFilterScreen;
 import dev.xyat.kineticarmory.armorsets.client.gui.ArmorListScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
@@ -42,6 +46,14 @@ public class ArmorNetworkClient {
             Screen parent = pendingEditorParent != null ? pendingEditorParent : minecraft.screen;
             pendingEditorParent = null;
             minecraft.setScreen(new ArmorListScreen(parent));
+        }
+    }
+
+    public static void handleEditorSaveResult(boolean success) {
+        if (success) {
+            KTConfigApi.notifySaved(ArmorConfigGui.EDITOR_PAGE_ID);
+        } else {
+            GuiOverlay.toast(Component.translatable("gui.kineticcore.config.save_failed"));
         }
     }
 

@@ -4,32 +4,32 @@ import dev.xyat.kineticarmory.util.ColorText;
 import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
 import dev.xyat.kineticarmory.armorsets.data.ArmorTipGenerator;
 import dev.xyat.kineticarmory.armorsets.predicate.client.ConditionListScreen;
-import dev.xyat.kineticcore.api.client.GuiRenderUtil;
-import dev.xyat.kineticcore.api.client.GuiToastUtil;
-import dev.xyat.kineticcore.api.client.RegistryDictUtil;
-import dev.xyat.kineticcore.api.client.ScaledScreen;
-import dev.xyat.kineticcore.api.client.gui.AutoCompleteBox;
-import dev.xyat.kineticcore.api.client.gui.AutoCompleteBoxGroup;
-import dev.xyat.kineticcore.api.client.gui.NumericAutoCompleteBox;
+import dev.xyat.kineticcore.api.client.theme.GuiTheme;
+import dev.xyat.kineticcore.api.client.overlay.GuiOverlay;
+import dev.xyat.kineticcore.api.client.search.KineticSearch;
+import dev.xyat.kineticcore.api.client.screen.KineticScreen;
+import dev.xyat.kineticcore.api.client.widget.KineticWidgets.AutoCompleteBox;
+import dev.xyat.kineticcore.api.client.widget.KineticWidgets.AutoCompleteBoxGroup;
+import dev.xyat.kineticcore.api.client.widget.KineticWidgets.NumericAutoCompleteBox;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 
-public class PotionEditor extends ScaledScreen {
+public class PotionEditor extends KineticScreen {
     private final AutoCompleteBoxGroup inputGroup =
             new AutoCompleteBoxGroup();
-    private final ScaledScreen parent; private final ArmorDataConfig config;
+    private final KineticScreen parent; private final ArmorDataConfig config;
     private final ArmorDataConfig.PotionEffectData data; private final boolean isNew;
     private AutoCompleteBox idInput;
     private NumericAutoCompleteBox lvlInput, timeInput;
     private String oldTip = null;
     private String tempId = null, tempLvl = null, tempTime = null;
 
-    public PotionEditor(ScaledScreen p, ArmorDataConfig c, ArmorDataConfig.PotionEffectData d) {
+    public PotionEditor(KineticScreen p, ArmorDataConfig c, ArmorDataConfig.PotionEffectData d) {
         super(ColorText.translatable("gui.kineticarmory.armorsets.editor.potion.title"));
-        configureResponsiveCanvas(
+        useCanvas(
                 640f,
                 360f,
                 6
@@ -46,9 +46,9 @@ public class PotionEditor extends ScaledScreen {
         if (timeInput != null) tempTime = timeInput.getValue();
     }
 
-    @Override protected void initScaled() {
-        int cx = vWidth / 2; int cy = vHeight / 2 - 50;
-        idInput = new AutoCompleteBox(font, cx - 100, cy - 35, 200, 20, Component.empty(), RegistryDictUtil::getPotionDict);
+    @Override protected void buildUi() {
+        int cx = canvasWidth / 2; int cy = canvasHeight / 2 - 50;
+        idInput = new AutoCompleteBox(font, cx - 100, cy - 35, 200, 20, Component.empty(), KineticSearch::getPotionDict);
         idInput.setValue(tempId != null ? tempId : (isNew ? "" : (data.effectId != null ? data.effectId : "")));
 
         lvlInput = NumericAutoCompleteBox.integer(font, cx - 100, cy - 10, 95, 20, Component.empty(), ArrayList::new, true, null, null);
@@ -64,7 +64,7 @@ public class PotionEditor extends ScaledScreen {
 
         addRenderableWidget(Button.builder(ColorText.translatable("gui.kineticarmory.armorsets.save"), b -> {
             if (syncToData()) return;
-            if (data.effectId.isEmpty()) { GuiToastUtil.showToast(ColorText.translatable("msg.kineticarmory.armorsets.empty_field")); return; }
+            if (data.effectId.isEmpty()) { GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.armorsets.empty_field")); return; }
             if (!isNew && oldTip != null) config.tips.remove(oldTip);
             if (isNew) config.potionEffects.add(data);
             config.tips.add(ArmorTipGenerator.genPotTip(data));
@@ -96,7 +96,7 @@ public class PotionEditor extends ScaledScreen {
         Integer duration = timeInput == null ? null : timeInput.getIntValue();
 
         if (amplifier == null || duration == null) {
-            GuiToastUtil.showToast(
+            GuiOverlay.toast(
                     ColorText.translatable("msg.kineticarmory.common.invalid_number")
             );
             return true;
@@ -114,18 +114,18 @@ public class PotionEditor extends ScaledScreen {
         }
     }
 
-    @Override protected void renderScaledBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        int cx = vWidth / 2; int cy = vHeight / 2 - 50; GuiRenderUtil.drawStandardPanel(g, cx - 120, cy - 70, 240, 150);
+    @Override protected void renderCanvasBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
+        int cx = canvasWidth / 2; int cy = canvasHeight / 2 - 50; GuiTheme.panel(g, cx - 120, cy - 70, 240, 150);
         g.drawCenteredString(font, title, cx, cy - 60, 0xFFFFFF);
     }
-    @Override protected void renderScaledForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {
+    @Override protected void renderCanvasForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {
         renderInputHint(g, idInput, "gui.kineticarmory.armorsets.input.id");
         renderInputHint(g, lvlInput, "gui.kineticarmory.armorsets.input.level");
         renderInputHint(g, timeInput, "gui.kineticarmory.armorsets.input.duration");
         inputGroup.renderSuggestions(g, mx, my);
     }
     @Override
-    protected boolean universalMouseScrolled(
+    protected boolean canvasMouseScrolled(
             double mouseX,
             double mouseY,
             double delta
@@ -134,7 +134,7 @@ public class PotionEditor extends ScaledScreen {
             return true;
         }
 
-        return super.universalMouseScrolled(
+        return super.canvasMouseScrolled(
                 mouseX,
                 mouseY,
                 delta
@@ -142,7 +142,7 @@ public class PotionEditor extends ScaledScreen {
     }
 
     @Override
-    protected boolean universalMouseClicked(
+    protected boolean canvasMouseClicked(
             double mouseX,
             double mouseY,
             int button
@@ -155,7 +155,7 @@ public class PotionEditor extends ScaledScreen {
         }
 
         boolean handled =
-                super.universalMouseClicked(
+                super.canvasMouseClicked(
                         mouseX,
                         mouseY,
                         button
@@ -170,7 +170,7 @@ public class PotionEditor extends ScaledScreen {
     }
 
     @Override
-    protected boolean universalMouseDragged(
+    protected boolean canvasMouseDragged(
             double mouseX,
             double mouseY,
             int button,
@@ -184,7 +184,7 @@ public class PotionEditor extends ScaledScreen {
             return true;
         }
 
-        return super.universalMouseDragged(
+        return super.canvasMouseDragged(
                 mouseX,
                 mouseY,
                 button,
@@ -194,7 +194,7 @@ public class PotionEditor extends ScaledScreen {
     }
 
     @Override
-    protected boolean universalMouseReleased(
+    protected boolean canvasMouseReleased(
             double mouseX,
             double mouseY,
             int button
@@ -203,7 +203,7 @@ public class PotionEditor extends ScaledScreen {
             return true;
         }
 
-        return super.universalMouseReleased(
+        return super.canvasMouseReleased(
                 mouseX,
                 mouseY,
                 button

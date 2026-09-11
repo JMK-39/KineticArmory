@@ -1,13 +1,19 @@
 package dev.xyat.kineticarmory.armorsets.client.gui;
 
+import dev.xyat.kineticcore.api.client.screen.KineticScreen;
+import dev.xyat.kineticcore.api.client.theme.GuiTheme;
+import dev.xyat.kineticcore.api.client.overlay.GuiOverlay;
+import dev.xyat.kineticcore.api.client.search.ItemSearchIndex;
+import dev.xyat.kineticcore.api.client.selector.ItemSelectorScreen;
+
 import dev.xyat.kineticarmory.util.ColorText;
 import dev.xyat.kineticarmory.armorsets.Network.ArmorNetwork;
 import dev.xyat.kineticarmory.armorsets.client.ArmorClientSnapshot;
 import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
 import dev.xyat.kineticarmory.armorsets.json.ArmorLoader;
-import dev.xyat.kineticcore.api.client.*;
-import dev.xyat.kineticcore.api.client.gui.AutoCompleteBox;
-import dev.xyat.kineticcore.api.client.gui.NbtEditorScreen;
+
+import dev.xyat.kineticcore.api.client.widget.KineticWidgets.AutoCompleteBox;
+import dev.xyat.kineticcore.api.client.selector.NbtEditorScreen;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -25,11 +31,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class ArmorEditScreen extends ScaledScreen {
+public class ArmorEditScreen extends KineticScreen {
 
     private static final int SLOT_SIZE = 18;
 
-    private final ScaledScreen parent;
+    private final KineticScreen parent;
     private final ArmorDataConfig config;
     private final String originalId;
 
@@ -40,13 +46,13 @@ public class ArmorEditScreen extends ScaledScreen {
 
     private final String[] vanillaSlots = {"head", "chest", "legs", "feet", "mainhand", "offhand"};
 
-    public ArmorEditScreen(ScaledScreen parent, ArmorDataConfig config) {
+    public ArmorEditScreen(KineticScreen parent, ArmorDataConfig config) {
         super(ColorText.translatable("gui.kineticarmory.armorsets.edit.title"));
         this.parent = parent;
         this.config = config;
         this.originalId = config.id;
 
-        configureResponsiveCanvas(
+        useCanvas(
                 640f,
                 360f,
                 6
@@ -74,6 +80,17 @@ public class ArmorEditScreen extends ScaledScreen {
         if (this.config.flightRequiredPieces < 0) this.config.flightRequiredPieces = 0;
         if (this.config.flightConditions == null) this.config.flightConditions = new ArrayList<>();
         if (this.config.pieceBonusGroups == null) this.config.pieceBonusGroups = new ArrayList<>();
+
+        configureStandaloneDraft(
+                config::copyForEdit,
+                snapshot -> {
+                    config.restoreFromEditCopy(snapshot);
+                    tempId = config.id;
+                    tempName = config.displayName;
+                    if (idBox != null) idBox.setValue(tempId == null ? "" : tempId);
+                    if (nameBox != null) nameBox.setValue(tempName == null ? "" : tempName);
+                }
+        );
     }
 
     @Override
@@ -84,9 +101,9 @@ public class ArmorEditScreen extends ScaledScreen {
     }
 
     @Override
-    protected void initScaled() {
-        int cx = this.vWidth / 2; int cy = this.vHeight / 2;
-        int panelWidth = Math.min(this.vWidth - 40, 360);
+    protected void buildUi() {
+        int cx = this.canvasWidth / 2; int cy = this.canvasHeight / 2;
+        int panelWidth = Math.min(this.canvasWidth - 40, 360);
         int leftX = cx - panelWidth / 2;
         int topY = cy - 110; int inputW = (panelWidth - 10) / 2;
 
@@ -209,18 +226,19 @@ public class ArmorEditScreen extends ScaledScreen {
         config.id = newId; config.displayName = newDisplayName;
         config.preparePieceBonusData();
         ArmorClientSnapshot.put(config);
+        commitDraft();
         ArmorNetwork.CHANNEL.sendToServer(new ArmorNetwork.SaveArmorSetPacket(config, oldIdForPacket));
 
         if (this.minecraft != null) this.minecraft.setScreen(parent);
     }
 
     @Override
-    protected void renderScaledBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        int cx = this.vWidth / 2; int topY = this.vHeight / 2 - 110;
-        int panelWidth = Math.min(this.vWidth - 40, 360);
+    protected void renderCanvasBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
+        int cx = this.canvasWidth / 2; int topY = this.canvasHeight / 2 - 110;
+        int panelWidth = Math.min(this.canvasWidth - 40, 360);
         int panelX = cx - panelWidth / 2 - 15; int panelY = topY - 30;
         if (this.warningMessage != null) panelY -= 15;
-        GuiRenderUtil.drawStandardPanel(g, panelX, panelY, panelWidth + 30, (topY + 225 + 30) - panelY);
+        GuiTheme.panel(g, panelX, panelY, panelWidth + 30, (topY + 225 + 30) - panelY);
     }
 
     private void renderInputHint(GuiGraphics g, AutoCompleteBox box, String key) {
@@ -231,8 +249,8 @@ public class ArmorEditScreen extends ScaledScreen {
     }
 
     @Override
-    protected void renderScaledForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        int cx = this.vWidth / 2; int topY = this.vHeight / 2 - 110;
+    protected void renderCanvasForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {
+        int cx = this.canvasWidth / 2; int topY = this.canvasHeight / 2 - 110;
 
         int titleY = topY - 23;
         if (this.warningMessage != null) {
@@ -261,7 +279,7 @@ public class ArmorEditScreen extends ScaledScreen {
     }
 
     private void renderSlot(GuiGraphics g, int x, int y, int mx, int my, String slotKey, int index, int type) {
-        AdaptiveItemGridRenderer.drawSlot(g, x, y, SLOT_SIZE, 4, false);
+        GuiTheme.itemSlot(g, x, y, SLOT_SIZE, 4, false);
         g.renderOutline(x, y, SLOT_SIZE, SLOT_SIZE, type == 2 ? 0xFFFF5555 : (type == 1 ? 0xFFFFAA00 : 0xFF55FFFF));
 
         ArmorDataConfig.ItemReq req = type == 1 ? (index < config.curios.size() ? config.curios.get(index) : ArmorDataConfig.ItemReq.create("minecraft:air")) :
@@ -282,7 +300,7 @@ public class ArmorEditScreen extends ScaledScreen {
                 t.add(ColorText.translatable("gui.kineticarmory.armorsets.slot_state.empty").withStyle(ChatFormatting.RED));
                 if (type == 0) t.add(ColorText.translatable("gui.kineticarmory.armorsets.variant.tooltip.open_list", variantCount));
                 else t.add(ColorText.translatable("gui.kineticarmory.armorsets.tooltip.midclick_clear"));
-                g.renderTooltip(this.font, t, java.util.Optional.empty(), mx, my);
+                GuiOverlay.requestTooltip(t, mx, my);
             }
         } else if (isAnyState) {
             g.drawCenteredString(this.font, "?", x + 9, y + 5, 0x55FF55);
@@ -291,7 +309,7 @@ public class ArmorEditScreen extends ScaledScreen {
                 t.add(ColorText.translatable("gui.kineticarmory.armorsets.slot_state.any").withStyle(ChatFormatting.GREEN));
                 if (type == 0) t.add(ColorText.translatable("gui.kineticarmory.armorsets.variant.tooltip.open_list", variantCount));
                 else t.add(ColorText.translatable("gui.kineticarmory.armorsets.tooltip.midclick_clear"));
-                g.renderTooltip(this.font, t, java.util.Optional.empty(), mx, my);
+                GuiOverlay.requestTooltip(t, mx, my);
             }
         } else if (!isAir) {
             ItemStack stack = req.createDisplayStack();
@@ -315,14 +333,14 @@ public class ArmorEditScreen extends ScaledScreen {
                         t.add(ColorText.translatable("gui.kineticarmory.armorsets.tooltip.shift_edit_nbt"));
                     }
                     if (type != 0) t.add(ColorText.translatable("gui.kineticarmory.armorsets.tooltip.midclick_clear"));
-                    g.renderTooltip(this.font, t, java.util.Optional.empty(), mx, my);
+                    GuiOverlay.requestTooltip(t, mx, my);
                 }
             }
         } else if (hover) {
             List<Component> t = new ArrayList<>();
             Component slotNameComp = type == 2 ? ColorText.translatable("gui.kineticarmory.armorsets.slot.rejected") : (type == 1 ? ColorText.translatable("gui.kineticarmory.armorsets.slot.curio") : ColorText.translatable("gui.kineticarmory.armorsets.slot." + slotKey));
             t.add(ColorText.translatable("gui.kineticarmory.armorsets.tooltip.empty_slot", slotNameComp));
-            g.renderTooltip(this.font, t, java.util.Optional.empty(), mx, my);
+            GuiOverlay.requestTooltip(t, mx, my);
         }
     }
 
@@ -334,7 +352,7 @@ public class ArmorEditScreen extends ScaledScreen {
     }
 
     @Override
-    protected boolean universalMouseClicked(double mx, double my, int btn) {
+    protected boolean canvasMouseClicked(double mx, double my, int btn) {
         if (idBox != null) {
             if (!idBox.isMouseOver(mx, my)) {
                 idBox.setFocused(false);
@@ -355,9 +373,9 @@ public class ArmorEditScreen extends ScaledScreen {
         if (idBox != null && idBox.handleMouseClick(mx, my)) return true;
         if (nameBox != null && nameBox.handleMouseClick(mx, my)) return true;
 
-        if (super.universalMouseClicked(mx, my, btn)) return true;
+        if (super.canvasMouseClicked(mx, my, btn)) return true;
 
-        int cx = this.vWidth / 2; int topY = this.vHeight / 2 - 110;
+        int cx = this.canvasWidth / 2; int topY = this.canvasHeight / 2 - 110;
         int vanillaStartX = cx - ((18 + 2) * 6 - 2) / 2;
         int extStartX = cx - ((18 + 2) * 18 - 2) / 2;
         int vanillaY = topY + 95; int curioY = vanillaY + 34; int rejectedY = curioY + 54;
@@ -393,12 +411,12 @@ public class ArmorEditScreen extends ScaledScreen {
                             this.minecraft.setScreen(new NbtEditorScreen(initNbt, savedNbt -> {
                                 req.nbtTag = savedNbt;
                                 if (req.nbtMode == null || req.nbtMode.equals("NONE")) req.nbtMode = "WEAK";
-                                GuiToastUtil.showToast(ColorText.translatable("msg.kineticarmory.common.saved"));
+                                GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.common.saved"));
                             }, this));
                         }
                     }
                 } else if (this.minecraft != null) {
-                    ItemCache.prepareCache(() -> this.minecraft.setScreen(new ItemSelectorScreen(this, selection -> {
+                    ItemSearchIndex.prepareCache(() -> this.minecraft.setScreen(new ItemSelectorScreen(this, selection -> {
                         if (!selection.isItem()) return;
                         ItemStack stack = selection.stack();
                         req.id = getId(stack);
@@ -420,24 +438,24 @@ public class ArmorEditScreen extends ScaledScreen {
     }
 
     @Override
-    protected boolean universalMouseReleased(double mx, double my, int btn) {
+    protected boolean canvasMouseReleased(double mx, double my, int btn) {
         if (idBox != null && idBox.handleMouseReleased(btn)) return true;
         if (nameBox != null && nameBox.handleMouseReleased(btn)) return true;
-        return super.universalMouseReleased(mx, my, btn);
+        return super.canvasMouseReleased(mx, my, btn);
     }
 
     @Override
-    protected boolean universalMouseDragged(double mx, double my, int btn, double dx, double dy) {
+    protected boolean canvasMouseDragged(double mx, double my, int btn, double dx, double dy) {
         if (idBox != null && idBox.handleMouseDragged(my)) return true;
         if (nameBox != null && nameBox.handleMouseDragged(my)) return true;
-        return super.universalMouseDragged(mx, my, btn, dx, dy);
+        return super.canvasMouseDragged(mx, my, btn, dx, dy);
     }
 
     @Override
-    protected boolean universalMouseScrolled(double mx, double my, double d) {
+    protected boolean canvasMouseScrolled(double mx, double my, double d) {
         if (idBox != null && idBox.handleMouseScrolled(d)) return true;
         if (nameBox != null && nameBox.handleMouseScrolled(d)) return true;
-        return super.universalMouseScrolled(mx, my, d);
+        return super.canvasMouseScrolled(mx, my, d);
     }
 
     private void cleanCurios() { for (int i = config.curios.size() - 1; i >= 0; i--) { if (config.curios.get(i).id.equals("minecraft:air")) config.curios.remove(i); else break; } }

@@ -1,5 +1,7 @@
 package dev.xyat.kineticarmory.armorsets.data;
 
+import com.google.gson.Gson;
+
 import dev.xyat.kineticarmory.armorsets.predicate.ConditionData;
 import dev.xyat.kineticarmory.armorsets.predicate.IConditionOwner;
 import net.minecraft.nbt.CompoundTag;
@@ -17,6 +19,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.registries.ForgeRegistries;
 
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,6 +27,7 @@ import java.util.Map;
 import java.util.UUID;
 
 public class ArmorDataConfig {
+    private static final Gson EDIT_COPY_GSON = new Gson();
     public transient String id;
     public String displayName = "Unnamed Set";
     public Map<String, ItemReq> equipment = new HashMap<>();
@@ -69,6 +73,82 @@ public class ArmorDataConfig {
     public List<ConditionData> flightConditions = new ArrayList<>();
     public String flightConditionMatchMode = "ANY";
     public int flightConditionMinCount = 1;
+
+    /** 编辑器草稿用深拷贝，不携带运行时缓存。 */
+    public ArmorDataConfig copyForEdit() {
+        ArmorDataConfig copy = EDIT_COPY_GSON.fromJson(EDIT_COPY_GSON.toJson(this), ArmorDataConfig.class);
+        copy.id = this.id;
+        return copy;
+    }
+
+    /** 子编辑器草稿用：复制本模组自己的纯数据对象。 */
+    public static <T> T copyEditable(T source, Class<T> type) {
+        if (source == null || type == null) return null;
+        return EDIT_COPY_GSON.fromJson(EDIT_COPY_GSON.toJson(source), type);
+    }
+
+    /** 子编辑器草稿回滚用：原地恢复公开数据字段，保持父子界面共享对象引用不变。 */
+    public static void restoreEditable(Object target, Object source) {
+        if (target == null || source == null || target.getClass() != source.getClass()) return;
+        Object copy = EDIT_COPY_GSON.fromJson(EDIT_COPY_GSON.toJson(source), source.getClass());
+        try {
+            for (java.lang.reflect.Field field : target.getClass().getFields()) {
+                int modifiers = field.getModifiers();
+                if (Modifier.isStatic(modifiers) || Modifier.isTransient(modifiers)) continue;
+                field.set(target, field.get(copy));
+            }
+        } catch (IllegalAccessException exception) {
+            throw new IllegalStateException("Failed to restore armor editor state", exception);
+        }
+    }
+
+    /** 原地恢复，保证所有子编辑器持有的对象引用仍然有效。 */
+    public void restoreFromEditCopy(ArmorDataConfig source) {
+        if (source == null) return;
+        ArmorDataConfig copy = source.copyForEdit();
+        this.id = copy.id;
+        this.displayName = copy.displayName;
+        this.equipment = copy.equipment;
+        this.equipmentVariants = copy.equipmentVariants;
+        this.curios = copy.curios;
+        this.rejectedCurios = copy.rejectedCurios;
+        this.attributes = copy.attributes;
+        this.potionEffects = copy.potionEffects;
+        this.attackEffects = copy.attackEffects;
+        this.activationCommands = copy.activationCommands;
+        this.deactivationCommands = copy.deactivationCommands;
+        this.damageImmunities = copy.damageImmunities;
+        this.effectImmunities = copy.effectImmunities;
+        this.damageConversions = copy.damageConversions;
+        this.damageMultipliers = copy.damageMultipliers;
+        this.attackDamageMultipliers = copy.attackDamageMultipliers;
+        this.allowFlight = copy.allowFlight;
+        this.playerOnly = copy.playerOnly;
+        this.entityWhitelistEnabled = copy.entityWhitelistEnabled;
+        this.allowedEntityTypes = copy.allowedEntityTypes;
+        this.tips = copy.tips;
+        this.manualTips = copy.manualTips;
+        this.tipLayout = copy.tipLayout;
+        this.hiddenTipKeys = copy.hiddenTipKeys;
+        this.tipOverrides = copy.tipOverrides;
+        this.tipKey = copy.tipKey;
+        this.flexiblePieces = copy.flexiblePieces;
+        this.minimumPieces = copy.minimumPieces;
+        this.pieceBonusGroups = copy.pieceBonusGroups;
+        this.flightRequiredPieces = copy.flightRequiredPieces;
+        this.flightPieceKey = copy.flightPieceKey;
+        this.flightConditions = copy.flightConditions;
+        this.flightConditionMatchMode = copy.flightConditionMatchMode;
+        this.flightConditionMinCount = copy.flightConditionMinCount;
+        this.cachedEntityRule = ArmorEntityRule.empty();
+        this.runtimeTotalPieceCount = -1;
+        this.runtimeMinimumPieceCount = -1;
+        this.runtimePieceGroupsPresent = false;
+        this.runtimePieceEffectCache = Map.of();
+        this.runtimeEquipmentSlots = List.of();
+        this.runtimeCurioRequirements = List.of();
+        this.runtimeRejectedCurios = List.of();
+    }
 
     public static class AttributeModifierData implements IConditionOwner {
         public String attribute; public String uuid; public double amount; public String operation; public int requiredPieces = 0; public String pieceKey = "";

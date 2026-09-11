@@ -6,9 +6,10 @@ import dev.xyat.kineticarmory.armorsets.data.ArmorTipGenerator;
 import dev.xyat.kineticarmory.armorsets.predicate.ConditionData;
 import dev.xyat.kineticarmory.armorsets.predicate.IConditionOwner;
 import dev.xyat.kineticarmory.armorsets.predicate.client.ConditionListScreen;
-import dev.xyat.kineticcore.api.client.GuiRenderUtil;
-import dev.xyat.kineticcore.api.client.ScaledScreen;
-import dev.xyat.kineticcore.api.client.ScrollUtil;
+import dev.xyat.kineticcore.api.client.theme.GuiTheme;
+import dev.xyat.kineticcore.api.client.screen.KineticScreen;
+import dev.xyat.kineticcore.api.client.widget.KineticWidgets.Scroll;
+import dev.xyat.kineticcore.api.client.widget.KineticWidgets.SmoothSelectionList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -21,18 +22,18 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class ArmorDetailScreen extends ScaledScreen {
-    private final ScaledScreen parent;
+public class ArmorDetailScreen extends KineticScreen {
+    private final KineticScreen parent;
     private final ArmorDataConfig config;
     private DetailListWidget listWidget;
 
     private double savedScrollAmount = 0;
 
-    public ArmorDetailScreen(ScaledScreen parent, ArmorDataConfig config) {
+    public ArmorDetailScreen(KineticScreen parent, ArmorDataConfig config) {
         super(Component.translatable("gui.kineticarmory.armorsets.detail.title"));
         this.parent = parent;
         this.config = config;
-        configureResponsiveCanvas(
+        useCanvas(
                 640f,
                 360f,
                 6
@@ -48,8 +49,8 @@ public class ArmorDetailScreen extends ScaledScreen {
     }
 
     @Override
-    protected void initScaled() {
-        int cx = vWidth / 2;
+    protected void buildUi() {
+        int cx = canvasWidth / 2;
         int padding = 15;
 
         int btnW = 105;
@@ -104,8 +105,8 @@ public class ArmorDetailScreen extends ScaledScreen {
         }).bounds(startX2 + (btnW + gap) * 2, row2Y, btnW, 20).build());
 
         int listTop = row2Y + 30;
-        int listBottom = vHeight - padding - 35;
-        int listWidth = (vWidth - padding * 2) - 20;
+        int listBottom = canvasHeight - padding - 35;
+        int listWidth = (canvasWidth - padding * 2) - 20;
 
         listWidget = new DetailListWidget(this.minecraft, listWidth, listBottom - listTop, listTop, 22);
         listWidget.setLeftPos(cx - listWidth / 2);
@@ -113,7 +114,7 @@ public class ArmorDetailScreen extends ScaledScreen {
 
         addRenderableWidget(Button.builder(Component.translatable("gui.kineticarmory.armorsets.back"), b -> {
             if (minecraft != null) minecraft.setScreen(parent);
-        }).bounds(cx - 50, vHeight - padding - 25, 100, 20).build());
+        }).bounds(cx - 50, canvasHeight - padding - 25, 100, 20).build());
 
         refreshList();
         listWidget.setScrollAmount(savedScrollAmount);
@@ -198,19 +199,19 @@ public class ArmorDetailScreen extends ScaledScreen {
     }
 
     @Override
-    protected void renderScaledBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        int cx = vWidth / 2;
+    protected void renderCanvasBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
+        int cx = canvasWidth / 2;
         int padding = 15;
-        int panelWidth = vWidth - padding * 2;
-        int panelHeight = vHeight - padding * 2;
+        int panelWidth = canvasWidth - padding * 2;
+        int panelHeight = canvasHeight - padding * 2;
 
-        GuiRenderUtil.drawStandardPanel(g, cx - panelWidth / 2, padding, panelWidth, panelHeight);
+        GuiTheme.panel(g, cx - panelWidth / 2, padding, panelWidth, panelHeight);
         g.drawCenteredString(font, title, cx, padding + 10, 0xFFFFFF);
 
-        renderScissorCorrectedList(listWidget, g, mx, my, pt);
+        renderScaledList(listWidget, g, mx, my, pt);
     }
 
-    public static class DetailListWidget extends ObjectSelectionList<DetailEntry> {
+    public static class DetailListWidget extends SmoothSelectionList<DetailEntry> {
         private final int listTop;
         private final int listBottom;
 
@@ -229,17 +230,17 @@ public class ArmorDetailScreen extends ScaledScreen {
             if (this.getMaxScroll() > 0) {
                 int height = Math.max(1, listBottom - listTop);
                 int thumbH = Math.max(20, (int) ((float) height * height / this.getMaxPosition()));
-                ScrollUtil.renderScrollbar(
+                Scroll.renderScrollbar(
                         g,
                         mx,
                         my,
-                        this.getScrollbarPosition(),
+                        this.getScrollbarPosition() + 2,
                         listTop,
-                        6,
+                        4,
                         height,
                         thumbH,
                         (int) Math.ceil(this.getMaxScroll()),
-                        (int) Math.round(this.getScrollAmount()),
+                        this.getScrollAmount(),
                         false
                 );
             }

@@ -4,30 +4,30 @@ import dev.xyat.kineticarmory.util.ColorText;
 import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
 import dev.xyat.kineticarmory.armorsets.data.ArmorTipGenerator;
 import dev.xyat.kineticarmory.armorsets.predicate.client.ConditionListScreen;
-import dev.xyat.kineticcore.api.client.GuiRenderUtil;
-import dev.xyat.kineticcore.api.client.GuiToastUtil;
-import dev.xyat.kineticcore.api.client.ScaledScreen;
-import dev.xyat.kineticcore.api.client.gui.AutoCompleteBox;
-import dev.xyat.kineticcore.api.client.gui.AutoCompleteBoxGroup;
-import dev.xyat.kineticcore.api.client.gui.NumericAutoCompleteBox;
+import dev.xyat.kineticcore.api.client.theme.GuiTheme;
+import dev.xyat.kineticcore.api.client.overlay.GuiOverlay;
+import dev.xyat.kineticcore.api.client.screen.KineticScreen;
+import dev.xyat.kineticcore.api.client.widget.KineticWidgets.AutoCompleteBox;
+import dev.xyat.kineticcore.api.client.widget.KineticWidgets.AutoCompleteBoxGroup;
+import dev.xyat.kineticcore.api.client.widget.KineticWidgets.NumericAutoCompleteBox;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 
-public class AttackDamageEditor extends ScaledScreen {
+public class AttackDamageEditor extends KineticScreen {
     private final AutoCompleteBoxGroup inputGroup =
             new AutoCompleteBoxGroup();
-    private final ScaledScreen parent; private final ArmorDataConfig config;
+    private final KineticScreen parent; private final ArmorDataConfig config;
     private final ArmorDataConfig.AttackDamageMultiplierData data; private final boolean isNew;
     private NumericAutoCompleteBox valInput;
     private String oldTip = null;
     private String tempVal = null;
 
-    public AttackDamageEditor(ScaledScreen p, ArmorDataConfig c, ArmorDataConfig.AttackDamageMultiplierData d) {
+    public AttackDamageEditor(KineticScreen p, ArmorDataConfig c, ArmorDataConfig.AttackDamageMultiplierData d) {
         super(ColorText.translatable("gui.kineticarmory.armorsets.editor.attack_damage.title"));
-        configureResponsiveCanvas(
+        useCanvas(
                 640f,
                 360f,
                 6
@@ -41,8 +41,8 @@ public class AttackDamageEditor extends ScaledScreen {
         if (valInput != null) tempVal = valInput.getValue();
     }
 
-    @Override protected void initScaled() {
-        int cx = vWidth / 2; int cy = vHeight / 2 - 50;
+    @Override protected void buildUi() {
+        int cx = canvasWidth / 2; int cy = canvasHeight / 2 - 50;
         valInput = NumericAutoCompleteBox.decimal(font, cx - 100, cy - 30, 200, 20, Component.empty(), ArrayList::new, true, null, null);
         valInput.setValue(tempVal != null ? tempVal : (isNew ? "" : String.valueOf(data.multiplier)));
 
@@ -53,7 +53,7 @@ public class AttackDamageEditor extends ScaledScreen {
 
         addRenderableWidget(Button.builder(ColorText.translatable("gui.kineticarmory.armorsets.save"), b -> {
             if (syncToData()) return;
-            if (valInput.getValue().trim().isEmpty()) { GuiToastUtil.showToast(ColorText.translatable("msg.kineticarmory.armorsets.empty_field")); return; }
+            if (valInput.getValue().trim().isEmpty()) { GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.armorsets.empty_field")); return; }
             if (!isNew && oldTip != null) config.tips.remove(oldTip);
             if (isNew) config.attackDamageMultipliers.add(data);
             config.tips.add(ArmorTipGenerator.genAtkDmgTip(data));
@@ -74,7 +74,7 @@ public class AttackDamageEditor extends ScaledScreen {
         Double multiplier = valInput == null ? null : valInput.getDoubleValue();
 
         if (multiplier == null) {
-            GuiToastUtil.showToast(
+            GuiOverlay.toast(
                     ColorText.translatable("msg.kineticarmory.common.invalid_number")
             );
             return true;
@@ -91,15 +91,15 @@ public class AttackDamageEditor extends ScaledScreen {
         }
     }
 
-    @Override protected void renderScaledBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        int cx = vWidth / 2; int cy = vHeight / 2 - 50; GuiRenderUtil.drawStandardPanel(g, cx - 120, cy - 60, 240, 115);
+    @Override protected void renderCanvasBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
+        int cx = canvasWidth / 2; int cy = canvasHeight / 2 - 50; GuiTheme.panel(g, cx - 120, cy - 60, 240, 115);
         g.drawCenteredString(font, title, cx, cy - 50, 0xFFFFFF);
     }
-    @Override protected void renderScaledForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {
+    @Override protected void renderCanvasForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {
         renderInputHint(g, valInput);
     }
     @Override
-    protected boolean universalMouseScrolled(
+    protected boolean canvasMouseScrolled(
             double mouseX,
             double mouseY,
             double delta
@@ -108,7 +108,7 @@ public class AttackDamageEditor extends ScaledScreen {
             return true;
         }
 
-        return super.universalMouseScrolled(
+        return super.canvasMouseScrolled(
                 mouseX,
                 mouseY,
                 delta
@@ -116,7 +116,7 @@ public class AttackDamageEditor extends ScaledScreen {
     }
 
     @Override
-    protected boolean universalMouseClicked(
+    protected boolean canvasMouseClicked(
             double mouseX,
             double mouseY,
             int button
@@ -129,7 +129,7 @@ public class AttackDamageEditor extends ScaledScreen {
         }
 
         boolean handled =
-                super.universalMouseClicked(
+                super.canvasMouseClicked(
                         mouseX,
                         mouseY,
                         button
@@ -144,7 +144,7 @@ public class AttackDamageEditor extends ScaledScreen {
     }
 
     @Override
-    protected boolean universalMouseDragged(
+    protected boolean canvasMouseDragged(
             double mouseX,
             double mouseY,
             int button,
@@ -158,7 +158,7 @@ public class AttackDamageEditor extends ScaledScreen {
             return true;
         }
 
-        return super.universalMouseDragged(
+        return super.canvasMouseDragged(
                 mouseX,
                 mouseY,
                 button,
@@ -168,7 +168,7 @@ public class AttackDamageEditor extends ScaledScreen {
     }
 
     @Override
-    protected boolean universalMouseReleased(
+    protected boolean canvasMouseReleased(
             double mouseX,
             double mouseY,
             int button
@@ -177,7 +177,7 @@ public class AttackDamageEditor extends ScaledScreen {
             return true;
         }
 
-        return super.universalMouseReleased(
+        return super.canvasMouseReleased(
                 mouseX,
                 mouseY,
                 button

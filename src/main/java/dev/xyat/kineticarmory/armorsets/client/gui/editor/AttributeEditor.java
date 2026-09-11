@@ -4,13 +4,13 @@ import dev.xyat.kineticarmory.util.ColorText;
 import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
 import dev.xyat.kineticarmory.armorsets.data.ArmorTipGenerator;
 import dev.xyat.kineticarmory.armorsets.predicate.client.ConditionListScreen;
-import dev.xyat.kineticcore.api.client.GuiRenderUtil;
-import dev.xyat.kineticcore.api.client.GuiToastUtil;
-import dev.xyat.kineticcore.api.client.RegistryDictUtil;
-import dev.xyat.kineticcore.api.client.ScaledScreen;
-import dev.xyat.kineticcore.api.client.gui.AutoCompleteBox;
-import dev.xyat.kineticcore.api.client.gui.AutoCompleteBoxGroup;
-import dev.xyat.kineticcore.api.client.gui.NumericAutoCompleteBox;
+import dev.xyat.kineticcore.api.client.theme.GuiTheme;
+import dev.xyat.kineticcore.api.client.overlay.GuiOverlay;
+import dev.xyat.kineticcore.api.client.search.KineticSearch;
+import dev.xyat.kineticcore.api.client.screen.KineticScreen;
+import dev.xyat.kineticcore.api.client.widget.KineticWidgets.AutoCompleteBox;
+import dev.xyat.kineticcore.api.client.widget.KineticWidgets.AutoCompleteBoxGroup;
+import dev.xyat.kineticcore.api.client.widget.KineticWidgets.NumericAutoCompleteBox;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
@@ -18,10 +18,10 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.UUID;
 
-public class AttributeEditor extends ScaledScreen {
+public class AttributeEditor extends KineticScreen {
     private final AutoCompleteBoxGroup inputGroup =
             new AutoCompleteBoxGroup();
-    private final ScaledScreen parent; private final ArmorDataConfig config;
+    private final KineticScreen parent; private final ArmorDataConfig config;
     private final ArmorDataConfig.AttributeModifierData data; private final boolean isNew;
     private AutoCompleteBox idInput;
     private NumericAutoCompleteBox amountInput;
@@ -29,9 +29,9 @@ public class AttributeEditor extends ScaledScreen {
     private String oldTip = null;
     private String tempId = null, tempAmount = null;
 
-    public AttributeEditor(ScaledScreen p, ArmorDataConfig c, ArmorDataConfig.AttributeModifierData d) {
+    public AttributeEditor(KineticScreen p, ArmorDataConfig c, ArmorDataConfig.AttributeModifierData d) {
         super(ColorText.translatable("gui.kineticarmory.armorsets.editor.attr.title"));
-        configureResponsiveCanvas(
+        useCanvas(
                 640f,
                 360f,
                 6
@@ -50,9 +50,9 @@ public class AttributeEditor extends ScaledScreen {
         if (amountInput != null) tempAmount = amountInput.getValue();
     }
 
-    @Override protected void initScaled() {
-        int cx = vWidth / 2; int cy = vHeight / 2 - 50;
-        idInput = new AutoCompleteBox(font, cx - 100, cy - 35, 200, 20, Component.empty(), RegistryDictUtil::getAttributeDict);
+    @Override protected void buildUi() {
+        int cx = canvasWidth / 2; int cy = canvasHeight / 2 - 50;
+        idInput = new AutoCompleteBox(font, cx - 100, cy - 35, 200, 20, Component.empty(), KineticSearch::getAttributeDict);
         idInput.setValue(tempId != null ? tempId : (isNew ? "" : (data.attribute != null ? data.attribute : "")));
 
         amountInput = NumericAutoCompleteBox.decimal(font, cx - 100, cy - 10, 95, 20, Component.empty(), ArrayList::new, true, null, null);
@@ -71,7 +71,7 @@ public class AttributeEditor extends ScaledScreen {
 
         addRenderableWidget(Button.builder(ColorText.translatable("gui.kineticarmory.armorsets.save"), b -> {
             if (syncToData()) return;
-            if (data.attribute.isEmpty()) { GuiToastUtil.showToast(ColorText.translatable("msg.kineticarmory.armorsets.empty_field")); return; }
+            if (data.attribute.isEmpty()) { GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.armorsets.empty_field")); return; }
             if (!isNew && oldTip != null) config.tips.remove(oldTip);
             if (isNew) config.attributes.add(data);
             config.tips.add(ArmorTipGenerator.genAttrTip(data));
@@ -101,7 +101,7 @@ public class AttributeEditor extends ScaledScreen {
         Double amount = amountInput == null ? null : amountInput.getDoubleValue();
 
         if (amount == null) {
-            GuiToastUtil.showToast(
+            GuiOverlay.toast(
                     ColorText.translatable("msg.kineticarmory.common.invalid_number")
             );
             return true;
@@ -118,17 +118,17 @@ public class AttributeEditor extends ScaledScreen {
         }
     }
 
-    @Override protected void renderScaledBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        int cx = vWidth / 2; int cy = vHeight / 2 - 50; GuiRenderUtil.drawStandardPanel(g, cx - 120, cy - 70, 240, 150);
+    @Override protected void renderCanvasBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
+        int cx = canvasWidth / 2; int cy = canvasHeight / 2 - 50; GuiTheme.panel(g, cx - 120, cy - 70, 240, 150);
         g.drawCenteredString(font, title, cx, cy - 60, 0xFFFFFF);
     }
-    @Override protected void renderScaledForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {
+    @Override protected void renderCanvasForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {
         renderInputHint(g, idInput, "gui.kineticarmory.armorsets.input.id");
         renderInputHint(g, amountInput, "gui.kineticarmory.armorsets.input.amount");
         inputGroup.renderSuggestions(g, mx, my);
     }
     @Override
-    protected boolean universalMouseScrolled(
+    protected boolean canvasMouseScrolled(
             double mouseX,
             double mouseY,
             double delta
@@ -137,7 +137,7 @@ public class AttributeEditor extends ScaledScreen {
             return true;
         }
 
-        return super.universalMouseScrolled(
+        return super.canvasMouseScrolled(
                 mouseX,
                 mouseY,
                 delta
@@ -145,7 +145,7 @@ public class AttributeEditor extends ScaledScreen {
     }
 
     @Override
-    protected boolean universalMouseClicked(
+    protected boolean canvasMouseClicked(
             double mouseX,
             double mouseY,
             int button
@@ -158,7 +158,7 @@ public class AttributeEditor extends ScaledScreen {
         }
 
         boolean handled =
-                super.universalMouseClicked(
+                super.canvasMouseClicked(
                         mouseX,
                         mouseY,
                         button
@@ -173,7 +173,7 @@ public class AttributeEditor extends ScaledScreen {
     }
 
     @Override
-    protected boolean universalMouseDragged(
+    protected boolean canvasMouseDragged(
             double mouseX,
             double mouseY,
             int button,
@@ -187,7 +187,7 @@ public class AttributeEditor extends ScaledScreen {
             return true;
         }
 
-        return super.universalMouseDragged(
+        return super.canvasMouseDragged(
                 mouseX,
                 mouseY,
                 button,
@@ -197,7 +197,7 @@ public class AttributeEditor extends ScaledScreen {
     }
 
     @Override
-    protected boolean universalMouseReleased(
+    protected boolean canvasMouseReleased(
             double mouseX,
             double mouseY,
             int button
@@ -206,7 +206,7 @@ public class AttributeEditor extends ScaledScreen {
             return true;
         }
 
-        return super.universalMouseReleased(
+        return super.canvasMouseReleased(
                 mouseX,
                 mouseY,
                 button

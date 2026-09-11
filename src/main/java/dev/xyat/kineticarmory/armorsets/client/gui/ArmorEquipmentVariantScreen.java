@@ -2,14 +2,13 @@ package dev.xyat.kineticarmory.armorsets.client.gui;
 
 import dev.xyat.kineticarmory.util.ColorText;
 import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
-import dev.xyat.kineticcore.api.client.AdaptiveItemGridRenderer;
-import dev.xyat.kineticcore.api.client.GuiRenderUtil;
-import dev.xyat.kineticcore.api.client.GuiToastUtil;
-import dev.xyat.kineticcore.api.client.ItemCache;
-import dev.xyat.kineticcore.api.client.ItemSelectorScreen;
-import dev.xyat.kineticcore.api.client.ScaledScreen;
-import dev.xyat.kineticcore.api.client.gui.NbtEditorScreen;
-import dev.xyat.kineticcore.api.client.gui.GridScrollController;
+import dev.xyat.kineticcore.api.client.theme.GuiTheme;
+import dev.xyat.kineticcore.api.client.overlay.GuiOverlay;
+import dev.xyat.kineticcore.api.client.search.ItemSearchIndex;
+import dev.xyat.kineticcore.api.client.selector.ItemSelectorScreen;
+import dev.xyat.kineticcore.api.client.screen.KineticScreen;
+import dev.xyat.kineticcore.api.client.selector.NbtEditorScreen;
+import dev.xyat.kineticcore.api.client.widget.KineticWidgets.GridScrollController;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -25,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class ArmorEquipmentVariantScreen extends ScaledScreen {
+public class ArmorEquipmentVariantScreen extends KineticScreen {
     private static final int PANEL_COLOR = 0xFF1C1C1C;
     private static final int PANEL_OUTLINE = 0xFF8A8A8A;
     private static final int LIST_COLOR = 0xCC050505;
@@ -33,12 +32,12 @@ public class ArmorEquipmentVariantScreen extends ScaledScreen {
     private static final int ROW_H = 36;
     private static final int ROW_GAP = 4;
     private static final int ICON_BOX = 24;
-    private static final int SCROLL_W = 6;
+    private static final int SCROLL_W = 4;
     private static final int ROW_BUTTON_W = 48;
     private static final int ROW_BUTTON_H = 18;
     private static final int ROW_BUTTON_GAP = 6;
 
-    private final ScaledScreen parent;
+    private final KineticScreen parent;
     private final ArmorDataConfig config;
     private final String slotKey;
 
@@ -68,12 +67,12 @@ public class ArmorEquipmentVariantScreen extends ScaledScreen {
     private final GridScrollController listScroll = new GridScrollController();
     private int selectedIndex;
 
-    public ArmorEquipmentVariantScreen(ScaledScreen parent, ArmorDataConfig config, String slotKey, Component slotName) {
+    public ArmorEquipmentVariantScreen(KineticScreen parent, ArmorDataConfig config, String slotKey, Component slotName) {
         super(ColorText.translatable("gui.kineticarmory.armorsets.variant.title", slotName));
         this.parent = parent;
         this.config = config;
         this.slotKey = slotKey;
-        configureResponsiveCanvas(
+        useCanvas(
                 640f,
                 360f,
                 6
@@ -89,14 +88,14 @@ public class ArmorEquipmentVariantScreen extends ScaledScreen {
     }
 
     @Override
-    protected void initScaled() {
+    protected void buildUi() {
         config.getEquipmentVariants(slotKey);
         calculateLayout();
 
         int btnW = 96;
         int gap = 6;
         int controlY = panelY + 36;
-        int startX = vWidth / 2 - (btnW * 5 + gap * 4) / 2;
+        int startX = canvasWidth / 2 - (btnW * 5 + gap * 4) / 2;
 
         slotModeButton = Button.builder(getSlotModeButtonText(), b -> toggleSlotRequirementMode())
                 .bounds(startX, controlY, btnW, 20)
@@ -134,7 +133,7 @@ public class ArmorEquipmentVariantScreen extends ScaledScreen {
         replaceButtons.clear();
         deleteButtons.clear();
 
-        for (int i = 0; i < visibleRows; i++) {
+        for (int i = 0; i <= visibleRows; i++) {
             int row = i;
             int rowY = rowY(row);
             int deleteX = listX + rowW - ROW_BUTTON_W - 7;
@@ -170,9 +169,9 @@ public class ArmorEquipmentVariantScreen extends ScaledScreen {
     }
 
     private void calculateLayout() {
-        panelW = Math.min(vWidth - 30, 620);
-        panelH = vHeight - 32;
-        panelX = vWidth / 2 - panelW / 2;
+        panelW = Math.min(canvasWidth - 30, 620);
+        panelH = canvasHeight - 32;
+        panelX = canvasWidth / 2 - panelW / 2;
         panelY = 16;
 
         listX = panelX + 18;
@@ -233,7 +232,7 @@ public class ArmorEquipmentVariantScreen extends ScaledScreen {
         } else {
             setSlotRequirementMode(SlotRequirementMode.NORMAL);
         }
-        GuiToastUtil.showToast(ColorText.translatable("msg.kineticarmory.common.saved"));
+        GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.common.saved"));
         clampSelectionAndScroll();
         updateActionButtons();
     }
@@ -268,7 +267,7 @@ public class ArmorEquipmentVariantScreen extends ScaledScreen {
     }
 
     private int indexOfVisibleRow(int visibleRow) {
-        return listScroll.offset() + visibleRow;
+        return listScroll.smoothIndexOffset() + visibleRow;
     }
 
     private ArmorDataConfig.ItemReq reqOfVisibleRow(int visibleRow) {
@@ -290,14 +289,14 @@ public class ArmorEquipmentVariantScreen extends ScaledScreen {
 
     private void addFromSelector() {
         if (isSpecialSlotMode() || minecraft == null) return;
-        ItemCache.prepareCache(() -> minecraft.setScreen(new ItemSelectorScreen(this, selection -> {
+        ItemSearchIndex.prepareCache(() -> minecraft.setScreen(new ItemSelectorScreen(this, selection -> {
             if (!selection.isItem()) return;
             ItemStack stack = selection.stack();
             if (stack.isEmpty()) return;
             variants().add(createReq(stack));
             selectedIndex = variants().size() - 1;
             config.normalizeEquipmentVariants();
-            GuiToastUtil.showToast(ColorText.translatable("msg.kineticarmory.common.saved"));
+            GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.common.saved"));
             clampSelectionAndScroll();
         })));
     }
@@ -306,13 +305,13 @@ public class ArmorEquipmentVariantScreen extends ScaledScreen {
         if (isSpecialSlotMode()) return;
         ItemStack stack = getEquippedStackForSlot();
         if (stack.isEmpty()) {
-            GuiToastUtil.showToast(ColorText.translatable("msg.kineticarmory.armorsets.variant.empty_equipped"));
+            GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.armorsets.variant.empty_equipped"));
             return;
         }
         variants().add(createReq(stack));
         selectedIndex = variants().size() - 1;
         config.normalizeEquipmentVariants();
-        GuiToastUtil.showToast(ColorText.translatable("msg.kineticarmory.common.saved"));
+        GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.common.saved"));
         clampSelectionAndScroll();
     }
 
@@ -332,7 +331,7 @@ public class ArmorEquipmentVariantScreen extends ScaledScreen {
 
     private void clearAll() {
         setSlotRequirementMode(SlotRequirementMode.NORMAL);
-        GuiToastUtil.showToast(ColorText.translatable("msg.kineticarmory.common.saved"));
+        GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.common.saved"));
         updateActionButtons();
     }
 
@@ -344,7 +343,7 @@ public class ArmorEquipmentVariantScreen extends ScaledScreen {
 
     private void replaceFromSelector(ArmorDataConfig.ItemReq req) {
         if (minecraft == null || req == null) return;
-        ItemCache.prepareCache(() -> minecraft.setScreen(new ItemSelectorScreen(this, selection -> {
+        ItemSearchIndex.prepareCache(() -> minecraft.setScreen(new ItemSelectorScreen(this, selection -> {
             if (!selection.isItem()) return;
             ItemStack stack = selection.stack();
             if (stack.isEmpty()) return;
@@ -353,7 +352,7 @@ public class ArmorEquipmentVariantScreen extends ScaledScreen {
             req.nbtTag = newReq.nbtTag;
             if (req.nbtMode == null) req.nbtMode = "NONE";
             config.normalizeEquipmentVariants();
-            GuiToastUtil.showToast(ColorText.translatable("msg.kineticarmory.common.saved"));
+            GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.common.saved"));
             clampSelectionAndScroll();
         })));
     }
@@ -371,7 +370,7 @@ public class ArmorEquipmentVariantScreen extends ScaledScreen {
             req.nbtTag = savedNbt;
             if (req.nbtMode == null || req.nbtMode.equals("NONE")) req.nbtMode = "WEAK";
             config.normalizeEquipmentVariants();
-            GuiToastUtil.showToast(ColorText.translatable("msg.kineticarmory.common.saved"));
+            GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.common.saved"));
         }, this));
     }
 
@@ -384,7 +383,7 @@ public class ArmorEquipmentVariantScreen extends ScaledScreen {
     private void toggleNbtMode(ArmorDataConfig.ItemReq req) {
         if (!canEditNbt(req)) return;
         req.nbtMode = ("NONE".equals(req.nbtMode) || req.nbtMode == null) ? "WEAK" : ("WEAK".equals(req.nbtMode) ? "STRONG" : "NONE");
-        GuiToastUtil.showToast(ColorText.translatable("msg.kineticarmory.common.saved"));
+        GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.common.saved"));
     }
 
     private void deleteVisibleRow(int visibleRow) {
@@ -406,7 +405,7 @@ public class ArmorEquipmentVariantScreen extends ScaledScreen {
 
         selectedIndex = Math.min(index, list.size() - 1);
         config.normalizeEquipmentVariants();
-        GuiToastUtil.showToast(ColorText.translatable("msg.kineticarmory.common.deleted"));
+        GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.common.deleted"));
         clampSelectionAndScroll();
         updateActionButtons();
     }
@@ -450,7 +449,7 @@ public class ArmorEquipmentVariantScreen extends ScaledScreen {
         if (addItemButton != null) addItemButton.active = normalMode;
         if (addEquippedButton != null) addEquippedButton.active = normalMode;
         if (clearButton != null) clearButton.active = !normalMode || !list.isEmpty();
-        for (int i = 0; i < visibleRows; i++) {
+        for (int i = 0; i <= visibleRows; i++) {
             int index = indexOfVisibleRow(i);
             boolean hasItem = normalMode && index >= 0 && index < list.size();
             ArmorDataConfig.ItemReq req = hasItem ? list.get(index) : null;
@@ -460,6 +459,25 @@ public class ArmorEquipmentVariantScreen extends ScaledScreen {
             setButtonState(replaceButtons, i, hasItem, hasItem);
             setButtonState(deleteButtons, i, hasItem, hasItem);
         }
+    }
+
+    private void updateRowButtonPositions() {
+        int shift = listScroll.visualShift(ROW_H + ROW_GAP);
+        for (int i = 0; i < modeButtons.size(); i++) {
+            int buttonY = rowY(i) - shift + (ROW_H - ROW_BUTTON_H) / 2;
+            boolean inside = buttonY >= listY + 2 && buttonY + ROW_BUTTON_H <= listY + listH - 2;
+            setRowButtonY(modeButtons, i, buttonY, inside);
+            setRowButtonY(nbtButtons, i, buttonY, inside);
+            setRowButtonY(replaceButtons, i, buttonY, inside);
+            setRowButtonY(deleteButtons, i, buttonY, inside);
+        }
+    }
+
+    private void setRowButtonY(List<Button> buttons, int index, int y, boolean inside) {
+        if (index < 0 || index >= buttons.size()) return;
+        Button button = buttons.get(index);
+        button.setY(y);
+        button.visible = button.visible && inside;
     }
 
     private void setButtonState(List<Button> buttons, int index, boolean visible, boolean active) {
@@ -494,28 +512,29 @@ public class ArmorEquipmentVariantScreen extends ScaledScreen {
     }
 
     @Override
-    protected void renderScaledBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
+    protected void renderCanvasBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
         calculateLayout();
         clampSelectionAndScroll();
         updateActionButtons();
-        GuiRenderUtil.drawPanel(g, panelX, panelY, panelW, panelH, PANEL_COLOR, PANEL_OUTLINE);
+        updateRowButtonPositions();
+        GuiTheme.panel(g, panelX, panelY, panelW, panelH, PANEL_COLOR, PANEL_OUTLINE);
         g.renderOutline(panelX + 1, panelY + 1, panelW - 2, panelH - 2, 0xFF3A3A3A);
         renderListArea(g, mx, my);
     }
 
     @Override
-    protected void renderScaledForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        g.drawCenteredString(font, title, vWidth / 2, panelY + 11, 0xFFFFFFFF);
+    protected void renderCanvasForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {
+        g.drawCenteredString(font, title, canvasWidth / 2, panelY + 11, 0xFFFFFFFF);
     }
 
     @Override
     protected void renderTooltips(GuiGraphics g, int scaledMouseX, int scaledMouseY, int mouseX, int mouseY) {
         List<Component> tooltip = getTooltipAt(scaledMouseX, scaledMouseY);
-        if (!tooltip.isEmpty()) g.renderComponentTooltip(font, tooltip, mouseX, mouseY);
+        if (!tooltip.isEmpty()) GuiOverlay.requestTooltip(tooltip, mouseX, mouseY);
     }
 
     private void renderListArea(GuiGraphics g, int mx, int my) {
-        GuiRenderUtil.drawPanel(g, listX, listY, listW, listH, LIST_COLOR, LIST_OUTLINE);
+        GuiTheme.panel(g, listX, listY, listW, listH, LIST_COLOR, LIST_OUTLINE);
         g.renderOutline(listX + 1, listY + 1, listW - 2, listH - 2, 0xFF3A3A3A);
 
         SlotRequirementMode mode = getSlotRequirementMode();
@@ -537,24 +556,27 @@ public class ArmorEquipmentVariantScreen extends ScaledScreen {
 
     private void renderRows(GuiGraphics g, int mx, int my) {
         List<ArmorDataConfig.ItemReq> list = variants();
-        int start = listScroll.offset();
-        int end = Math.min(list.size(), start + visibleRows);
-        for (int index = start; index < end; index++) {
+        int start = listScroll.smoothIndexOffset();
+        int shift = listScroll.visualShift(ROW_H + ROW_GAP);
+        int end = Math.min(list.size(), start + visibleRows + 1);
+                enableCanvasScissor(g, listX + 6, listY + 6, listX + listW - 6, listY + listH - 6);
+        try {
+for (int index = start; index < end; index++) {
             int visibleRow = index - start;
-            int rowY = rowY(visibleRow);
+            int rowY = rowY(visibleRow) - shift;
             int rowX = listX + 6;
             ArmorDataConfig.ItemReq req = list.get(index);
             boolean selected = index == selectedIndex;
-            boolean hover = GuiRenderUtil.isHovering(mx, my, rowX, rowY, rowW, ROW_H);
+            boolean hover = GuiTheme.hovering(mx, my, rowX, rowY, rowW, ROW_H);
             int bg = selected ? 0xAA775500 : (hover ? 0x88444444 : ((index % 2 == 0) ? 0x88333333 : 0x88222222));
-            int outline = selected ? 0xFFFFB000 : (hover ? 0xFF55FFFF : 0xFF707070);
+            int outline = selected ? 0xFFFFB000 : (hover ? 0xFFAAAAAA : 0xFF707070);
 
             g.fill(rowX, rowY, rowX + rowW, rowY + ROW_H, bg);
             g.renderOutline(rowX, rowY, rowW, ROW_H, outline);
 
             int iconX = rowX + 8;
             int iconY = rowY + 6;
-            AdaptiveItemGridRenderer.drawSlot(g, iconX, iconY, ICON_BOX, 4, false);
+            GuiTheme.itemSlot(g, iconX, iconY, ICON_BOX, 4, false);
             renderReqIcon(g, req, iconX + 4, iconY + 4);
 
             int textX = iconX + ICON_BOX + 10;
@@ -562,6 +584,9 @@ public class ArmorEquipmentVariantScreen extends ScaledScreen {
             int textW = Math.max(20, firstButtonX - textX - 8);
             drawTrimmedText(g, getReqName(req).getString(), textX, rowY + 6, textW);
             drawInfoLine(g, req, textX, rowY + 20, textW);
+        }
+        } finally {
+            g.disableScissor();
         }
     }
 
@@ -648,7 +673,7 @@ public class ArmorEquipmentVariantScreen extends ScaledScreen {
         if (isButtonHovered(addEquippedButton, mx, my)) return isSpecialSlotMode() ? List.of(ColorText.translatable("gui.kineticarmory.armorsets.variant.tooltip.special_no_add")) : List.of(ColorText.translatable("gui.kineticarmory.armorsets.variant.tooltip.add_equipped"));
         if (isButtonHovered(clearButton, mx, my)) return List.of(ColorText.translatable("gui.kineticarmory.armorsets.variant.tooltip.clear"));
         if (isButtonHovered(backButton, mx, my)) return List.of(ColorText.translatable("gui.kineticarmory.armorsets.back"));
-        for (int i = 0; i < visibleRows; i++) {
+        for (int i = 0; i <= visibleRows; i++) {
             ArmorDataConfig.ItemReq req = reqOfVisibleRow(i);
             if (isButtonHovered(modeButtons, i, mx, my)) return getNbtModeHelp(req == null ? "NONE" : req.nbtMode);
             if (isButtonHovered(nbtButtons, i, mx, my)) return List.of(ColorText.translatable("gui.kineticarmory.armorsets.tooltip.shift_edit_nbt"));
@@ -683,18 +708,18 @@ public class ArmorEquipmentVariantScreen extends ScaledScreen {
     private int getRowIndexAt(double mx, double my) {
         int rowX = listX + 6;
         if (mx < rowX || mx >= rowX + rowW || my < listY + 6 || my >= listY + listH - 6) return -1;
-        int localY = (int)(my - listY - 6);
         int step = ROW_H + ROW_GAP;
+        int localY = (int)(my - listY - 6) + listScroll.visualShift(step);
         int visibleRow = localY / step;
         if (visibleRow < 0 || visibleRow >= visibleRows) return -1;
         if (localY % step >= ROW_H) return -1;
-        return listScroll.offset() + visibleRow;
+        return listScroll.smoothIndexOffset() + visibleRow;
     }
 
     @Override
-    protected boolean universalMouseClicked(double mx, double my, int btn) {
+    protected boolean canvasMouseClicked(double mx, double my, int btn) {
         if (tryStartScrollbarDrag(mx, my, btn)) return true;
-        if (super.universalMouseClicked(mx, my, btn)) return true;
+        if (super.canvasMouseClicked(mx, my, btn)) return true;
 
         int index = getRowIndexAt(mx, my);
         List<ArmorDataConfig.ItemReq> list = variants();
@@ -720,31 +745,31 @@ public class ArmorEquipmentVariantScreen extends ScaledScreen {
     }
 
     @Override
-    protected boolean universalMouseDragged(double mx, double my, int btn, double dx, double dy) {
+    protected boolean canvasMouseDragged(double mx, double my, int btn, double dx, double dy) {
         if (listScroll.drag(my, scrollY, scrollH, 18)) {
             updateActionButtons();
             return true;
         }
-        return super.universalMouseDragged(mx, my, btn, dx, dy);
+        return super.canvasMouseDragged(mx, my, btn, dx, dy);
     }
 
     @Override
-    protected boolean universalMouseReleased(double mx, double my, int btn) {
+    protected boolean canvasMouseReleased(double mx, double my, int btn) {
         if (listScroll.release(btn)) return true;
-        return super.universalMouseReleased(mx, my, btn);
+        return super.canvasMouseReleased(mx, my, btn);
     }
 
     @Override
-    protected boolean universalMouseScrolled(double mx, double my, double delta) {
+    protected boolean canvasMouseScrolled(double mx, double my, double delta) {
         if (!isSpecialSlotMode()
-                && GuiRenderUtil.isHovering(mx, my, listX, listY, listW, listH)) {
+                && GuiTheme.hovering(mx, my, listX, listY, listW, listH)) {
             listScroll.update(variants().size(), visibleRows);
             if (listScroll.scroll(delta)) {
                 updateActionButtons();
                 return true;
             }
         }
-        return super.universalMouseScrolled(mx, my, delta);
+        return super.canvasMouseScrolled(mx, my, delta);
     }
 
 }

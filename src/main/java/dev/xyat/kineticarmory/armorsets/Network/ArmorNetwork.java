@@ -93,9 +93,12 @@ public class ArmorNetwork {
         CHANNEL.messageBuilder(ClientInputStatePacket.class, id++, NetworkDirection.PLAY_TO_SERVER)
                 .decoder(ClientInputStatePacket::new).encoder(ClientInputStatePacket::toBytes)
                 .consumerNetworkThread(ClientInputStatePacket::handle).add();
-        CHANNEL.messageBuilder(RequestOpenEditorPacket.class, id, NetworkDirection.PLAY_TO_SERVER)
+        CHANNEL.messageBuilder(RequestOpenEditorPacket.class, id++, NetworkDirection.PLAY_TO_SERVER)
                 .decoder(RequestOpenEditorPacket::new).encoder(RequestOpenEditorPacket::toBytes)
                 .consumerNetworkThread(RequestOpenEditorPacket::handle).add();
+        CHANNEL.messageBuilder(EditorSaveResultPacket.class, id, NetworkDirection.PLAY_TO_CLIENT)
+                .decoder(EditorSaveResultPacket::new).encoder(EditorSaveResultPacket::toBytes)
+                .consumerNetworkThread(EditorSaveResultPacket::handle).add();
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ArmorNetworkClient.registerClient(modEventBus));
     }
 
@@ -523,17 +526,20 @@ public class ArmorNetwork {
                 if (!player.hasPermissions(2)) {
                     player.sendSystemMessage(Component.translatable("commands.generic.permission"));
                     resyncArmorConfigs(player);
+                    sendEditorSaveResult(player, false);
                     return;
                 }
                 if (config == null) {
                     player.sendSystemMessage(Component.translatable("msg.kineticarmory.armorsets.save_failed", ""));
                     resyncArmorConfigs(player);
+                    sendEditorSaveResult(player, false);
                     return;
                 }
                 if (!ArmorLoader.isSafeSetId(config.id)
                         || (oldId != null && !ArmorLoader.isSafeSetId(oldId))) {
                     notifyInvalidSetId(player);
                     resyncArmorConfigs(player);
+                    sendEditorSaveResult(player, false);
                     return;
                 }
 
@@ -545,6 +551,7 @@ public class ArmorNetwork {
                             config.id
                     ));
                     resyncArmorConfigs(player);
+                    sendEditorSaveResult(player, false);
                     return;
                 }
 
@@ -571,9 +578,8 @@ public class ArmorNetwork {
                             "msg.kineticarmory.armorsets.rename_cleanup_failed",
                             oldId
                     ));
-                } else {
-                    player.sendSystemMessage(Component.translatable("msg.kineticarmory.common.saved"));
                 }
+                sendEditorSaveResult(player, true);
             });
             context.setPacketHandled(true);
         }
@@ -609,13 +615,43 @@ public class ArmorNetwork {
             if (context == null) return;
             context.enqueueWork(() -> {
                 ServerPlayer player = context.getSender();
-                if (player == null || !player.hasPermissions(2)) return;
+                if (player == null) return;
+                if (!player.hasPermissions(2)) {
+                    sendEditorSaveResult(player, false);
+                    return;
+                }
                 ArmorConfig.entityFilterMode = "BLACKLIST".equalsIgnoreCase(mode) ? "BLACKLIST" : "WHITELIST";
                 ArmorConfig.allowedEntities = rules == null ? new ArrayList<>() : new ArrayList<>(rules);
                 ArmorConfig.save();
                 ArmorManager.forceRecalculateAll(player.getServer());
                 CHANNEL.send(net.minecraftforge.network.PacketDistributor.ALL.noArg(), new SyncEntityFilterPacket(ArmorConfig.entityFilterMode, ArmorConfig.allowedEntities, false));
+                sendEditorSaveResult(player, true);
             });
+            context.setPacketHandled(true);
+        }
+    }
+
+    private static void sendEditorSaveResult(ServerPlayer player, boolean success) {
+        if (player == null) return;
+        CHANNEL.send(
+                net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
+                new EditorSaveResultPacket(success)
+        );
+    }
+
+    public record EditorSaveResultPacket(boolean success) {
+        public EditorSaveResultPacket(FriendlyByteBuf buf) {
+            this(buf.readBoolean());
+        }
+
+        public void toBytes(FriendlyByteBuf buf) {
+            buf.writeBoolean(success);
+        }
+
+        public void handle(Supplier<NetworkEvent.Context> ctx) {
+            NetworkEvent.Context context = contextForSide(ctx, LogicalSide.CLIENT);
+            if (context == null) return;
+            context.enqueueWork(() -> ArmorNetworkClient.handleEditorSaveResult(success));
             context.setPacketHandled(true);
         }
     }
