@@ -8,6 +8,8 @@
 
 This add-on cannot be safely merged into KineticCore or another Kinetic project. It has its own feature scope, dependencies, configuration, release cycle, and user audience, so combining them would couple unrelated gameplay systems and make installation and maintenance less flexible.
 
+**Required dependency:** KineticCore.
+
 ### Overview
 
 **KineticArmory** is the Kinetic armor-set and dynamic-condition mod for modpack authors and server administrators. It provides a complete workflow for armor-set definitions, conditional evaluation, effect execution, visual editing, and player-facing tooltips while using KineticCore's configuration, networking, and GUI APIs.
@@ -41,10 +43,8 @@ config/kineticcore/armorsets/
 - Curios: required
 - KubeJS: optional
 
-## Complete Functional Reference
-
-### Detailed Configuration Reference
-
+## Feature Reference
+### Config Details
 | Item | Description |
 |---|---|
 | **Armor Set Settings** | Server-owned global armor set behavior. This page is available only for the local installation or an integrated server. |
@@ -57,8 +57,7 @@ config/kineticcore/armorsets/
 | **Force Sync** | Whether to sync data to all online players when admin reloads. |
 | **Tip Shortcut Key** | Default key held to show armor-set details: shift, ctrl, alt, or none. |
 
-### GUI and Editor Reference
-
+### GUI and Editors
 | Item | Description |
 |---|---|
 | **Edit Set Commands** | Tip: Start with / to execute command silently, without / to send as player chat |
@@ -79,8 +78,7 @@ config/kineticcore/armorsets/
 | **direction** | Click to switch the entity model rotation direction. The numeric field still controls rotation speed from 0%-500%. |
 | **mode** | Click to toggle logical combinations:<br>[Match ANY] Activates if at least 1 condition is met.<br>[Match ALL] Activates only when ALL conditions are met.<br>[Match MIN X] Activates when met conditions reach X.<br><br>💡 Advanced: Creating 'Disable Rules' with Inversions<br>Combine with the [NOT] button for logical inversion!<br>E.g. If you want: "Disable flight when Raining AND in Water"<br>1. Set Mode to: [Match ANY]<br>2. Add Condition: [NOT] Raining<br>3. Add Condition: [NOT] In Water<br>(De Morgan's Laws: Flight stays active as long as it's NOT raining OR you are NOT in water) |
 
-### Editable Fields, Modes and Categories
-
+### Editable Options
 - Curio
 - Curio Slots (Extended)
 - Rejected Curios (Blocks set if worn)
@@ -131,8 +129,7 @@ config/kineticcore/armorsets/
 - %s %s
 - Not selected
 
-### Configuration Keys and Defaults
-
+### Config Defaults
 | Key | Default |
 |---|---|
 | `armorsets.defaultTipKey` | `"shift"` |
@@ -141,16 +138,14 @@ config/kineticcore/armorsets/
 | `armorsets.potionRefreshInterval` | `20` |
 | `armorsets.syncOnReload` | `true` |
 
-### Configuration and Data Paths
-
+### Data Paths
 Primary configuration/data paths:
 
 - `config/kineticcore/armorsets.toml`
 - `config/kineticcore/armorsets/`
 - `config/kineticcore/armorsets_client.toml`
 
-### Dependencies and Optional Integrations
-
+### Dependencies
 | Mod ID | Relationship |
 |---|---|
 | `kineticcore` | Required |
