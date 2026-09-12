@@ -8,7 +8,7 @@
 
 This add-on cannot be safely merged into KineticCore or another Kinetic project. It has its own feature scope, dependencies, configuration, release cycle, and user audience, so combining them would couple unrelated gameplay systems and make installation and maintenance less flexible.
 
-**Required dependency:** KineticCore.
+**Required dependencies:** Forge 47.4.0+, KineticCore.
 
 ### Overview
 
@@ -36,9 +36,9 @@ config/kineticcore/armorsets_client.toml
 config/kineticcore/armorsets/
 ```
 
-### Requirements
+### Dependencies
 
-- Java 17
+- Forge 47.4.0+
 - KineticCore: required
 - Curios: required
 - KubeJS: optional
@@ -192,9 +192,9 @@ config/kineticcore/armorsets/
 
 优先从 `F6` 打开 KineticArmory 页面，再进入套装列表与专用编辑器。服务端规则由服务器保存；连接服务器时只有具备相应管理权限的玩家才能提交服务端配置修改。
 
-### 运行环境
+### 依赖
 
-- Java 17
+- Forge 47.4.0+
 - KineticCore：必须
 - Curios：必须
 - KubeJS：可选
