@@ -3,9 +3,11 @@ package dev.xyat.kineticarmory.armorsets.client.gui;
 import dev.xyat.kineticarmory.armorsets.client.ArmorCache;
 import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
 import dev.xyat.kineticarmory.armorsets.data.ArmorTipGenerator;
+import dev.xyat.kineticcore.api.client.text.KineticText;
 import dev.xyat.kineticcore.api.client.theme.GuiTheme;
 import dev.xyat.kineticcore.api.client.overlay.GuiOverlay;
 import dev.xyat.kineticcore.api.client.screen.KineticScreen;
+import dev.xyat.kineticcore.api.client.widget.KineticWidgets;
 import dev.xyat.kineticcore.api.client.widget.KineticWidgets.Scroll;
 import dev.xyat.kineticcore.api.client.widget.KineticWidgets.SmoothSelectionList;
 import net.minecraft.client.Minecraft;
@@ -53,7 +55,7 @@ public class ArmorTipEditorScreen extends KineticScreen {
         this.config = config;
         this.config.initNullFields();
         ensureManualTipLayout();
-        useCanvas(
+        useResponsiveCanvas(
                 640f,
                 360f,
                 6
@@ -68,38 +70,30 @@ public class ArmorTipEditorScreen extends KineticScreen {
 
     @Override
     protected void buildUi() {
-        int cx = this.canvasWidth / 2;
-        int guiW = this.canvasWidth - 20;
+        int cx = this.canvasWidth() / 2;
+        int guiW = this.canvasWidth() - 20;
         int x0 = cx - guiW / 2;
         int y0 = 35;
 
         int inputW = guiW - 120;
 
-        this.input = new EditBox(this.font, x0, y0, inputW, 20, Component.empty()) {
-            @Override
-            public void renderWidget(@NotNull GuiGraphics g, int mx, int my, float pt) {
-                super.renderWidget(g, mx, my, pt);
-                if (!this.isFocused() && this.getValue().isEmpty()) {
-                    String editHint = Component.translatable("gui.kineticarmory.armorsets.tips.edit_hint").getString();
-                    g.drawString(Minecraft.getInstance().font, Minecraft.getInstance().font.plainSubstrByWidth(editHint, this.getWidth() - 8), this.getX() + 4, this.getY() + 6, 0x888888, false);
-                }
-            }
-        };
+        this.input = addTextField(
+                x0,
+                y0,
+                inputW,
+                Component.empty()
+        );
         this.input.setMaxLength(1024);
         if (tempInput != null) this.input.setValue(tempInput);
-        this.addRenderableWidget(input);
-
-        this.btnAdd = Button.builder(Component.translatable("gui.kineticarmory.armorsets.tips.add"), b -> {
+this.btnAdd = addButton(x0 + guiW - 115, y0, 115, Component.translatable("gui.kineticarmory.armorsets.tips.add"), null, b -> {
             ensureManualTipLayout();
             if (!input.getValue().trim().isEmpty()) {
                 config.tipLayout.add(ArmorDataConfig.TipLineData.text(input.getValue()));
                 input.setValue("");
                 listWidget.refresh();
             }
-        }).bounds(x0 + guiW - 115, y0, 115, 20).build();
-        this.addRenderableWidget(btnAdd);
-
-        this.btnModify = Button.builder(Component.translatable("gui.kineticarmory.armorsets.commands.save_edit"), b -> {
+        });
+this.btnModify = addButton(x0 + guiW - 115, y0, 55, Component.translatable("gui.kineticarmory.armorsets.commands.save_edit"), null, b -> {
             ensureManualTipLayout();
             String value = input.getValue().trim();
             if (value.isEmpty()) return;
@@ -110,43 +104,35 @@ public class ArmorTipEditorScreen extends KineticScreen {
                 listWidget.refresh();
                 GuiOverlay.toast(Component.translatable("msg.kineticarmory.common.saved"));
             }
-        }).bounds(x0 + guiW - 115, y0, 55, 20).build();
+        });
         this.btnModify.visible = false;
-        this.addRenderableWidget(btnModify);
-
-        this.btnCancel = Button.builder(Component.translatable("gui.kineticarmory.armorsets.commands.cancel_edit"), b -> cancelEdit()).bounds(x0 + guiW - 55, y0, 55, 20).build();
+this.btnCancel = addButton(x0 + guiW - 55, y0, 55, Component.translatable("gui.kineticarmory.armorsets.commands.cancel_edit"), null, b -> cancelEdit());
         this.btnCancel.visible = false;
-        this.addRenderableWidget(btnCancel);
-
-        int cX = cx - (COLORS.length * 14) / 2;
+int cX = cx - (COLORS.length * 14) / 2;
         int cY = y0 + 25;
         for (int i = 0; i < COLORS.length; i++) {
             final String code = "§" + CODES[i];
             int finalI = i;
-            this.addRenderableWidget(new Button(cX, cY, 12, 12, Component.empty(), b -> insert(code), (b) -> Component.empty()) {
-                @Override
-                public void renderWidget(@NotNull GuiGraphics g, int mx, int my, float pt) {
-                    g.fill(getX(), getY(), getX() + width, getY() + height, 0xFF000000);
-                    g.fill(getX() + 1, getY() + 1, getX() + width - 1, getY() + height - 1, COLORS[finalI] | 0xFF000000);
-                    if (this.isHoveredOrFocused()) g.renderOutline(getX(), getY(), width, height, 0xFFFFFFFF);
-                }
-            });
+            addColorPreviewButton(
+                    cX, cY, 12, COLORS[finalI], Component.empty(), null,
+                    () -> insert(code)
+            );
             cX += 14;
         }
 
         int listTop = y0 + 45;
-        int listBottom = this.canvasHeight - 35;
+        int listBottom = this.canvasHeight() - 35;
         this.listWidget = new TipListWidget(this.minecraft, guiW, listBottom - listTop, listTop, listBottom, 22);
         this.listWidget.setLeftPos(x0);
-        this.addWidget(listWidget);
+        this.addEventListWidget(listWidget);
 
         int actionBtnW = 80;
-        int bottomBtnY = this.canvasHeight - 25;
+        int bottomBtnY = this.canvasHeight() - 25;
 
-        this.addRenderableWidget(Button.builder(Component.translatable("gui.kineticarmory.armorsets.save"), b -> GuiOverlay.toast(Component.translatable("msg.kineticarmory.common.saved"))).bounds(cx - actionBtnW - 5, bottomBtnY, actionBtnW, 20).build());
-        this.addRenderableWidget(Button.builder(Component.translatable("gui.kineticarmory.armorsets.back"), b -> {
-            if (minecraft != null) minecraft.setScreen(parent);
-        }).bounds(cx + 5, bottomBtnY, actionBtnW, 20).build());
+        addButton(cx - actionBtnW - 5, bottomBtnY, actionBtnW, Component.translatable("gui.kineticarmory.armorsets.save"), null, b -> GuiOverlay.toast(Component.translatable("msg.kineticarmory.common.saved")));
+        addButton(cx + 5, bottomBtnY, actionBtnW, Component.translatable("gui.kineticarmory.armorsets.back"), null, b -> {
+            if (minecraft != null) navigateBack();
+        });
     }
 
     private void ensureTips() {
@@ -363,11 +349,11 @@ public class ArmorTipEditorScreen extends KineticScreen {
 
     @Override
     protected void renderCanvasBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        int cx = this.canvasWidth / 2;
-        int guiW = this.canvasWidth - 20;
+        int cx = this.canvasWidth() / 2;
+        int guiW = this.canvasWidth() - 20;
         int x0 = cx - guiW / 2;
 
-        GuiTheme.panel(g, x0 - 5, 5, guiW + 10, this.canvasHeight - 10);
+        GuiTheme.panel(g, x0 - 5, 5, guiW + 10, this.canvasHeight() - 10);
         g.drawCenteredString(this.font, this.title, cx, 8, 0xFFFFFF);
 
         String dragHint = Component.translatable("gui.kineticarmory.armorsets.tips.drag_hint").getString();
@@ -378,6 +364,11 @@ public class ArmorTipEditorScreen extends KineticScreen {
 
     @Override
     protected void renderCanvasForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {
+        renderTextFieldPlaceholder(
+                g,
+                input,
+                Component.translatable("gui.kineticarmory.armorsets.tips.edit_hint")
+        );
         if (draggingIndex != -1 && draggingText != null) {
             hoverTargetIndex = -1;
             if (my >= listWidget.getTop() && my <= listWidget.getBottom()) {
@@ -424,43 +415,45 @@ public class ArmorTipEditorScreen extends KineticScreen {
 
         Pattern pattern = Pattern.compile("\\[(item|effect):([^]]+)]");
         Matcher matcher = pattern.matcher(text);
-
         String cleanText = text.replaceAll("\\[(item|effect):([^]]+)]", "");
-        String dispClean = cleanText;
 
-        if (font.width(cleanText) > maxW) {
-            dispClean = font.plainSubstrByWidth(cleanText, maxW - 10) + "...";
-        }
-        g.drawString(font, dispClean, x, y, 16777215, false);
-
-        int maxPixelX = x + maxW - 10;
-
-        matcher.reset();
+        int contentWidth = font.width(cleanText);
         while (matcher.find()) {
-            String type = matcher.group(1);
-            String id = matcher.group(2);
-
             String textBefore = text.substring(0, matcher.start());
             String cleanBefore = textBefore.replaceAll("\\[(item|effect):([^]]+)]", "");
+            contentWidth = Math.max(contentWidth, font.width(cleanBefore) + 12);
+        }
 
-            int iconX = x + font.width(cleanBefore);
-            int iconY = y - 2;
+        int offset = KineticText.scrollOffset(contentWidth, maxW);
+        enableCanvasScissor(g, x, y - 2, x + maxW, y + font.lineHeight + 3);
+        try {
+            g.drawString(font, cleanText, x - offset, y, 16777215, false);
 
-            if (iconX > maxPixelX) continue;
+            matcher.reset();
+            while (matcher.find()) {
+                String type = matcher.group(1);
+                String id = matcher.group(2);
+                String textBefore = text.substring(0, matcher.start());
+                String cleanBefore = textBefore.replaceAll("\\[(item|effect):([^]]+)]", "");
+                int iconX = x - offset + font.width(cleanBefore);
+                int iconY = y - 2;
 
-            if (type.equals("item")) {
-                net.minecraft.resources.ResourceLocation rl = net.minecraft.resources.ResourceLocation.tryParse(id);
-                if (rl != null) {
-                    net.minecraft.world.item.Item item = net.minecraftforge.registries.ForgeRegistries.ITEMS.getValue(rl);
-                    if (item != null && item != net.minecraft.world.item.Items.AIR) {
-                        g.pose().pushPose();
-                        g.pose().translate(iconX, iconY, 0);
-                        g.pose().scale(0.7f, 0.7f, 1.0f);
-                        g.renderItem(new net.minecraft.world.item.ItemStack(item), 0, 0);
-                        g.pose().popPose();
+                if (type.equals("item")) {
+                    net.minecraft.resources.ResourceLocation rl = net.minecraft.resources.ResourceLocation.tryParse(id);
+                    if (rl != null) {
+                        net.minecraft.world.item.Item item = net.minecraftforge.registries.ForgeRegistries.ITEMS.getValue(rl);
+                        if (item != null && item != net.minecraft.world.item.Items.AIR) {
+                            g.pose().pushPose();
+                            g.pose().translate(iconX, iconY, 0);
+                            g.pose().scale(0.7f, 0.7f, 1.0f);
+                            g.renderItem(new net.minecraft.world.item.ItemStack(item), 0, 0);
+                            g.pose().popPose();
+                        }
                     }
                 }
             }
+        } finally {
+            disableCanvasScissor(g);
         }
     }
 
@@ -483,29 +476,6 @@ public class ArmorTipEditorScreen extends KineticScreen {
             refresh();
         }
 
-        @Override
-        public void render(@NotNull GuiGraphics g, int mx, int my, float pt) {
-            super.render(g, mx, my, pt);
-            if (this.getMaxScroll() > 0) {
-                int barX = this.getScrollbarPosition();
-                int height = listBottom - listTop;
-                int thumbH = Math.max(20, (int) ((float) height * height / this.getMaxPosition()));
-                Scroll.renderScrollbar(
-                        g,
-                        mx,
-                        my,
-                        barX + 2,
-                        listTop,
-                        4,
-                        height,
-                        thumbH,
-                        (int) Math.ceil(this.getMaxScroll()),
-                        this.getScrollAmount(),
-                        false
-                );
-            }
-        }
-
         public void refresh() {
             clearEntries();
             rebuildDisplayRows();
@@ -517,7 +487,7 @@ public class ArmorTipEditorScreen extends KineticScreen {
 
         class Entry extends ObjectSelectionList.Entry<Entry> {
             private static final int DELETE_BUTTON_W = 44;
-            private static final int DELETE_BUTTON_H = 18;
+            private static final int DELETE_BUTTON_H = KineticScreen.STANDARD_CONTROL_HEIGHT;
 
             private final TipRow row;
             private final Button deleteButton;
@@ -525,9 +495,7 @@ public class ArmorTipEditorScreen extends KineticScreen {
 
             public Entry(TipRow row) {
                 this.row = row;
-                this.deleteButton = Button.builder(Component.translatable("gui.kineticarmory.armorsets.delete"), b -> deleteRow())
-                        .bounds(0, 0, DELETE_BUTTON_W, DELETE_BUTTON_H)
-                        .build();
+                this.deleteButton = KineticWidgets.createCompactButton(0, 0, DELETE_BUTTON_W, Component.translatable("gui.kineticarmory.armorsets.delete"), null, b -> deleteRow());
             }
 
             @Override
@@ -536,7 +504,7 @@ public class ArmorTipEditorScreen extends KineticScreen {
 
                 if (draggingIndex == row.layoutIndex()) {
                     g.fill(l, t, l + w, t + 20, 0x44000000);
-                    g.renderOutline(l, t, w, 20, 0x88555555);
+                    GuiTheme.stateOutline(g, l, t, w, 20, false, true, false);
                     return;
                 }
 
@@ -550,18 +518,14 @@ public class ArmorTipEditorScreen extends KineticScreen {
 
                 g.fill(l, t, l + w, t + 20, bgColor);
 
-                if (editing) {
-                    g.renderOutline(l, t, w, 20, 0xFFFFFFFF);
-                } else {
-                    g.renderOutline(l, t, w, 20, 0xFF555555);
-                }
+                GuiTheme.stateOutline(g, l, t, w, 20, editing, hv, false);
 
                 int deleteX = l + w - DELETE_BUTTON_W - 5;
                 int maxW = Math.max(0, deleteX - l - 8);
                 renderTextWithIcons(g, Minecraft.getInstance().font, row.text(), l + 4, t + 6, maxW);
 
                 deleteButton.setX(deleteX);
-                deleteButton.setY(t + 1);
+                deleteButton.setY(t + (20 - DELETE_BUTTON_H) / 2);
                 deleteButton.render(g, mx, my, pt);
             }
 

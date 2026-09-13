@@ -102,13 +102,12 @@ public class ArmorEntityFilterScreen extends KineticScreen {
     }
 
     private void setupScale() {
-        useCanvas(
+        useResponsiveCanvas(
                 V_WIDTH,
                 V_HEIGHT,
                 6
         );
-        this.scaleMultiplier = 1f;
-        entityPreviewRenderer.setRotationSpeedPercent(rotationSpeedPercent);
+entityPreviewRenderer.setRotationSpeedPercent(rotationSpeedPercent);
         entityPreviewRenderer.setClockwise(clockwiseRotation);
     }
 
@@ -257,154 +256,75 @@ public class ArmorEntityFilterScreen extends KineticScreen {
         int backW = 64;
 
         if (global) {
-            Button modeButton = Button.builder(getGlobalModeText(), b -> {
+            Button modeButton = addButton(8, topY, modeW, getGlobalModeText(), getGlobalModeTooltip(), b -> {
                         globalMode = "WHITELIST".equalsIgnoreCase(globalMode)
                                 ? "BLACKLIST"
                                 : "WHITELIST";
 
                         b.setMessage(getGlobalModeText());
-                        b.setTooltip(Tooltip.create(getGlobalModeTooltip()));
-                    })
-                    .bounds(8, topY, modeW, 20)
-                    .tooltip(Tooltip.create(getGlobalModeTooltip()))
-                    .build();
-
-            this.addRenderableWidget(modeButton);
-        } else {
-            Button setToggleButton = Button.builder(getSetFilterText(), b -> {
+                        registerWidgetTooltip(b, getGlobalModeTooltip());
+                    });
+} else {
+            Button setToggleButton = addButton(8, topY, modeW, getSetFilterText(), getSetFilterTooltip(), b -> {
                         setFilterEnabled = !setFilterEnabled;
                         b.setMessage(getSetFilterText());
-                        b.setTooltip(Tooltip.create(getSetFilterTooltip()));
-                    })
-                    .bounds(8, topY, modeW, 20)
-                    .tooltip(Tooltip.create(getSetFilterTooltip()))
-                    .build();
+                        registerWidgetTooltip(b, getSetFilterTooltip());
+                    });
+}
 
-            this.addRenderableWidget(setToggleButton);
-        }
-
-        rotationSpeedBox = new EditBox(
-                this.font,
-                432,
-                topY,
-                speedInputW,
-                20,
-                ColorText.translatable("gui.kineticarmory.armorsets.entity_filter.rotation_speed")
-        );
+        rotationSpeedBox = addTextField(432, topY, speedInputW, ColorText.translatable("gui.kineticarmory.armorsets.entity_filter.rotation_speed"));
         rotationSpeedBox.setMaxLength(3);
         rotationSpeedBox.setFilter(value -> value.isEmpty() || value.chars().allMatch(Character::isDigit));
         rotationSpeedBox.setValue(Integer.toString(rotationSpeedPercent));
         rotationSpeedBox.setResponder(value -> applyRotationSpeedInput(false));
-        rotationSpeedBox.setTooltip(Tooltip.create(ColorText.translatable(
+        registerWidgetTooltip(rotationSpeedBox, ColorText.translatable(
                 "gui.kineticarmory.armorsets.entity_filter.rotation_speed.tooltip"
-        )));
-        this.addRenderableWidget(rotationSpeedBox);
-
-        this.addRenderableWidget(
-                Button.builder(
-                                getRotationDirectionText(),
-                                b -> {
+        ));
+addButton(356, topY, speedButtonW, getRotationDirectionText(), ColorText.translatable(
+                                "gui.kineticarmory.common.rotation.direction.tooltip"
+                        ), b -> {
                                     clockwiseRotation = !clockwiseRotation;
                                     entityPreviewRenderer.setClockwise(clockwiseRotation);
                                     b.setMessage(getRotationDirectionText());
-                                }
-                        )
-                        .bounds(356, topY, speedButtonW, 20)
-                        .tooltip(Tooltip.create(ColorText.translatable(
-                                "gui.kineticarmory.common.rotation.direction.tooltip"
-                        )))
-                        .build()
-        );
+                                });
 
-        this.addRenderableWidget(
-                Button.builder(
-                                ColorText.translatable("gui.kineticarmory.armorsets.save"),
-                                b -> saveAndBack()
-                        )
-                        .bounds(500, topY, saveW, 20)
-                        .tooltip(Tooltip.create(ColorText.translatable(
+        addButton(500, topY, saveW, ColorText.translatable("gui.kineticarmory.armorsets.save"), ColorText.translatable(
                                 global
                                         ? "gui.kineticarmory.armorsets.entity_filter.save_global.tooltip"
                                         : "gui.kineticarmory.armorsets.entity_filter.save_set.tooltip"
-                        )))
-                        .build()
-        );
+                        ), b -> saveAndBack());
 
-        this.addRenderableWidget(
-                Button.builder(
-                                ColorText.translatable("gui.kineticarmory.common.back"),
-                                b -> backWithoutSave()
-                        )
-                        .bounds(568, topY, backW, 20)
-                        .tooltip(Tooltip.create(ColorText.translatable(
+        addButton(568, topY, backW, ColorText.translatable("gui.kineticarmory.common.back"), ColorText.translatable(
                                 "gui.kineticarmory.armorsets.entity_filter.back.tooltip"
-                        )))
-                        .build()
-        );
+                        ), b -> backWithoutSave());
 
-        this.addRenderableWidget(
-                Button.builder(
-                                ColorText.translatable(
+        addButton(LEFT_X + PANEL_W - 80, PANEL_Y + 4, 72, ColorText.translatable(
                                         "gui.kineticarmory.armorsets.entity_filter.remove_filtered"
-                                ),
-                                b -> removeFiltered()
-                        )
-                        .bounds(LEFT_X + PANEL_W - 80, PANEL_Y + 4, 72, 18)
-                        .tooltip(Tooltip.create(ColorText.translatable(
+                                ), ColorText.translatable(
                                 "gui.kineticarmory.armorsets.entity_filter.remove_filtered.tooltip"
-                        )))
-                        .build()
-        );
+                        ), b -> removeFiltered());
 
-        this.addRenderableWidget(
-                Button.builder(
-                                ColorText.translatable(
+        addButton(RIGHT_X + PANEL_W - 80, PANEL_Y + 4, 72, ColorText.translatable(
                                         "gui.kineticarmory.armorsets.entity_filter.add_filtered"
-                                ),
-                                b -> addFiltered()
-                        )
-                        .bounds(RIGHT_X + PANEL_W - 80, PANEL_Y + 4, 72, 18)
-                        .tooltip(Tooltip.create(ColorText.translatable(
+                                ), ColorText.translatable(
                                 "gui.kineticarmory.armorsets.entity_filter.add_filtered.tooltip"
-                        )))
-                        .build()
-        );
+                        ), b -> addFiltered());
 
-        leftSearchBox = new EditBox(
-                this.font,
-                LEFT_X + 8,
-                SEARCH_Y,
-                PANEL_W - 16,
-                20,
-                Component.empty()
-        );
+        leftSearchBox = addTextField(LEFT_X + 8, SEARCH_Y, PANEL_W - 16, Component.empty());
 
         leftSearchBox.setMaxLength(256);
         leftSearchBox.setResponder(value -> {
             leftScroll = 0;
             refreshLists();
         });
-
-        this.addRenderableWidget(leftSearchBox);
-
-        rightSearchBox = new EditBox(
-                this.font,
-                RIGHT_X + 8,
-                SEARCH_Y,
-                PANEL_W - 16,
-                20,
-                Component.empty()
-        );
+rightSearchBox = addTextField(RIGHT_X + 8, SEARCH_Y, PANEL_W - 16, Component.empty());
 
         rightSearchBox.setMaxLength(256);
         rightSearchBox.setResponder(value -> {
             rightScroll = 0;
             refreshLists();
         });
-
-        this.addRenderableWidget(rightSearchBox);
-
-        refreshLists();
+refreshLists();
     }
 
     private Component getRotationDirectionText() {
@@ -625,7 +545,7 @@ public class ArmorEntityFilterScreen extends KineticScreen {
 
     private void backWithoutSave() {
         if (this.minecraft != null) {
-            this.minecraft.setScreen(parent);
+            this.navigateBack();
         }
     }
 
@@ -733,16 +653,16 @@ public class ArmorEntityFilterScreen extends KineticScreen {
             int my,
             float pt
     ) {
-        renderSearchHint(
+        renderTextFieldPlaceholder(
                 g,
                 leftSearchBox,
-                "gui.kineticarmory.armorsets.entity_filter.search_available"
+                ColorText.translatable("gui.kineticarmory.armorsets.entity_filter.search_available")
         );
 
-        renderSearchHint(
+        renderTextFieldPlaceholder(
                 g,
                 rightSearchBox,
-                "gui.kineticarmory.armorsets.entity_filter.search_added"
+                ColorText.translatable("gui.kineticarmory.armorsets.entity_filter.search_added")
         );
 
         renderGrid(
@@ -805,35 +725,8 @@ public class ArmorEntityFilterScreen extends KineticScreen {
 
         if (deferredTooltip != null
                 && !deferredTooltip.isEmpty()) {
-            GuiOverlay.requestTooltip(deferredTooltip, mx, my);
+            showTooltip(deferredTooltip);
         }
-    }
-
-    private void renderSearchHint(
-            GuiGraphics g,
-            EditBox box,
-            String key
-    ) {
-        if (box == null
-                || !box.visible
-                || !box.getValue().isEmpty()
-                || box.isFocused()) {
-            return;
-        }
-
-        String text = this.font.plainSubstrByWidth(
-                ColorText.translatable(key).getString(),
-                box.getWidth() - 10
-        );
-
-        g.drawString(
-                this.font,
-                text,
-                box.getX() + 5,
-                box.getY() + 6,
-                0xFFAAAAAA,
-                false
-        );
     }
 
     private void renderGrid(
@@ -1001,9 +894,9 @@ public class ArmorEntityFilterScreen extends KineticScreen {
                 boxY,
                 boxW,
                 boxH,
-                this.canvasScale,
-                this.canvasX,
-                this.canvasY,
+                this.canvasScale(),
+                this.canvasX(),
+                this.canvasY(),
                 hovered
         );
 

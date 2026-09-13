@@ -28,7 +28,7 @@ public class DamageConversionEditor extends KineticScreen {
 
     public DamageConversionEditor(KineticScreen p, ArmorDataConfig c, ArmorDataConfig.DamageConversionData d) {
         super(ColorText.translatable("gui.kineticarmory.armorsets.editor.dmg_convert.title"));
-        useCanvas(
+        useResponsiveCanvas(
                 640f,
                 360f,
                 6
@@ -47,25 +47,25 @@ public class DamageConversionEditor extends KineticScreen {
     }
 
     @Override protected void buildUi() {
-        int cx = canvasWidth / 2; int cy = canvasHeight / 2 - 50;
-        srcInput = new AutoCompleteBox(font, cx - 125, cy - 30, 110, 20, Component.empty(), KineticSearch::getDamageDict);
+        int cx = canvasWidth() / 2; int cy = canvasHeight() / 2 - 50;
+        srcInput = addAutoCompleteField(cx - 125, cy - 30, 110, Component.empty(), KineticSearch::getDamageDict, null);
         srcInput.setValue(tempSrc != null ? tempSrc : (isNew ? "" : (data.sourceType != null ? data.sourceType : "")));
 
-        tgtInput = new AutoCompleteBox(font, cx + 15, cy - 30, 110, 20, Component.empty(), KineticSearch::getSpecificDamageDict);
+        tgtInput = addAutoCompleteField(cx + 15, cy - 30, 110, Component.empty(), KineticSearch::getSpecificDamageDict, null);
         tgtInput.setValue(tempTgt != null ? tempTgt : (isNew ? "" : (data.targetType != null ? data.targetType : "")));
 
-        ratioInput = NumericAutoCompleteBox.decimal(font, cx - 125, cy - 5, 110, 20, Component.empty(), ArrayList::new, true, null, null);
+        ratioInput = addDecimalAutoCompleteField(cx - 125, cy - 5, 110, Component.empty(), ArrayList::new, true, null, null, null);
         ratioInput.setValue(tempRatio != null ? tempRatio : (isNew ? "" : String.valueOf(data.ratio)));
 
-        chanceInput = NumericAutoCompleteBox.decimal(font, cx + 15, cy - 5, 110, 20, Component.empty(), ArrayList::new, true, null, null);
+        chanceInput = addDecimalAutoCompleteField(cx + 15, cy - 5, 110, Component.empty(), ArrayList::new, true, null, null, null);
         chanceInput.setValue(tempChance != null ? tempChance : (isNew ? "" : String.valueOf(data.chance)));
 
-        addRenderableWidget(Button.builder(ColorText.translatable("gui.kineticarmory.armorsets.editor.conditions", data.conditions.size()), b -> {
+        addButton(cx - 100, cy + 20, 200, ColorText.translatable("gui.kineticarmory.armorsets.editor.conditions", data.conditions.size()), null, b -> {
             if (syncToData()) return;
             if (minecraft != null) minecraft.setScreen(new ConditionListScreen(this, data));
-        }).bounds(cx - 100, cy + 20, 200, 20).build());
+        });
 
-        addRenderableWidget(Button.builder(ColorText.translatable("gui.kineticarmory.armorsets.save"), b -> {
+        addButton(cx - 60, cy + 50, 55, ColorText.translatable("gui.kineticarmory.armorsets.save"), null, b -> {
             if (syncToData()) return;
             if (data.sourceType.isEmpty() || data.targetType.isEmpty()) {
                 GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.armorsets.empty_field")); return;
@@ -77,11 +77,10 @@ public class DamageConversionEditor extends KineticScreen {
             if (!isNew && oldTip != null) config.tips.remove(oldTip);
             if (isNew) config.damageConversions.add(data);
             config.tips.add(ArmorTipGenerator.genConvTip(data));
-            if (minecraft != null) minecraft.setScreen(parent);
-        }).bounds(cx - 60, cy + 50, 55, 20).build());
-        addRenderableWidget(Button.builder(ColorText.translatable("gui.kineticarmory.armorsets.back"), b -> { if (minecraft != null) minecraft.setScreen(parent); }).bounds(cx + 5, cy + 50, 55, 20).build());
+            if (minecraft != null) navigateBack();
+        });
+        addButton(cx + 5, cy + 50, 55, ColorText.translatable("gui.kineticarmory.armorsets.back"), null, b -> { if (minecraft != null) navigateBack(); });
 
-        addRenderableWidget(srcInput); addRenderableWidget(tgtInput); addRenderableWidget(ratioInput); addRenderableWidget(chanceInput);
 
         inputGroup.set(
                 srcInput,
@@ -123,14 +122,11 @@ public class DamageConversionEditor extends KineticScreen {
     }
 
     private void renderInputHint(GuiGraphics g, AutoCompleteBox box, String key) {
-        if (box != null && !box.isFocused() && box.getValue().isEmpty()) {
-            String text = ColorText.translatable(key).getString();
-            g.drawString(font, font.plainSubstrByWidth(text, box.getWidth() - 8), box.getX() + 4, box.getY() + 6, 0x999999, false);
-        }
+        renderTextFieldPlaceholder(g, box, ColorText.translatable(key));
     }
 
     @Override protected void renderCanvasBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        int cx = canvasWidth / 2; int cy = canvasHeight / 2 - 50; GuiTheme.panel(g, cx - 140, cy - 60, 280, 145);
+        int cx = canvasWidth() / 2; int cy = canvasHeight() / 2 - 50; GuiTheme.panel(g, cx - 140, cy - 60, 280, 145);
         g.drawCenteredString(font, title, cx, cy - 50, 0xFFFFFF);
     }
     @Override protected void renderCanvasForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {

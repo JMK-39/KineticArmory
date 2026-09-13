@@ -1,5 +1,6 @@
 package dev.xyat.kineticarmory.armorsets.client.gui;
 
+import dev.xyat.kineticcore.api.client.text.KineticText;
 import dev.xyat.kineticarmory.util.ColorText;
 import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
 import dev.xyat.kineticcore.api.client.theme.GuiTheme;
@@ -72,7 +73,7 @@ public class ArmorEquipmentVariantScreen extends KineticScreen {
         this.parent = parent;
         this.config = config;
         this.slotKey = slotKey;
-        useCanvas(
+        useResponsiveCanvas(
                 640f,
                 360f,
                 6
@@ -95,34 +96,16 @@ public class ArmorEquipmentVariantScreen extends KineticScreen {
         int btnW = 96;
         int gap = 6;
         int controlY = panelY + 36;
-        int startX = canvasWidth / 2 - (btnW * 5 + gap * 4) / 2;
+        int startX = canvasWidth() / 2 - (btnW * 5 + gap * 4) / 2;
 
-        slotModeButton = Button.builder(getSlotModeButtonText(), b -> toggleSlotRequirementMode())
-                .bounds(startX, controlY, btnW, 20)
-                .build();
-        addRenderableWidget(slotModeButton);
-
-        addItemButton = Button.builder(ColorText.translatable("gui.kineticarmory.armorsets.variant.add_item"), b -> addFromSelector())
-                .bounds(startX + (btnW + gap), controlY, btnW, 20)
-                .build();
-        addRenderableWidget(addItemButton);
-
-        addEquippedButton = Button.builder(ColorText.translatable("gui.kineticarmory.armorsets.variant.add_equipped"), b -> addEquipped())
-                .bounds(startX + (btnW + gap) * 2, controlY, btnW, 20)
-                .build();
-        addRenderableWidget(addEquippedButton);
-
-        clearButton = Button.builder(ColorText.translatable("gui.kineticarmory.armorsets.variant.clear"), b -> clearAll())
-                .bounds(startX + (btnW + gap) * 3, controlY, btnW, 20)
-                .build();
-        addRenderableWidget(clearButton);
-
-        backButton = Button.builder(ColorText.translatable("gui.kineticarmory.armorsets.back"), b -> {
-            if (minecraft != null) minecraft.setScreen(parent);
-        }).bounds(startX + (btnW + gap) * 4, controlY, btnW, 20).build();
-        addRenderableWidget(backButton);
-
-        createRowButtons();
+        slotModeButton = addButton(startX, controlY, btnW, getSlotModeButtonText(), null, b -> toggleSlotRequirementMode());
+addItemButton = addButton(startX + (btnW + gap), controlY, btnW, ColorText.translatable("gui.kineticarmory.armorsets.variant.add_item"), null, b -> addFromSelector());
+addEquippedButton = addButton(startX + (btnW + gap) * 2, controlY, btnW, ColorText.translatable("gui.kineticarmory.armorsets.variant.add_equipped"), null, b -> addEquipped());
+clearButton = addButton(startX + (btnW + gap) * 3, controlY, btnW, ColorText.translatable("gui.kineticarmory.armorsets.variant.clear"), null, b -> clearAll());
+backButton = addButton(startX + (btnW + gap) * 4, controlY, btnW, ColorText.translatable("gui.kineticarmory.armorsets.back"), null, b -> {
+            if (minecraft != null) navigateBack();
+        });
+createRowButtons();
         clampSelectionAndScroll();
         updateActionButtons();
     }
@@ -142,36 +125,21 @@ public class ArmorEquipmentVariantScreen extends KineticScreen {
             int modeX = nbtX - ROW_BUTTON_W - ROW_BUTTON_GAP;
             int buttonY = rowY + (ROW_H - ROW_BUTTON_H) / 2;
 
-            Button mode = Button.builder(ColorText.translatable("gui.kineticarmory.armorsets.variant.mode"), b -> toggleVisibleRowNbtMode(row))
-                    .bounds(modeX, buttonY, ROW_BUTTON_W, ROW_BUTTON_H)
-                    .build();
+            Button mode = addButton(modeX, buttonY, ROW_BUTTON_W, ColorText.translatable("gui.kineticarmory.armorsets.variant.mode"), null, b -> toggleVisibleRowNbtMode(row));
             modeButtons.add(mode);
-            addRenderableWidget(mode);
-
-            Button nbt = Button.builder(ColorText.translatable("gui.kineticarmory.armorsets.variant.nbt"), b -> editVisibleRowNbt(row))
-                    .bounds(nbtX, buttonY, ROW_BUTTON_W, ROW_BUTTON_H)
-                    .build();
+Button nbt = addButton(nbtX, buttonY, ROW_BUTTON_W, ColorText.translatable("gui.kineticarmory.armorsets.variant.nbt"), null, b -> editVisibleRowNbt(row));
             nbtButtons.add(nbt);
-            addRenderableWidget(nbt);
-
-            Button replace = Button.builder(ColorText.translatable("gui.kineticarmory.armorsets.variant.edit"), b -> replaceVisibleRowFromSelector(row))
-                    .bounds(replaceX, buttonY, ROW_BUTTON_W, ROW_BUTTON_H)
-                    .build();
+Button replace = addButton(replaceX, buttonY, ROW_BUTTON_W, ColorText.translatable("gui.kineticarmory.armorsets.variant.edit"), null, b -> replaceVisibleRowFromSelector(row));
             replaceButtons.add(replace);
-            addRenderableWidget(replace);
-
-            Button delete = Button.builder(ColorText.translatable("gui.kineticarmory.armorsets.delete"), b -> deleteVisibleRow(row))
-                    .bounds(deleteX, buttonY, ROW_BUTTON_W, ROW_BUTTON_H)
-                    .build();
+Button delete = addButton(deleteX, buttonY, ROW_BUTTON_W, ColorText.translatable("gui.kineticarmory.armorsets.delete"), null, b -> deleteVisibleRow(row));
             deleteButtons.add(delete);
-            addRenderableWidget(delete);
-        }
+}
     }
 
     private void calculateLayout() {
-        panelW = Math.min(canvasWidth - 30, 620);
-        panelH = canvasHeight - 32;
-        panelX = canvasWidth / 2 - panelW / 2;
+        panelW = Math.min(canvasWidth() - 30, 620);
+        panelH = canvasHeight() - 32;
+        panelX = canvasWidth() / 2 - panelW / 2;
         panelY = 16;
 
         listX = panelX + 18;
@@ -524,13 +492,13 @@ public class ArmorEquipmentVariantScreen extends KineticScreen {
 
     @Override
     protected void renderCanvasForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        g.drawCenteredString(font, title, canvasWidth / 2, panelY + 11, 0xFFFFFFFF);
+        g.drawCenteredString(font, title, canvasWidth() / 2, panelY + 11, 0xFFFFFFFF);
     }
 
     @Override
     protected void renderTooltips(GuiGraphics g, int scaledMouseX, int scaledMouseY, int mouseX, int mouseY) {
         List<Component> tooltip = getTooltipAt(scaledMouseX, scaledMouseY);
-        if (!tooltip.isEmpty()) GuiOverlay.requestTooltip(tooltip, mouseX, mouseY);
+        if (!tooltip.isEmpty()) showTooltip(tooltip);
     }
 
     private void renderListArea(GuiGraphics g, int mx, int my) {
@@ -586,36 +554,18 @@ for (int index = start; index < end; index++) {
             drawInfoLine(g, req, textX, rowY + 20, textW);
         }
         } finally {
-            g.disableScissor();
+            disableCanvasScissor(g);
         }
     }
 
     private void drawInfoLine(GuiGraphics g, ArmorDataConfig.ItemReq req, int x, int y, int maxWidth) {
-        String idLabel = "ID: ";
         String id = req == null || req.id == null ? "" : req.id;
-        String nbtLabel = "  " + ColorText.translatable("gui.kineticarmory.armorsets.variant.nbt").getString().replace("§b", "") + ": ";
-        String nbt = getNbtModeName(req == null ? "NONE" : req.nbtMode).getString();
-        String full = idLabel + id + nbtLabel + nbt;
-        String trimmed = font.plainSubstrByWidth(full, Math.max(0, maxWidth));
-        int cursor = x;
-        if (trimmed.startsWith(idLabel)) {
-            g.drawString(font, idLabel, cursor, y, 0xFF55FFFF, false);
-            cursor += font.width(idLabel);
-            String rest = trimmed.substring(idLabel.length());
-            int nbtStart = rest.indexOf(nbtLabel);
-            if (nbtStart >= 0) {
-                String idPart = rest.substring(0, nbtStart);
-                g.drawString(font, idPart, cursor, y, 0xFFDDDDDD, false);
-                cursor += font.width(idPart);
-                g.drawString(font, nbtLabel, cursor, y, 0xFFFFFF55, false);
-                cursor += font.width(nbtLabel);
-                g.drawString(font, rest.substring(nbtStart + nbtLabel.length()), cursor, y, 0xFFDDDDDD, false);
-            } else {
-                g.drawString(font, rest, cursor, y, 0xFFDDDDDD, false);
-            }
-        } else {
-            g.drawString(font, trimmed, x, y, 0xFFDDDDDD, false);
-        }
+        Component line = ColorText.translatable(
+                "gui.kineticarmory.armorsets.variant.row_sub",
+                id,
+                getNbtModeName(req == null ? "NONE" : req.nbtMode)
+        );
+        KineticText.drawScrollingLeft(g, font, line, x, y, maxWidth, 0xFFFFFFFF, false);
     }
 
     private void renderScrollbar(GuiGraphics g, int mx, int my) {
@@ -658,7 +608,7 @@ for (int index = start; index < end; index++) {
     }
 
     private void drawTrimmedText(GuiGraphics g, String text, int x, int y, int maxWidth) {
-        g.drawString(font, font.plainSubstrByWidth(text == null ? "" : text, Math.max(0, maxWidth)), x, y, -1, false);
+        KineticText.drawScrollingLeft(g, font, text == null ? "" : text, x, y, Math.max(0, maxWidth), -1, false);
     }
 
     private List<Component> getTooltipAt(int mx, int my) {

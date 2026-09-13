@@ -51,7 +51,7 @@ public class ConditionEditScreen extends KineticScreen {
         this.parentList = parentList;
         this.data = data;
         this.isNew = isNew;
-        useCanvas(
+        useResponsiveCanvas(
                 640f,
                 360f,
                 6
@@ -60,22 +60,16 @@ public class ConditionEditScreen extends KineticScreen {
     }
 
     @Override protected void buildUi() {
-        int cx = canvasWidth / 2; int cy = canvasHeight / 2;
+        int cx = canvasWidth() / 2; int cy = canvasHeight() / 2;
 
-        typeInput = new AutoCompleteBox(font, cx - 120, cy - 50, 240, 20, Component.empty(), ConditionTypeUtil::getSuggestions);
+        typeInput = addAutoCompleteField(cx - 120, cy - 50, 240, Component.empty(), ConditionTypeUtil::getSuggestions, null);
         typeInput.setValue((data.type != null && !data.type.isEmpty()) ? data.type.toUpperCase() : "");
-        addRenderableWidget(typeInput);
 
-        saveBtn = Button.builder(ColorText.translatable("gui.kineticarmory.predicate.save"), b -> saveAndClose())
-                .bounds(cx - 60, cy + 30, 55, 20).build();
-        backBtn = Button.builder(ColorText.translatable("gui.kineticarmory.predicate.back"), b -> {
-            if (minecraft != null) minecraft.setScreen(parent);
-        }).bounds(cx + 5, cy + 30, 55, 20).build();
-
-        addRenderableWidget(saveBtn);
-        addRenderableWidget(backBtn);
-
-        lastTickType = ConditionTypeUtil.getRawType(typeInput.getValue());
+        saveBtn = addButton(cx - 60, cy + 30, 55, ColorText.translatable("gui.kineticarmory.predicate.save"), null, b -> saveAndClose());
+        backBtn = addButton(cx + 5, cy + 30, 55, ColorText.translatable("gui.kineticarmory.predicate.back"), null, b -> {
+            if (minecraft != null) navigateBack();
+        });
+lastTickType = ConditionTypeUtil.getRawType(typeInput.getValue());
         rebuildParamsUI(lastTickType);
     }
 
@@ -90,14 +84,14 @@ public class ConditionEditScreen extends KineticScreen {
     }
 
     private void rebuildParamsUI(String newType) {
-        for (AbstractWidget w : dynamicWidgets) removeWidget(w);
+        for (AbstractWidget w : dynamicWidgets) removeControl(w);
         dynamicWidgets.clear();
         dynamicAcBoxes.clear();
         invalidParams.clear();
 
         currentSchema = ConditionTypeUtil.getParamSchema(newType);
-        int cx = canvasWidth / 2;
-        int currentY = (canvasHeight / 2) - 10;
+        int cx = canvasWidth() / 2;
+        int currentY = (canvasHeight() / 2) - 10;
 
         for (ConditionTypeUtil.ParamDef def : currentSchema) {
             String initialVal = currentParamValues.getOrDefault(def.key(), def.defaultVal());
@@ -106,20 +100,16 @@ public class ConditionEditScreen extends KineticScreen {
                 boolean allowEmpty = "TIME_RANGE".equals(newType);
                 double minimum = allowEmpty ? 0.0D : 0.05D;
                 double maximum = allowEmpty ? 1199.95D : Integer.MAX_VALUE / 20.0D;
-                NumericEditBox box = NumericEditBox.decimal(
-                        font, cx - 120, currentY + 12, 240, 20,
-                        Component.empty(), false, minimum, maximum
-                );
+                NumericEditBox box = addDecimalField(cx - 120, currentY + 12, 240, Component.empty(), false, minimum, maximum, null);
                 box.setMaxLength(32);
                 box.setValue(secondsDisplayValue(initialVal, allowEmpty));
                 box.setResponder(value -> updateSecondsParam(def.key(), box, allowEmpty));
                 updateSecondsParam(def.key(), box, allowEmpty);
                 dynamicWidgets.add(box);
-                addRenderableWidget(box);
-            }
+}
             else if (def.type() == ConditionTypeUtil.ParamDataType.ITEM) {
                 String displayStr = initialVal.isEmpty() ? ColorText.translatable("gui.kineticarmory.predicate.select_item").getString() : initialVal;
-                Button btn = Button.builder(Component.literal(displayStr), b -> {
+                Button btn = addButton(cx - 120, currentY + 12, 240, Component.literal(displayStr), null, b -> {
                     syncCurrentValues();
                     if (minecraft != null) {
                         minecraft.setScreen(new ItemSelectorScreen(this, selection -> {
@@ -129,11 +119,11 @@ public class ConditionEditScreen extends KineticScreen {
                             minecraft.setScreen(this);
                         }));
                     }
-                }).bounds(cx - 120, currentY + 12, 240, 20).build();
-                dynamicWidgets.add(btn); addRenderableWidget(btn);
+                });
+                dynamicWidgets.add(btn);
             }
             else if (def.type() == ConditionTypeUtil.ParamDataType.NUMBER || def.type() == ConditionTypeUtil.ParamDataType.STRING) {
-                EditBox box = new EditBox(font, cx - 120, currentY + 12, 240, 20, Component.empty());
+                EditBox box = addTextField(cx - 120, currentY + 12, 240, Component.empty());
                 box.setValue(initialVal);
 
                 if (def.key().equals("stage")) {
@@ -148,13 +138,13 @@ public class ConditionEditScreen extends KineticScreen {
                     box.setResponder(s -> currentParamValues.put(def.key(), s));
                 }
 
-                dynamicWidgets.add(box); addRenderableWidget(box);
+                dynamicWidgets.add(box);
             }
             else {
-                AutoCompleteBox acBox = new AutoCompleteBox(font, cx - 120, currentY + 12, 240, 20, Component.empty(), () -> ConditionTypeUtil.getSuggestionsFor(def.type()));
+                AutoCompleteBox acBox = addAutoCompleteField(cx - 120, currentY + 12, 240, Component.empty(), () -> ConditionTypeUtil.getSuggestionsFor(def.type()), null);
                 acBox.setValue(initialVal);
                 acBox.setResponder(s -> currentParamValues.put(def.key(), ConditionTypeUtil.extractValue(s)));
-                dynamicAcBoxes.add(acBox); dynamicWidgets.add(acBox); addRenderableWidget(acBox);
+                dynamicAcBoxes.add(acBox); dynamicWidgets.add(acBox);
             }
             currentY += 45;
         }
@@ -162,7 +152,7 @@ public class ConditionEditScreen extends KineticScreen {
         saveBtn.setY(currentY + 10);
         backBtn.setY(currentY + 10);
 
-        int panelStartY = (canvasHeight / 2) - 70;
+        int panelStartY = (canvasHeight() / 2) - 70;
         int buttonsBottomY = saveBtn.getY() + saveBtn.getHeight();
         dynamicPanelHeight = (buttonsBottomY + 15) - panelStartY;
     }
@@ -199,11 +189,11 @@ public class ConditionEditScreen extends KineticScreen {
         syncCurrentValues();
         if (isNew) parentList.add(data);
         parent.listWidget.refresh();
-        if (minecraft != null) minecraft.setScreen(parent);
+        if (minecraft != null) navigateBack();
     }
 
     @Override protected void renderCanvasBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        int cx = canvasWidth / 2; int cy = canvasHeight / 2;
+        int cx = canvasWidth() / 2; int cy = canvasHeight() / 2;
         int panelY = cy - 70;
         GuiTheme.panel(g, cx - 140, panelY, 280, dynamicPanelHeight);
 
@@ -212,11 +202,11 @@ public class ConditionEditScreen extends KineticScreen {
     }
 
     @Override protected void renderCanvasForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        int cx = canvasWidth / 2;
+        int cx = canvasWidth() / 2;
 
         for (int i = 0; i < currentSchema.size(); i++) {
             ConditionTypeUtil.ParamDef def = currentSchema.get(i);
-            int y = (canvasHeight / 2) - 10 + i * 45;
+            int y = (canvasHeight() / 2) - 10 + i * 45;
 
             String label = ConditionTypeUtil.getTranslatedParamName(def.key());
             if (isSecondsParam(ConditionTypeUtil.getRawType(typeInput.getValue()), def.key())) {
@@ -233,7 +223,7 @@ public class ConditionEditScreen extends KineticScreen {
             if (mx >= cx - 120 && mx <= cx + 120 && my >= y && my <= y + 10) {
                 String hint = ConditionTypeUtil.getTranslatedParamHint(def.key());
                 if (!hint.isEmpty() && !hint.startsWith("gui.")) {
-                    GuiOverlay.requestTooltip(ColorText.translatable("gui.kineticarmory.predicate.param.hint", hint), mx, my);
+                    showTooltip(ColorText.translatable("gui.kineticarmory.predicate.param.hint", hint));
                 }
             }
         }

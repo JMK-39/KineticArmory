@@ -1,5 +1,6 @@
 package dev.xyat.kineticarmory.armorsets.client.gui;
 
+import dev.xyat.kineticcore.api.client.text.KineticText;
 import dev.xyat.kineticarmory.util.ColorText;
 import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
 import dev.xyat.kineticarmory.armorsets.data.ArmorTipGenerator;
@@ -56,7 +57,7 @@ public class ArmorPieceBonusScreen extends KineticScreen {
         super(ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.title"));
         this.parent = parent;
         this.config = config;
-        useCanvas(
+        useResponsiveCanvas(
                 640f,
                 360f,
                 6
@@ -78,8 +79,8 @@ public class ArmorPieceBonusScreen extends KineticScreen {
         config.preparePieceBonusData();
         rebuildEffects();
 
-        int panelW = canvasWidth - PANEL_PADDING * 2;
-        int panelH = canvasHeight - PANEL_PADDING * 2;
+        int panelW = canvasWidth() - PANEL_PADDING * 2;
+        int panelH = canvasHeight() - PANEL_PADDING * 2;
         int controlY = PANEL_PADDING + 36;
         int inputX = PANEL_PADDING + 12;
         int doneX = PANEL_PADDING + panelW - 92;
@@ -89,31 +90,21 @@ public class ArmorPieceBonusScreen extends KineticScreen {
         if (selectedPieces < 2) selectedPieces = 2;
         if (tempPieceInput == null) tempPieceInput = String.valueOf(selectedPieces);
 
-        pieceInput = NumericEditBox.integer(
-                font, inputX, controlY, 54, 20,
-                Component.empty(), false, null, null
-        );
+        pieceInput = addIntegerField(inputX, controlY, 54, Component.empty(), false, null, null, null);
         pieceInput.setMaxLength(3);
         pieceInput.setValue(tempPieceInput);
-        pieceInput.setTooltip(Tooltip.create(ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.tooltip.piece_input")));
-        addRenderableWidget(pieceInput);
-
-        int saveTierX = inputX + 62;
-        addRenderableWidget(new HighZButton(saveTierX, controlY, 82, 20, ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.save_tier"), b -> saveTierForSelectedEffect(), Tooltip.create(ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.tooltip.save_tier"))));
+        registerWidgetTooltip(pieceInput, ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.tooltip.piece_input"));
+int saveTierX = inputX + 62;
+        addHighZButton(saveTierX, controlY, 82, ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.save_tier"), ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.tooltip.save_tier"), 200, b -> saveTierForSelectedEffect());
 
         int valueX = saveTierX + 98;
-        valueInput = NumericEditBox.decimal(
-                font, valueX, controlY, 90, 20,
-                Component.empty(), true, null, null
-        );
+        valueInput = addDecimalField(valueX, controlY, 90, Component.empty(), true, null, null, null);
         valueInput.setMaxLength(32);
-        valueInput.setTooltip(Tooltip.create(ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.tooltip.value_input")));
+        registerWidgetTooltip(valueInput, ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.tooltip.value_input"));
         if (tempValueInput != null) valueInput.setValue(tempValueInput);
-        addRenderableWidget(valueInput);
-
-        addRenderableWidget(new HighZButton(valueX + 98, controlY, 74, 20, ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.value_save"), b -> saveSelectedValue(), Tooltip.create(ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.tooltip.value_save"))));
-        addRenderableWidget(new HighZButton(valueX + 178, controlY, 74, 20, ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.value_clear"), b -> clearSelectedValue(), Tooltip.create(ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.tooltip.value_clear"))));
-        addRenderableWidget(new HighZButton(doneX, controlY, 80, 20, ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.confirm"), b -> closeToParent(), Tooltip.create(ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.tooltip.confirm"))));
+addHighZButton(valueX + 98, controlY, 74, ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.value_save"), ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.tooltip.value_save"), 200, b -> saveSelectedValue());
+        addHighZButton(valueX + 178, controlY, 74, ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.value_clear"), ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.tooltip.value_clear"), 200, b -> clearSelectedValue());
+        addHighZButton(doneX, controlY, 80, ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.confirm"), ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.tooltip.confirm"), 200, b -> closeToParent());
 
         leftX = PANEL_PADDING + 12;
         leftY = controlY + 36;
@@ -413,13 +404,13 @@ public class ArmorPieceBonusScreen extends KineticScreen {
     private void closeToParent() {
         pruneEmptyGroups();
         config.preparePieceBonusData();
-        if (minecraft != null) minecraft.setScreen(parent);
+        if (minecraft != null) navigateBack();
     }
 
     @Override
     protected void renderCanvasBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        drawStrongPanel(g, PANEL_PADDING, PANEL_PADDING, canvasWidth - PANEL_PADDING * 2, canvasHeight - PANEL_PADDING * 2, 0xFF1C1C1C);
-        g.drawCenteredString(font, title, canvasWidth / 2, PANEL_PADDING + 10, 0xFFFFFF);
+        drawStrongPanel(g, PANEL_PADDING, PANEL_PADDING, canvasWidth() - PANEL_PADDING * 2, canvasHeight() - PANEL_PADDING * 2, 0xFF1C1C1C);
+        g.drawCenteredString(font, title, canvasWidth() / 2, PANEL_PADDING + 10, 0xFFFFFF);
         drawStrongPanel(g, leftX, leftY, leftW, leftH, 0xDD050505);
         drawStrongPanel(g, rightX, rightY, rightW, rightH, 0xDD050505);
         renderEffectRows(g, mx, my);
@@ -428,13 +419,17 @@ public class ArmorPieceBonusScreen extends KineticScreen {
 
     @Override
     protected void renderCanvasForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        if (pieceInput != null && !pieceInput.isFocused() && pieceInput.getValue().isEmpty()) {
-            String hint = ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.input_hint").getString();
-            g.drawString(font, font.plainSubstrByWidth(hint, pieceInput.getWidth() - 8), pieceInput.getX() + 4, pieceInput.getY() + 6, 0xFFAAAAAA, false);
-        }
-        if (valueInput != null && !valueInput.isFocused() && valueInput.getValue().isEmpty() && valueInput.active) {
-            String hint = ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.value_hint").getString();
-            g.drawString(font, font.plainSubstrByWidth(hint, valueInput.getWidth() - 8), valueInput.getX() + 4, valueInput.getY() + 6, 0xFFAAAAAA, false);
+        renderTextFieldPlaceholder(
+                g,
+                pieceInput,
+                ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.input_hint")
+        );
+        if (valueInput != null && valueInput.active) {
+            renderTextFieldPlaceholder(
+                    g,
+                    valueInput,
+                    ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.value_hint")
+            );
         }
         if (pieceInput != null) {
             g.drawString(font, ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.piece_input_label"), pieceInput.getX(), pieceInput.getY() - 11, 0xFFFFAA00, false);
@@ -444,7 +439,7 @@ public class ArmorPieceBonusScreen extends KineticScreen {
         }
         g.drawString(font, ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.effect_list_title"), leftX, leftY - 13, 0xFFFFAA00, false);
         g.drawString(font, ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.tier_list_title"), rightX, rightY - 13, 0xFFFFAA00, false);
-        if (warningMessage != null) g.drawCenteredString(font, warningMessage, canvasWidth / 2, PANEL_PADDING + 24, 0xFFFF5555);
+        if (warningMessage != null) g.drawCenteredString(font, warningMessage, canvasWidth() / 2, PANEL_PADDING + 24, 0xFFFF5555);
     }
 
     private void drawStrongPanel(GuiGraphics g, int x, int y, int w, int h, int bgColor) {
@@ -481,7 +476,7 @@ public class ArmorPieceBonusScreen extends KineticScreen {
             String summary = buildEffectSummary(effect);
             if (!summary.isEmpty()) drawTrimmedText(g, summary, leftX + 6, y + 16, leftW - 22, 0xFF55FF55);
         }
-        g.disableScissor();
+        disableCanvasScissor(g);
         effectScroll.render(
                 g, mx, my,
                 leftX + leftW - SCROLL_W - 2,
@@ -520,11 +515,10 @@ public class ArmorPieceBonusScreen extends KineticScreen {
             g.drawString(font, label, rightX + 36, y + 9, rowSelected ? 0xFFFFFFFF : 0xFFDDDDDD, false);
             if (selectedEffect != null) {
                 String valueText = getTierValueText(group, selectedEffect);
-                int valueW = Math.min(132, font.width(valueText));
-                g.drawString(font, font.plainSubstrByWidth(valueText, valueW), rightX + rightW - valueW - 18, y + 9, enabled ? 0xFFFFFF55 : 0xFFAAAAAA, false);
+                KineticText.drawScrollingRight(g, font, Component.literal(valueText), rightX + rightW - 18, y + 9, 132, enabled ? 0xFFFFFF55 : 0xFFAAAAAA, false);
             }
         }
-        g.disableScissor();
+        disableCanvasScissor(g);
         tierScroll.render(
                 g, mx, my,
                 rightX + rightW - SCROLL_W - 2,
@@ -559,7 +553,7 @@ public class ArmorPieceBonusScreen extends KineticScreen {
     }
 
     private void drawTrimmedText(GuiGraphics g, String text, int x, int y, int maxWidth, int color) {
-        g.drawString(font, font.plainSubstrByWidth(text == null ? "" : text, Math.max(0, maxWidth)), x, y, color, false);
+        KineticText.drawScrollingLeft(g, font, text == null ? "" : text, x, y, Math.max(0, maxWidth), color, false);
     }
 
     private boolean isInside(double mx, double my, int x, int y, int w, int h) {

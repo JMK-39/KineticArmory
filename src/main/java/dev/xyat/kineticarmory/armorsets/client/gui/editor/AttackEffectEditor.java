@@ -28,7 +28,7 @@ public class AttackEffectEditor extends KineticScreen {
 
     public AttackEffectEditor(KineticScreen p, ArmorDataConfig c, ArmorDataConfig.AttackEffectData d) {
         super(ColorText.translatable("gui.kineticarmory.armorsets.editor.attack.title"));
-        useCanvas(
+        useResponsiveCanvas(
                 640f,
                 360f,
                 6
@@ -47,36 +47,35 @@ public class AttackEffectEditor extends KineticScreen {
     }
 
     @Override protected void buildUi() {
-        int cx = canvasWidth / 2; int cy = canvasHeight / 2 - 50;
-        idInput = new AutoCompleteBox(font, cx - 100, cy - 35, 200, 20, Component.empty(), KineticSearch::getPotionDict);
+        int cx = canvasWidth() / 2; int cy = canvasHeight() / 2 - 50;
+        idInput = addAutoCompleteField(cx - 100, cy - 35, 200, Component.empty(), KineticSearch::getPotionDict, null);
         idInput.setValue(tempId != null ? tempId : (isNew ? "" : (data.effectId != null ? data.effectId : "")));
 
         int w = 60; int gap = 10; int startX = cx - 100;
-        durInput = NumericAutoCompleteBox.decimal(font, startX, cy - 10, w, 20, Component.empty(), ArrayList::new, true, null, null);
+        durInput = addDecimalAutoCompleteField(startX, cy - 10, w, Component.empty(), ArrayList::new, true, null, null, null);
         durInput.setValue(tempDur != null ? tempDur : (isNew ? "" : String.valueOf(data.duration)));
 
-        lvlInput = NumericAutoCompleteBox.integer(font, startX + w + gap, cy - 10, w, 20, Component.empty(), ArrayList::new, true, null, null);
+        lvlInput = addIntegerAutoCompleteField(startX + w + gap, cy - 10, w, Component.empty(), ArrayList::new, true, null, null, null);
         lvlInput.setValue(tempLvl != null ? tempLvl : (isNew ? "" : String.valueOf(data.amplifier)));
 
-        chanceInput = NumericAutoCompleteBox.decimal(font, startX + (w + gap) * 2, cy - 10, w, 20, Component.empty(), ArrayList::new, true, null, null);
+        chanceInput = addDecimalAutoCompleteField(startX + (w + gap) * 2, cy - 10, w, Component.empty(), ArrayList::new, true, null, null, null);
         chanceInput.setValue(tempChance != null ? tempChance : (isNew ? "" : String.valueOf(data.chance)));
 
-        addRenderableWidget(Button.builder(ColorText.translatable("gui.kineticarmory.armorsets.editor.conditions", data.conditions.size()), b -> {
+        addButton(cx - 100, cy + 15, 200, ColorText.translatable("gui.kineticarmory.armorsets.editor.conditions", data.conditions.size()), null, b -> {
             if (syncToData()) return;
             if (minecraft != null) minecraft.setScreen(new ConditionListScreen(this, data));
-        }).bounds(cx - 100, cy + 15, 200, 20).build());
+        });
 
-        addRenderableWidget(Button.builder(ColorText.translatable("gui.kineticarmory.armorsets.save"), b -> {
+        addButton(cx - 60, cy + 45, 55, ColorText.translatable("gui.kineticarmory.armorsets.save"), null, b -> {
             if (syncToData()) return;
             if (data.effectId.isEmpty()) { GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.armorsets.empty_field")); return; }
             if (!isNew && oldTip != null) config.tips.remove(oldTip);
             if (isNew) config.attackEffects.add(data);
             config.tips.add(ArmorTipGenerator.genAtkTip(data));
-            if (minecraft != null) minecraft.setScreen(parent);
-        }).bounds(cx - 60, cy + 45, 55, 20).build());
-        addRenderableWidget(Button.builder(ColorText.translatable("gui.kineticarmory.armorsets.back"), b -> { if (minecraft != null) minecraft.setScreen(parent); }).bounds(cx + 5, cy + 45, 55, 20).build());
+            if (minecraft != null) navigateBack();
+        });
+        addButton(cx + 5, cy + 45, 55, ColorText.translatable("gui.kineticarmory.armorsets.back"), null, b -> { if (minecraft != null) navigateBack(); });
 
-        addRenderableWidget(idInput); addRenderableWidget(durInput); addRenderableWidget(lvlInput); addRenderableWidget(chanceInput);
 
         inputGroup.set(
                 idInput,
@@ -115,14 +114,11 @@ public class AttackEffectEditor extends KineticScreen {
     }
 
     private void renderInputHint(GuiGraphics g, AutoCompleteBox box, String key) {
-        if (box != null && !box.isFocused() && box.getValue().isEmpty()) {
-            String text = ColorText.translatable(key).getString();
-            g.drawString(font, font.plainSubstrByWidth(text, box.getWidth() - 8), box.getX() + 4, box.getY() + 6, 0x999999, false);
-        }
+        renderTextFieldPlaceholder(g, box, ColorText.translatable(key));
     }
 
     @Override protected void renderCanvasBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        int cx = canvasWidth / 2; int cy = canvasHeight / 2 - 50;
+        int cx = canvasWidth() / 2; int cy = canvasHeight() / 2 - 50;
         GuiTheme.panel(g, cx - 120, cy - 70, 240, 150);
         g.drawCenteredString(font, title, cx, cy - 60, 0xFFFFFF);
     }

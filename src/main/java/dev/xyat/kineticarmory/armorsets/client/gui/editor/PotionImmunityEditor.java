@@ -25,7 +25,7 @@ public class PotionImmunityEditor extends KineticScreen {
 
     public PotionImmunityEditor(KineticScreen p, ArmorDataConfig c, ArmorDataConfig.EffectImmunityData d) {
         super(ColorText.translatable("gui.kineticarmory.armorsets.editor.effect_immunity.title"));
-        useCanvas(
+        useResponsiveCanvas(
                 640f,
                 360f,
                 6
@@ -41,26 +41,25 @@ public class PotionImmunityEditor extends KineticScreen {
     }
 
     @Override protected void buildUi() {
-        int cx = canvasWidth / 2; int cy = canvasHeight / 2 - 50;
-        idInput = new AutoCompleteBox(font, cx - 100, cy - 30, 200, 20, Component.empty(), KineticSearch::getPotionDict);
+        int cx = canvasWidth() / 2; int cy = canvasHeight() / 2 - 50;
+        idInput = addAutoCompleteField(cx - 100, cy - 30, 200, Component.empty(), KineticSearch::getPotionDict, null);
         idInput.setValue(tempId != null ? tempId : (isNew ? "" : (data.effectId != null ? data.effectId : "")));
 
-        addRenderableWidget(Button.builder(ColorText.translatable("gui.kineticarmory.armorsets.editor.conditions", data.conditions.size()), b -> {
+        addButton(cx - 100, cy - 5, 200, ColorText.translatable("gui.kineticarmory.armorsets.editor.conditions", data.conditions.size()), null, b -> {
             syncToData();
             if (minecraft != null) minecraft.setScreen(new ConditionListScreen(this, data));
-        }).bounds(cx - 100, cy - 5, 200, 20).build());
+        });
 
-        addRenderableWidget(Button.builder(ColorText.translatable("gui.kineticarmory.armorsets.save"), b -> {
+        addButton(cx - 60, cy + 25, 55, ColorText.translatable("gui.kineticarmory.armorsets.save"), null, b -> {
             syncToData();
             if (data.effectId.isEmpty()) { GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.armorsets.empty_field")); return; }
             if (!isNew && oldTip != null) config.tips.remove(oldTip);
             if (isNew) config.effectImmunities.add(data);
             config.tips.add(ArmorTipGenerator.genEffImmTip(data));
-            if (minecraft != null) minecraft.setScreen(parent);
-        }).bounds(cx - 60, cy + 25, 55, 20).build());
-        addRenderableWidget(Button.builder(ColorText.translatable("gui.kineticarmory.armorsets.back"), b -> { if (minecraft != null) minecraft.setScreen(parent); }).bounds(cx + 5, cy + 25, 55, 20).build());
+            if (minecraft != null) navigateBack();
+        });
+        addButton(cx + 5, cy + 25, 55, ColorText.translatable("gui.kineticarmory.armorsets.back"), null, b -> { if (minecraft != null) navigateBack(); });
 
-        addRenderableWidget(idInput);
 
         inputGroup.set(
                 idInput
@@ -79,14 +78,11 @@ public class PotionImmunityEditor extends KineticScreen {
     }
 
     private void renderInputHint(GuiGraphics g, AutoCompleteBox box) {
-        if (box != null && !box.isFocused() && box.getValue().isEmpty()) {
-            String text = ColorText.translatable("gui.kineticarmory.armorsets.input.id").getString();
-            g.drawString(font, font.plainSubstrByWidth(text, box.getWidth() - 8), box.getX() + 4, box.getY() + 6, 0x999999, false);
-        }
+        renderTextFieldPlaceholder(g, box, ColorText.translatable("gui.kineticarmory.armorsets.input.id"));
     }
 
     @Override protected void renderCanvasBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        int cx = canvasWidth / 2; int cy = canvasHeight / 2 - 50; GuiTheme.panel(g, cx - 120, cy - 60, 240, 115);
+        int cx = canvasWidth() / 2; int cy = canvasHeight() / 2 - 50; GuiTheme.panel(g, cx - 120, cy - 60, 240, 115);
         g.drawCenteredString(font, title, cx, cy - 50, 0xFFFFFF);
     }
     @Override protected void renderCanvasForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {

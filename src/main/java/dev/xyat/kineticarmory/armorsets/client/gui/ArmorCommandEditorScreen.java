@@ -1,10 +1,12 @@
 package dev.xyat.kineticarmory.armorsets.client.gui;
 
+import dev.xyat.kineticcore.api.client.text.KineticText;
 import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
 import dev.xyat.kineticarmory.armorsets.predicate.client.ConditionListScreen;
 import dev.xyat.kineticcore.api.client.theme.GuiTheme;
 import dev.xyat.kineticcore.api.client.overlay.GuiOverlay;
 import dev.xyat.kineticcore.api.client.screen.KineticScreen;
+import dev.xyat.kineticcore.api.client.widget.KineticWidgets;
 import dev.xyat.kineticcore.api.client.widget.KineticWidgets.Scroll;
 import dev.xyat.kineticcore.api.client.widget.KineticWidgets.SmoothSelectionList;
 import net.minecraft.client.Minecraft;
@@ -41,7 +43,7 @@ public class ArmorCommandEditorScreen extends KineticScreen {
         super(Component.translatable("gui.kineticarmory.armorsets.commands.title"));
         this.parent = parent;
         this.config = config;
-        useCanvas(
+        useResponsiveCanvas(
                 640f,
                 360f,
                 6
@@ -56,50 +58,40 @@ public class ArmorCommandEditorScreen extends KineticScreen {
 
     @Override
     protected void buildUi() {
-        int cx = this.canvasWidth / 2;
-        int guiW = Math.min(this.canvasWidth - 20, 800);
-        int guiH = this.canvasHeight - 55;
+        int cx = this.canvasWidth() / 2;
+        int guiW = Math.min(this.canvasWidth() - 20, 800);
+        int guiH = this.canvasHeight() - 55;
         int x0 = cx - guiW / 2;
         int y0 = 20;
 
         int inputY = y0 + guiH - 28;
 
-        this.input = new EditBox(this.font, x0 + 10, inputY, guiW - 160, 20, Component.empty()) {
-            @Override
-            public void renderWidget(@NotNull GuiGraphics g, int mx, int my, float pt) {
-                super.renderWidget(g, mx, my, pt);
-                if (!this.isFocused() && this.getValue().isEmpty()) {
-                    String text = Component.translatable("gui.kineticarmory.armorsets.commands.hint").getString();
-                    g.drawString(Minecraft.getInstance().font, Minecraft.getInstance().font.plainSubstrByWidth(text, this.getWidth() - 8), this.getX() + 4, this.getY() + 6, 0x888888, false);
-                }
-            }
-        };
+        this.input = addTextField(
+                x0 + 10,
+                inputY,
+                guiW - 160,
+                Component.empty()
+        );
         this.input.setMaxLength(2048);
         if (tempInput != null) this.input.setValue(tempInput);
         this.input.setResponder(this::onEdited);
-        this.addRenderableWidget(input);
-
-        this.btnAddActive = Button.builder(Component.translatable("gui.kineticarmory.armorsets.commands.add_active"), b -> {
+this.btnAddActive = addButton(x0 + guiW - 145, inputY, 65, Component.translatable("gui.kineticarmory.armorsets.commands.add_active"), null, b -> {
             if (!input.getValue().trim().isEmpty()) {
                 ArmorDataConfig.CommandData cd = new ArmorDataConfig.CommandData();
                 cd.command = input.getValue();
                 config.activationCommands.add(cd);
                 input.setValue(""); activeList.refresh();
             }
-        }).bounds(x0 + guiW - 145, inputY, 65, 20).build();
-        this.addRenderableWidget(btnAddActive);
-
-        this.btnAddDeactive = Button.builder(Component.translatable("gui.kineticarmory.armorsets.commands.add_deactive"), b -> {
+        });
+this.btnAddDeactive = addButton(x0 + guiW - 75, inputY, 65, Component.translatable("gui.kineticarmory.armorsets.commands.add_deactive"), null, b -> {
             if (!input.getValue().trim().isEmpty()) {
                 ArmorDataConfig.CommandData cd = new ArmorDataConfig.CommandData();
                 cd.command = input.getValue();
                 config.deactivationCommands.add(cd);
                 input.setValue(""); deactiveList.refresh();
             }
-        }).bounds(x0 + guiW - 75, inputY, 65, 20).build();
-        this.addRenderableWidget(btnAddDeactive);
-
-        this.btnSaveEdit = Button.builder(Component.translatable("gui.kineticarmory.armorsets.commands.save_edit"), b -> {
+        });
+this.btnSaveEdit = addButton(x0 + guiW - 145, inputY, 65, Component.translatable("gui.kineticarmory.armorsets.commands.save_edit"), null, b -> {
             if (editingTargetList != null && editingIndex >= 0 && editingIndex < editingTargetList.size()) {
                 editingTargetList.get(editingIndex).command = input.getValue();
                 cancelEdit();
@@ -107,39 +99,34 @@ public class ArmorCommandEditorScreen extends KineticScreen {
                 deactiveList.refresh();
                 GuiOverlay.toast(Component.translatable("msg.kineticarmory.common.saved"));
             }
-        }).bounds(x0 + guiW - 145, inputY, 65, 20).build();
-        this.addRenderableWidget(btnSaveEdit);
-
-        this.btnCancelEdit = Button.builder(Component.translatable("gui.kineticarmory.armorsets.commands.cancel_edit"), b -> cancelEdit())
-                .bounds(x0 + guiW - 75, inputY, 65, 20).build();
-        this.addRenderableWidget(btnCancelEdit);
-
-        updateButtonVisibility();
+        });
+this.btnCancelEdit = addButton(x0 + guiW - 75, inputY, 65, Component.translatable("gui.kineticarmory.armorsets.commands.cancel_edit"), null, b -> cancelEdit());
+updateButtonVisibility();
 
         int listW = guiW / 2 - 15;
         this.activeList = new CommandListWidget(this.minecraft, listW, guiH - 60, y0 + 25, y0 + guiH - 35, 20, config.activationCommands);
         this.activeList.setLeftPos(x0 + 10);
-        this.addWidget(activeList);
+        this.addEventListWidget(activeList);
 
         this.deactiveList = new CommandListWidget(this.minecraft, listW, guiH - 60, y0 + 25, y0 + guiH - 35, 20, config.deactivationCommands);
         this.deactiveList.setLeftPos(cx + 5);
-        this.addWidget(deactiveList);
+        this.addEventListWidget(deactiveList);
 
         int actionBtnW = 80;
-        int bottomBtnY = this.canvasHeight - 25;
+        int bottomBtnY = this.canvasHeight() - 25;
 
-        this.addRenderableWidget(Button.builder(Component.translatable("gui.kineticarmory.armorsets.save"), b -> {
+        addButton(cx - actionBtnW - 5, bottomBtnY, actionBtnW, Component.translatable("gui.kineticarmory.armorsets.save"), null, b -> {
             GuiOverlay.toast(Component.translatable("msg.kineticarmory.common.saved"));
-            if (minecraft != null) minecraft.setScreen(parent);
-        }).bounds(cx - actionBtnW - 5, bottomBtnY, actionBtnW, 20).build());
+            if (minecraft != null) navigateBack();
+        });
 
-        this.addRenderableWidget(Button.builder(Component.translatable("gui.kineticarmory.armorsets.back"), b -> {
-            if (minecraft != null) minecraft.setScreen(parent);
-        }).bounds(cx + 5, bottomBtnY, actionBtnW, 20).build());
+        addButton(cx + 5, bottomBtnY, actionBtnW, Component.translatable("gui.kineticarmory.armorsets.back"), null, b -> {
+            if (minecraft != null) navigateBack();
+        });
 
         Screen dummyScreen = new Screen(Component.empty()) {};
         if (this.minecraft != null) {
-            dummyScreen.init(this.minecraft, this.canvasWidth, inputY + 12);
+            dummyScreen.init(this.minecraft, this.canvasWidth(), inputY + 12);
         }
 
         if (this.minecraft != null) {
@@ -197,6 +184,15 @@ public class ArmorCommandEditorScreen extends KineticScreen {
     }
 
     @Override
+    protected void renderCanvasForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {
+        renderTextFieldPlaceholder(
+                g,
+                input,
+                Component.translatable("gui.kineticarmory.armorsets.commands.hint")
+        );
+    }
+
+    @Override
     protected boolean canvasMouseScrolled(double mx, double my, double d) {
         if (this.commandSuggestions != null && this.commandSuggestions.mouseScrolled(Mth.clamp(d, -1.0, 1.0))) {
             return true;
@@ -206,9 +202,9 @@ public class ArmorCommandEditorScreen extends KineticScreen {
 
     @Override
     protected void renderCanvasBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        int cx = this.canvasWidth / 2;
-        int guiW = Math.min(this.canvasWidth - 20, 800);
-        int guiH = this.canvasHeight - 55;
+        int cx = this.canvasWidth() / 2;
+        int guiW = Math.min(this.canvasWidth() - 20, 800);
+        int guiH = this.canvasHeight() - 55;
         int x0 = cx - guiW / 2;
         int y0 = 20;
 
@@ -282,12 +278,8 @@ public class ArmorCommandEditorScreen extends KineticScreen {
                 this.index = index;
                 this.text = text;
                 this.targetList = targetList;
-                this.deleteButton = Button.builder(Component.translatable("gui.kineticarmory.armorsets.delete"), b -> deleteEntry())
-                        .bounds(0, 0, ROW_BUTTON_W, ROW_BUTTON_H)
-                        .build();
-                this.conditionsButton = Button.builder(Component.translatable("gui.kineticarmory.armorsets.conditions"), b -> openConditions())
-                        .bounds(0, 0, ROW_BUTTON_W, ROW_BUTTON_H)
-                        .build();
+                this.deleteButton = KineticWidgets.createCompactButton(0, 0, ROW_BUTTON_W, Component.translatable("gui.kineticarmory.armorsets.delete"), null, b -> deleteEntry());
+                this.conditionsButton = KineticWidgets.createCompactButton(0, 0, ROW_BUTTON_W, Component.translatable("gui.kineticarmory.armorsets.conditions"), null, b -> openConditions());
             }
 
             @Override
@@ -303,11 +295,9 @@ public class ArmorCommandEditorScreen extends KineticScreen {
                 int deleteX = l + w - ROW_BUTTON_W - 5;
                 int conditionsX = deleteX - ROW_BUTTON_W - ROW_BUTTON_GAP;
                 int maxW = Math.max(0, conditionsX - l - 8);
-                String disp = text;
-                if (Minecraft.getInstance().font.width(disp) > maxW) {
-                    disp = Minecraft.getInstance().font.plainSubstrByWidth(disp, Math.max(0, maxW - Minecraft.getInstance().font.width("..."))) + "...";
-                }
-                g.drawString(Minecraft.getInstance().font, Component.literal(disp), l + 4, t + 5, 0xFFFFFF);
+                KineticText.drawScrollingLeft(
+                        g, Minecraft.getInstance().font, text, l + 4, t + 5, maxW, 0xFFFFFF, false
+                );
 
                 conditionsButton.setX(conditionsX);
                 conditionsButton.setY(t);

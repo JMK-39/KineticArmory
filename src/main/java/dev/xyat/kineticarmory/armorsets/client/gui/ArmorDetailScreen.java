@@ -6,8 +6,10 @@ import dev.xyat.kineticarmory.armorsets.data.ArmorTipGenerator;
 import dev.xyat.kineticarmory.armorsets.predicate.ConditionData;
 import dev.xyat.kineticarmory.armorsets.predicate.IConditionOwner;
 import dev.xyat.kineticarmory.armorsets.predicate.client.ConditionListScreen;
+import dev.xyat.kineticcore.api.client.text.KineticText;
 import dev.xyat.kineticcore.api.client.theme.GuiTheme;
 import dev.xyat.kineticcore.api.client.screen.KineticScreen;
+import dev.xyat.kineticcore.api.client.widget.KineticWidgets;
 import dev.xyat.kineticcore.api.client.widget.KineticWidgets.Scroll;
 import dev.xyat.kineticcore.api.client.widget.KineticWidgets.SmoothSelectionList;
 import net.minecraft.client.Minecraft;
@@ -33,7 +35,7 @@ public class ArmorDetailScreen extends KineticScreen {
         super(Component.translatable("gui.kineticarmory.armorsets.detail.title"));
         this.parent = parent;
         this.config = config;
-        useCanvas(
+        useResponsiveCanvas(
                 640f,
                 360f,
                 6
@@ -50,7 +52,7 @@ public class ArmorDetailScreen extends KineticScreen {
 
     @Override
     protected void buildUi() {
-        int cx = canvasWidth / 2;
+        int cx = canvasWidth() / 2;
         int padding = 15;
 
         int btnW = 105;
@@ -61,37 +63,37 @@ public class ArmorDetailScreen extends KineticScreen {
 
         int startX1 = cx - (btnW * 5 + gap * 4) / 2;
 
-        this.addRenderableWidget(Button.builder(Component.translatable("gui.kineticarmory.armorsets.detail.add_attr"), b -> {
+        addButton(startX1, y0, btnW, Component.translatable("gui.kineticarmory.armorsets.detail.add_attr"), null, b -> {
             if (minecraft != null) minecraft.setScreen(new AttributeEditor(this, config, null));
-        }).bounds(startX1, y0, btnW, 20).build());
+        });
 
-        this.addRenderableWidget(Button.builder(Component.translatable("gui.kineticarmory.armorsets.detail.add_potion"), b -> {
+        addButton(startX1 + btnW + gap, y0, btnW, Component.translatable("gui.kineticarmory.armorsets.detail.add_potion"), null, b -> {
             if (minecraft != null) minecraft.setScreen(new PotionEditor(this, config, null));
-        }).bounds(startX1 + btnW + gap, y0, btnW, 20).build());
+        });
 
-        this.addRenderableWidget(Button.builder(Component.translatable("gui.kineticarmory.armorsets.detail.add_immunity"), b -> {
+        addButton(startX1 + (btnW + gap) * 2, y0, btnW, Component.translatable("gui.kineticarmory.armorsets.detail.add_immunity"), null, b -> {
             if (minecraft != null) minecraft.setScreen(new ImmunityEditor(this, config, null));
-        }).bounds(startX1 + (btnW + gap) * 2, y0, btnW, 20).build());
+        });
 
-        this.addRenderableWidget(Button.builder(Component.translatable("gui.kineticarmory.armorsets.detail.add_attack"), b -> {
+        addButton(startX1 + (btnW + gap) * 3, y0, btnW, Component.translatable("gui.kineticarmory.armorsets.detail.add_attack"), null, b -> {
             if (minecraft != null) minecraft.setScreen(new AttackEffectEditor(this, config, null));
-        }).bounds(startX1 + (btnW + gap) * 3, y0, btnW, 20).build());
+        });
 
-        this.addRenderableWidget(Button.builder(Component.translatable("gui.kineticarmory.armorsets.detail.add_effect_immunity"), b -> {
+        addButton(startX1 + (btnW + gap) * 4, y0, btnW, Component.translatable("gui.kineticarmory.armorsets.detail.add_effect_immunity"), null, b -> {
             if (minecraft != null) minecraft.setScreen(new PotionImmunityEditor(this, config, null));
-        }).bounds(startX1 + (btnW + gap) * 4, y0, btnW, 20).build());
+        });
 
         int startX2 = cx - (btnW * 3 + gap * 2) / 2;
 
-        this.addRenderableWidget(Button.builder(Component.translatable("gui.kineticarmory.armorsets.detail.add_dmg_convert"), b -> {
+        addButton(startX2, row2Y, btnW, Component.translatable("gui.kineticarmory.armorsets.detail.add_dmg_convert"), null, b -> {
             if (minecraft != null) minecraft.setScreen(new DamageConversionEditor(this, config, null));
-        }).bounds(startX2, row2Y, btnW, 20).build());
+        });
 
-        this.addRenderableWidget(Button.builder(Component.translatable("gui.kineticarmory.armorsets.detail.add_attack_damage"), b -> {
+        addButton(startX2 + btnW + gap, row2Y, btnW, Component.translatable("gui.kineticarmory.armorsets.detail.add_attack_damage"), null, b -> {
             if (minecraft != null) minecraft.setScreen(new AttackDamageEditor(this, config, null));
-        }).bounds(startX2 + btnW + gap, row2Y, btnW, 20).build());
+        });
 
-        this.addRenderableWidget(Button.builder(Component.translatable("gui.kineticarmory.armorsets.detail.add_flight"), b -> {
+        addButton(startX2 + (btnW + gap) * 2, row2Y, btnW, Component.translatable("gui.kineticarmory.armorsets.detail.add_flight"), null, b -> {
             config.allowFlight = true;
             if (config.flightConditions == null) config.flightConditions = new java.util.ArrayList<>();
             IConditionOwner flightOwner = new IConditionOwner() {
@@ -102,19 +104,19 @@ public class ArmorDetailScreen extends KineticScreen {
                 @Override public void setMinCount(int count) { config.flightConditionMinCount = count; }
             };
             if (minecraft != null) minecraft.setScreen(new ConditionListScreen(this, flightOwner));
-        }).bounds(startX2 + (btnW + gap) * 2, row2Y, btnW, 20).build());
+        });
 
         int listTop = row2Y + 30;
-        int listBottom = canvasHeight - padding - 35;
-        int listWidth = (canvasWidth - padding * 2) - 20;
+        int listBottom = canvasHeight() - padding - 35;
+        int listWidth = (canvasWidth() - padding * 2) - 20;
 
         listWidget = new DetailListWidget(this.minecraft, listWidth, listBottom - listTop, listTop, 22);
         listWidget.setLeftPos(cx - listWidth / 2);
-        this.addWidget(listWidget);
+        this.addEventListWidget(listWidget);
 
-        addRenderableWidget(Button.builder(Component.translatable("gui.kineticarmory.armorsets.back"), b -> {
-            if (minecraft != null) minecraft.setScreen(parent);
-        }).bounds(cx - 50, canvasHeight - padding - 25, 100, 20).build());
+        addButton(cx - 50, canvasHeight() - padding - 25, 100, Component.translatable("gui.kineticarmory.armorsets.back"), null, b -> {
+            if (minecraft != null) navigateBack();
+        });
 
         refreshList();
         listWidget.setScrollAmount(savedScrollAmount);
@@ -200,10 +202,10 @@ public class ArmorDetailScreen extends KineticScreen {
 
     @Override
     protected void renderCanvasBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        int cx = canvasWidth / 2;
+        int cx = canvasWidth() / 2;
         int padding = 15;
-        int panelWidth = canvasWidth - padding * 2;
-        int panelHeight = canvasHeight - padding * 2;
+        int panelWidth = canvasWidth() - padding * 2;
+        int panelHeight = canvasHeight() - padding * 2;
 
         GuiTheme.panel(g, cx - panelWidth / 2, padding, panelWidth, panelHeight);
         g.drawCenteredString(font, title, cx, padding + 10, 0xFFFFFF);
@@ -258,7 +260,7 @@ public class ArmorDetailScreen extends KineticScreen {
         @Override protected int getScrollbarPosition() { return this.getLeft() + this.width - 6; }
     }
 
-    public static class DetailEntry extends ObjectSelectionList.Entry<DetailEntry> {
+    public class DetailEntry extends ObjectSelectionList.Entry<DetailEntry> {
         private static final int DELETE_BUTTON_W = 44;
         private static final int DELETE_BUTTON_H = 18;
 
@@ -271,9 +273,7 @@ public class ArmorDetailScreen extends KineticScreen {
         public DetailEntry(String text, Runnable onEdit, Runnable onDelete) {
             this.text = text;
             this.onEdit = onEdit;
-            this.deleteButton = Button.builder(Component.translatable("gui.kineticarmory.armorsets.delete"), b -> onDelete.run())
-                    .bounds(0, 0, DELETE_BUTTON_W, DELETE_BUTTON_H)
-                    .build();
+            this.deleteButton = KineticWidgets.createCompactButton(0, 0, DELETE_BUTTON_W, Component.translatable("gui.kineticarmory.armorsets.delete"), null, b -> onDelete.run());
         }
 
         @Override
@@ -296,37 +296,50 @@ public class ArmorDetailScreen extends KineticScreen {
             text = text.replaceAll("\\n\\s*(§[0-9a-fk-or])?", "");
 
             Pattern pattern = Pattern.compile("\\[(item|effect):([^]]+)]");
-            Matcher matcher = pattern.matcher(text);
-            int currentX = x;
+            Matcher measure = pattern.matcher(text);
+            int contentWidth = 0;
             int lastEnd = 0;
-            while (matcher.find()) {
-                String plain = text.substring(lastEnd, matcher.start());
-                String clipped = font.plainSubstrByWidth(plain, Math.max(0, x + maxWidth - currentX));
-                g.drawString(font, clipped, currentX, y, 0xFFFFFF);
-                currentX += font.width(clipped);
-                if (clipped.length() < plain.length() || currentX + 12 > x + maxWidth) return;
+            while (measure.find()) {
+                contentWidth += font.width(text.substring(lastEnd, measure.start()));
+                contentWidth += 12;
+                lastEnd = measure.end();
+            }
+            contentWidth += font.width(text.substring(lastEnd));
 
-                String type = matcher.group(1);
-                String id = matcher.group(2);
-                if (type.equals("item")) {
-                    net.minecraft.resources.ResourceLocation rl = net.minecraft.resources.ResourceLocation.tryParse(id);
-                    if (rl != null) {
-                        net.minecraft.world.item.Item item = net.minecraftforge.registries.ForgeRegistries.ITEMS.getValue(rl);
-                        if (item != null && item != net.minecraft.world.item.Items.AIR) {
-                            g.pose().pushPose();
-                            g.pose().translate(currentX, y - 2, 0);
-                            g.pose().scale(0.7f, 0.7f, 1.0f);
-                            g.renderItem(new net.minecraft.world.item.ItemStack(item), 0, 0);
-                            g.pose().popPose();
+            int offset = KineticText.scrollOffset(contentWidth, maxWidth);
+            ArmorDetailScreen.this.enableCanvasScissor(g, x, y - 2, x + maxWidth, y + font.lineHeight + 3);
+            try {
+                Matcher matcher = pattern.matcher(text);
+                int currentX = x - offset;
+                lastEnd = 0;
+                while (matcher.find()) {
+                    String plain = text.substring(lastEnd, matcher.start());
+                    g.drawString(font, plain, currentX, y, 0xFFFFFF);
+                    currentX += font.width(plain);
+
+                    String type = matcher.group(1);
+                    String id = matcher.group(2);
+                    if (type.equals("item")) {
+                        net.minecraft.resources.ResourceLocation rl = net.minecraft.resources.ResourceLocation.tryParse(id);
+                        if (rl != null) {
+                            net.minecraft.world.item.Item item = net.minecraftforge.registries.ForgeRegistries.ITEMS.getValue(rl);
+                            if (item != null && item != net.minecraft.world.item.Items.AIR) {
+                                g.pose().pushPose();
+                                g.pose().translate(currentX, y - 2, 0);
+                                g.pose().scale(0.7f, 0.7f, 1.0f);
+                                g.renderItem(new net.minecraft.world.item.ItemStack(item), 0, 0);
+                                g.pose().popPose();
+                            }
                         }
                     }
-                }
 
-                lastEnd = matcher.end();
-                currentX += 12;
+                    lastEnd = matcher.end();
+                    currentX += 12;
+                }
+                g.drawString(font, text.substring(lastEnd), currentX, y, 0xFFFFFF);
+            } finally {
+                ArmorDetailScreen.this.disableCanvasScissor(g);
             }
-            String tail = text.substring(lastEnd);
-            g.drawString(font, font.plainSubstrByWidth(tail, Math.max(0, x + maxWidth - currentX)), currentX, y, 0xFFFFFF);
         }
 
         @Override

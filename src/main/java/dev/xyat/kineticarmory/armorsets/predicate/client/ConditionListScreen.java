@@ -1,6 +1,5 @@
 package dev.xyat.kineticarmory.armorsets.predicate.client;
 
-import dev.xyat.kineticcore.api.client.overlay.GuiOverlay;
 import dev.xyat.kineticarmory.util.ColorText;
 import dev.xyat.kineticarmory.armorsets.predicate.ConditionData;
 import dev.xyat.kineticarmory.armorsets.predicate.ConditionTypeUtil;
@@ -38,7 +37,7 @@ public class ConditionListScreen extends KineticScreen {
         this.parent = parent;
         this.owner = owner;
         this.conditions = owner.getConditions();
-        useCanvas(
+        useResponsiveCanvas(
                 640f,
                 360f,
                 6
@@ -65,22 +64,22 @@ public class ConditionListScreen extends KineticScreen {
     }
 
     @Override protected void buildUi() {
-        int cx = canvasWidth / 2; int cy = canvasHeight / 2; int guiW = 400; int guiH = 220; int y0 = cy - guiH / 2;
+        int cx = canvasWidth() / 2; int cy = canvasHeight() / 2; int guiW = 400; int guiH = 220; int y0 = cy - guiH / 2;
 
         this.listWidget = new ConditionListWidget(this.minecraft, guiW, guiH - 60, y0 + 30, y0 + guiH - 30, 24);
-        this.listWidget.setLeftPos(cx - guiW / 2); this.addWidget(listWidget);
+        this.listWidget.setLeftPos(cx - guiW / 2); this.addEventListWidget(listWidget);
 
         int btnW = 90;
         int gap = 15;
         int startX = cx - (btnW * 3 + gap * 2) / 2;
         int bottomY = y0 + guiH - 25;
 
-        this.addRenderableWidget(Button.builder(ColorText.translatable("gui.kineticarmory.predicate.add"), b -> {
+        addButton(startX, bottomY, btnW, ColorText.translatable("gui.kineticarmory.predicate.add"), null, b -> {
             ConditionData newCond = new ConditionData();
             if (minecraft != null) minecraft.setScreen(new ConditionEditScreen(this, conditions, newCond, true));
-        }).bounds(startX, bottomY, btnW, 20).build());
+        });
 
-        this.minCountInput = new EditBox(font, startX + btnW + gap + 65, bottomY, 25, 20, Component.empty());
+        this.minCountInput = addTextField(startX + btnW + gap + 65, bottomY, 25, Component.empty());
         this.minCountInput.setValue(String.valueOf(owner.getMinCount()));
         this.minCountInput.setResponder(s -> {
             try {
@@ -88,26 +87,22 @@ public class ConditionListScreen extends KineticScreen {
                 owner.setMinCount(Math.max(1, val));
             } catch (NumberFormatException ignored) {}
         });
-        this.addRenderableWidget(minCountInput);
-
-        Button modeBtn = Button.builder(Component.empty(), b -> {
+Button modeBtn = addButton(startX + btnW + gap, bottomY, btnW, Component.empty(), ColorText.translatable("gui.kineticarmory.predicate.mode.tooltip"), b -> {
             String currentMode = owner.getMatchMode();
             if ("ANY".equals(currentMode)) { owner.setMatchMode("ALL"); }
             else if ("ALL".equals(currentMode)) { owner.setMatchMode("MIN"); }
             else { owner.setMatchMode("ANY"); }
             updateModeUI(b);
-        }).bounds(startX + btnW + gap, bottomY, btnW, 20).tooltip(Tooltip.create(ColorText.translatable("gui.kineticarmory.predicate.mode.tooltip"))).build();
-        this.addRenderableWidget(modeBtn);
+        });
+updateModeUI(modeBtn);
 
-        updateModeUI(modeBtn);
-
-        this.addRenderableWidget(Button.builder(ColorText.translatable("gui.kineticarmory.predicate.back"), b -> {
-            if (minecraft != null) minecraft.setScreen(parent);
-        }).bounds(startX + (btnW + gap) * 2, bottomY, btnW, 20).build());
+        addButton(startX + (btnW + gap) * 2, bottomY, btnW, ColorText.translatable("gui.kineticarmory.predicate.back"), null, b -> {
+            if (minecraft != null) navigateBack();
+        });
     }
 
     @Override protected void renderCanvasBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        int cx = canvasWidth / 2; int cy = canvasHeight / 2; int guiW = 400; int guiH = 220;
+        int cx = canvasWidth() / 2; int cy = canvasHeight() / 2; int guiW = 400; int guiH = 220;
         GuiTheme.panel(g, cx - guiW / 2 - 10, cy - guiH / 2 - 10, guiW + 20, guiH + 20);
         g.drawCenteredString(font, title, cx, cy - guiH / 2 + 5, 0xFFFFFF);
         renderScaledList(listWidget, g, mx, my, pt);
@@ -116,7 +111,7 @@ public class ConditionListScreen extends KineticScreen {
 
     @Override protected void renderCanvasForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {
         if (delayedTooltip != null && !delayedTooltip.isEmpty()) {
-            GuiOverlay.requestTooltip(delayedTooltip, delayedTooltipX, delayedTooltipY);
+            showTooltip(delayedTooltip);
             delayedTooltip = null;
         }
     }

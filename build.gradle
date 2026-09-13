@@ -230,3 +230,5 @@ tasks.withType(JavaCompile).configureEach {
             '-Amixin.suppressTargetWarnings=true'
     ])
 }
+
+apply from: 'gradle/github-release.gradle'

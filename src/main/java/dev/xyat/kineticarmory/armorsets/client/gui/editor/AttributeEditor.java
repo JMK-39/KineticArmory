@@ -31,7 +31,7 @@ public class AttributeEditor extends KineticScreen {
 
     public AttributeEditor(KineticScreen p, ArmorDataConfig c, ArmorDataConfig.AttributeModifierData d) {
         super(ColorText.translatable("gui.kineticarmory.armorsets.editor.attr.title"));
-        useCanvas(
+        useResponsiveCanvas(
                 640f,
                 360f,
                 6
@@ -51,36 +51,34 @@ public class AttributeEditor extends KineticScreen {
     }
 
     @Override protected void buildUi() {
-        int cx = canvasWidth / 2; int cy = canvasHeight / 2 - 50;
-        idInput = new AutoCompleteBox(font, cx - 100, cy - 35, 200, 20, Component.empty(), KineticSearch::getAttributeDict);
+        int cx = canvasWidth() / 2; int cy = canvasHeight() / 2 - 50;
+        idInput = addAutoCompleteField(cx - 100, cy - 35, 200, Component.empty(), KineticSearch::getAttributeDict, null);
         idInput.setValue(tempId != null ? tempId : (isNew ? "" : (data.attribute != null ? data.attribute : "")));
 
-        amountInput = NumericAutoCompleteBox.decimal(font, cx - 100, cy - 10, 95, 20, Component.empty(), ArrayList::new, true, null, null);
+        amountInput = addDecimalAutoCompleteField(cx - 100, cy - 10, 95, Component.empty(), ArrayList::new, true, null, null, null);
         amountInput.setValue(tempAmount != null ? tempAmount : (isNew ? "" : String.valueOf(data.amount)));
 
-        Button opBtn = Button.builder(ColorText.translatable("gui.kineticarmory.armorsets.op." + currentOp.toLowerCase()), b -> {
+        Button opBtn = addButton(cx + 5, cy - 10, 95, ColorText.translatable("gui.kineticarmory.armorsets.op." + currentOp.toLowerCase()), null, b -> {
             currentOp = currentOp.equals("ADDITION") ? "MULTIPLY_TOTAL" : (currentOp.equals("MULTIPLY_TOTAL") ? "SET" : "ADDITION");
             b.setMessage(ColorText.translatable("gui.kineticarmory.armorsets.op." + currentOp.toLowerCase()));
             data.operation = currentOp;
-        }).bounds(cx + 5, cy - 10, 95, 20).build();
+        });
 
-        addRenderableWidget(Button.builder(ColorText.translatable("gui.kineticarmory.armorsets.editor.conditions", data.conditions.size()), b -> {
+        addButton(cx - 100, cy + 15, 200, ColorText.translatable("gui.kineticarmory.armorsets.editor.conditions", data.conditions.size()), null, b -> {
             if (syncToData()) return;
             if (minecraft != null) minecraft.setScreen(new ConditionListScreen(this, data));
-        }).bounds(cx - 100, cy + 15, 200, 20).build());
+        });
 
-        addRenderableWidget(Button.builder(ColorText.translatable("gui.kineticarmory.armorsets.save"), b -> {
+        addButton(cx - 60, cy + 45, 55, ColorText.translatable("gui.kineticarmory.armorsets.save"), null, b -> {
             if (syncToData()) return;
             if (data.attribute.isEmpty()) { GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.armorsets.empty_field")); return; }
             if (!isNew && oldTip != null) config.tips.remove(oldTip);
             if (isNew) config.attributes.add(data);
             config.tips.add(ArmorTipGenerator.genAttrTip(data));
-            if (minecraft != null) minecraft.setScreen(parent);
-        }).bounds(cx - 60, cy + 45, 55, 20).build());
+            if (minecraft != null) navigateBack();
+        });
 
-        addRenderableWidget(Button.builder(ColorText.translatable("gui.kineticarmory.armorsets.back"), b -> { if (minecraft != null) minecraft.setScreen(parent); }).bounds(cx + 5, cy + 45, 55, 20).build());
-        addRenderableWidget(opBtn);
-        addRenderableWidget(idInput); addRenderableWidget(amountInput);
+        addButton(cx + 5, cy + 45, 55, ColorText.translatable("gui.kineticarmory.armorsets.back"), null, b -> { if (minecraft != null) navigateBack(); });
 
         inputGroup.set(
                 idInput,
@@ -112,14 +110,11 @@ public class AttributeEditor extends KineticScreen {
     }
 
     private void renderInputHint(GuiGraphics g, AutoCompleteBox box, String key) {
-        if (box != null && !box.isFocused() && box.getValue().isEmpty()) {
-            String text = ColorText.translatable(key).getString();
-            g.drawString(font, font.plainSubstrByWidth(text, box.getWidth() - 8), box.getX() + 4, box.getY() + 6, 0x888888, false);
-        }
+        renderTextFieldPlaceholder(g, box, ColorText.translatable(key));
     }
 
     @Override protected void renderCanvasBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        int cx = canvasWidth / 2; int cy = canvasHeight / 2 - 50; GuiTheme.panel(g, cx - 120, cy - 70, 240, 150);
+        int cx = canvasWidth() / 2; int cy = canvasHeight() / 2 - 50; GuiTheme.panel(g, cx - 120, cy - 70, 240, 150);
         g.drawCenteredString(font, title, cx, cy - 60, 0xFFFFFF);
     }
     @Override protected void renderCanvasForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {
