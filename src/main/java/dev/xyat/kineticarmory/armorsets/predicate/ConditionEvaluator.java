@@ -1,6 +1,8 @@
 package dev.xyat.kineticarmory.armorsets.predicate;
 
 import dev.xyat.kineticarmory.KineticArmory;
+import dev.xyat.kineticcore.api.registry.KineticRegistries;
+import dev.xyat.kineticcore.api.resource.KineticResourceIds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffect;
@@ -10,7 +12,6 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.registries.ForgeRegistries;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -23,7 +24,7 @@ public final class ConditionEvaluator {
     private ConditionEvaluator() {
     }
 
-    private static boolean checkGameStage(Player player, String stage) {
+    private static boolean lacksGameStage(Player player, String stage) {
         if (!gameStageMethodSearched) {
             gameStageMethodSearched = true;
             try {
@@ -36,13 +37,13 @@ public final class ConditionEvaluator {
 
         if (gameStageMethod != null) {
             try {
-                return (boolean) gameStageMethod.invoke(null, player, stage);
+                return !(boolean) gameStageMethod.invoke(null, player, stage);
             } catch (ReflectiveOperationException ignored) {
                 gameStageMethod = null;
             }
         }
 
-        return player.getTags().contains(stage);
+        return !player.getTags().contains(stage);
     }
 
     public static boolean checkConditions(LivingEntity entity, List<ConditionData> conditions) {
@@ -83,7 +84,7 @@ public final class ConditionEvaluator {
                 case "ON_BLOCK" -> {
                     BlockPos pos = entity.blockPosition().below();
                     BlockState state = level.getBlockState(pos);
-                    ResourceLocation blockId = ForgeRegistries.BLOCKS.getKey(state.getBlock());
+                    ResourceLocation blockId = KineticRegistries.blocks().id(state.getBlock());
                     result = blockId != null && blockId.toString().equals(id);
                 }
                 case "HEALTH_RANGE" -> {
@@ -91,8 +92,8 @@ public final class ConditionEvaluator {
                     result = health >= min && health <= max;
                 }
                 case "POTION_RANGE" -> {
-                    ResourceLocation effectId = ResourceLocation.tryParse(id);
-                    MobEffect effect = effectId == null ? null : ForgeRegistries.MOB_EFFECTS.getValue(effectId);
+                    ResourceLocation effectId = KineticResourceIds.tryParse(id);
+                    MobEffect effect = effectId == null ? null : KineticRegistries.mobEffects().get(effectId);
                     if (effect != null && entity.hasEffect(effect)) {
                         MobEffectInstance instance = entity.getEffect(effect);
                         int levelValue = instance == null ? 0 : instance.getAmplifier();
@@ -102,8 +103,8 @@ public final class ConditionEvaluator {
                     }
                 }
                 case "ATTR_RANGE" -> {
-                    ResourceLocation attributeId = ResourceLocation.tryParse(id);
-                    Attribute attribute = attributeId == null ? null : ForgeRegistries.ATTRIBUTES.getValue(attributeId);
+                    ResourceLocation attributeId = KineticResourceIds.tryParse(id);
+                    Attribute attribute = attributeId == null ? null : KineticRegistries.attributes().get(attributeId);
                     if (attribute != null && entity.getAttributes().hasAttribute(attribute)) {
                         double value = entity.getAttributeValue(attribute);
                         result = value >= min && value <= max;
@@ -123,7 +124,7 @@ public final class ConditionEvaluator {
                             for (String rawStage : stagesText.split(",")) {
                                 String stage = rawStage.trim();
                                 if (stage.isEmpty()) continue;
-                                if (!checkGameStage(player, stage)) {
+                                if (lacksGameStage(player, stage)) {
                                     hasAll = false;
                                     break;
                                 }

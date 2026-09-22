@@ -6,7 +6,6 @@ import dev.xyat.kineticarmory.armorsets.config.ArmorConfig;
 import dev.xyat.kineticarmory.armorsets.event.ArmorManager;
 import dev.xyat.kineticarmory.armorsets.json.ArmorLoader;
 import net.minecraft.commands.CommandSourceStack;
-import net.minecraftforge.network.PacketDistributor;
 
 public class ArmorCommand {
 
@@ -22,10 +21,8 @@ public class ArmorCommand {
         ArmorConfig.rebuildEntityRuleCache();
         ArmorLoader.load();
         if (ArmorConfig.syncOnReload) {
-            ArmorNetwork.CHANNEL.send(PacketDistributor.ALL.noArg(),
-                    new ArmorNetwork.SyncEntityFilterPacket(ArmorConfig.entityFilterMode, ArmorConfig.allowedEntities, false));
-            ArmorNetwork.CHANNEL.send(PacketDistributor.ALL.noArg(),
-                    new ArmorNetwork.SyncArmorConfigsPacket(ArmorLoader.LOADED_SETS, false));
+            ArmorNetwork.broadcastEntityFilter();
+            ArmorNetwork.broadcastArmorConfigs();
         }
         ArmorManager.forceRecalculateAll(source.getServer());
     }

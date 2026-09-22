@@ -6,17 +6,19 @@ import dev.xyat.kineticarmory.armorsets.data.ArmorTipGenerator;
 import dev.xyat.kineticarmory.armorsets.predicate.ConditionData;
 import dev.xyat.kineticarmory.armorsets.predicate.IConditionOwner;
 import dev.xyat.kineticarmory.armorsets.predicate.client.ConditionListScreen;
+import dev.xyat.kineticcore.api.client.input.KineticMouseButtons;
 import dev.xyat.kineticcore.api.client.text.KineticText;
 import dev.xyat.kineticcore.api.client.theme.GuiTheme;
 import dev.xyat.kineticcore.api.client.screen.KineticScreen;
 import dev.xyat.kineticcore.api.client.widget.KineticWidgets;
-import dev.xyat.kineticcore.api.client.widget.KineticWidgets.Scroll;
-import dev.xyat.kineticcore.api.client.widget.KineticWidgets.SmoothSelectionList;
-import net.minecraft.client.Minecraft;
+import dev.xyat.kineticcore.api.client.widget.button.KineticButtons.StateButton;
+import dev.xyat.kineticcore.api.client.widget.scroll.KineticScroll.SmoothEntry;
+import dev.xyat.kineticcore.api.registry.KineticRegistries;
+import dev.xyat.kineticcore.api.resource.KineticResourceIds;
+import dev.xyat.kineticcore.api.runtime.KineticClientRuntime;
+import dev.xyat.kineticcore.api.client.widget.scroll.KineticScroll.SmoothSelectionList;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.NotNull;
 
@@ -33,18 +35,13 @@ public class ArmorDetailScreen extends KineticScreen {
 
     public ArmorDetailScreen(KineticScreen parent, ArmorDataConfig config) {
         super(Component.translatable("gui.kineticarmory.armorsets.detail.title"));
+        setParentScreen(parent);
         this.parent = parent;
         this.config = config;
-        useResponsiveCanvas(
-                640f,
-                360f,
-                6
-        );
     }
 
     @Override
-    public void tick() {
-        super.tick();
+    protected void canvasTick() {
         if (listWidget != null) {
             savedScrollAmount = listWidget.getScrollAmount();
         }
@@ -63,37 +60,37 @@ public class ArmorDetailScreen extends KineticScreen {
 
         int startX1 = cx - (btnW * 5 + gap * 4) / 2;
 
-        addButton(startX1, y0, btnW, Component.translatable("gui.kineticarmory.armorsets.detail.add_attr"), null, b -> {
-            if (minecraft != null) minecraft.setScreen(new AttributeEditor(this, config, null));
+        addButtonWithHandler(startX1, y0, btnW, Component.translatable("gui.kineticarmory.armorsets.detail.add_attr"), null, b -> {
+            KineticClientRuntime.openScreen(new AttributeEditor(this, config, null));
         });
 
-        addButton(startX1 + btnW + gap, y0, btnW, Component.translatable("gui.kineticarmory.armorsets.detail.add_potion"), null, b -> {
-            if (minecraft != null) minecraft.setScreen(new PotionEditor(this, config, null));
+        addButtonWithHandler(startX1 + btnW + gap, y0, btnW, Component.translatable("gui.kineticarmory.armorsets.detail.add_potion"), null, b -> {
+            KineticClientRuntime.openScreen(new PotionEditor(this, config, null));
         });
 
-        addButton(startX1 + (btnW + gap) * 2, y0, btnW, Component.translatable("gui.kineticarmory.armorsets.detail.add_immunity"), null, b -> {
-            if (minecraft != null) minecraft.setScreen(new ImmunityEditor(this, config, null));
+        addButtonWithHandler(startX1 + (btnW + gap) * 2, y0, btnW, Component.translatable("gui.kineticarmory.armorsets.detail.add_immunity"), null, b -> {
+            KineticClientRuntime.openScreen(new ImmunityEditor(this, config, null));
         });
 
-        addButton(startX1 + (btnW + gap) * 3, y0, btnW, Component.translatable("gui.kineticarmory.armorsets.detail.add_attack"), null, b -> {
-            if (minecraft != null) minecraft.setScreen(new AttackEffectEditor(this, config, null));
+        addButtonWithHandler(startX1 + (btnW + gap) * 3, y0, btnW, Component.translatable("gui.kineticarmory.armorsets.detail.add_attack"), null, b -> {
+            KineticClientRuntime.openScreen(new AttackEffectEditor(this, config, null));
         });
 
-        addButton(startX1 + (btnW + gap) * 4, y0, btnW, Component.translatable("gui.kineticarmory.armorsets.detail.add_effect_immunity"), null, b -> {
-            if (minecraft != null) minecraft.setScreen(new PotionImmunityEditor(this, config, null));
+        addButtonWithHandler(startX1 + (btnW + gap) * 4, y0, btnW, Component.translatable("gui.kineticarmory.armorsets.detail.add_effect_immunity"), null, b -> {
+            KineticClientRuntime.openScreen(new PotionImmunityEditor(this, config, null));
         });
 
         int startX2 = cx - (btnW * 3 + gap * 2) / 2;
 
-        addButton(startX2, row2Y, btnW, Component.translatable("gui.kineticarmory.armorsets.detail.add_dmg_convert"), null, b -> {
-            if (minecraft != null) minecraft.setScreen(new DamageConversionEditor(this, config, null));
+        addButtonWithHandler(startX2, row2Y, btnW, Component.translatable("gui.kineticarmory.armorsets.detail.add_dmg_convert"), null, b -> {
+            KineticClientRuntime.openScreen(new DamageConversionEditor(this, config, null));
         });
 
-        addButton(startX2 + btnW + gap, row2Y, btnW, Component.translatable("gui.kineticarmory.armorsets.detail.add_attack_damage"), null, b -> {
-            if (minecraft != null) minecraft.setScreen(new AttackDamageEditor(this, config, null));
+        addButtonWithHandler(startX2 + btnW + gap, row2Y, btnW, Component.translatable("gui.kineticarmory.armorsets.detail.add_attack_damage"), null, b -> {
+            KineticClientRuntime.openScreen(new AttackDamageEditor(this, config, null));
         });
 
-        addButton(startX2 + (btnW + gap) * 2, row2Y, btnW, Component.translatable("gui.kineticarmory.armorsets.detail.add_flight"), null, b -> {
+        addButtonWithHandler(startX2 + (btnW + gap) * 2, row2Y, btnW, Component.translatable("gui.kineticarmory.armorsets.detail.add_flight"), null, b -> {
             config.allowFlight = true;
             if (config.flightConditions == null) config.flightConditions = new java.util.ArrayList<>();
             IConditionOwner flightOwner = new IConditionOwner() {
@@ -103,19 +100,19 @@ public class ArmorDetailScreen extends KineticScreen {
                 @Override public int getMinCount() { return Math.max(config.flightConditionMinCount, 1); }
                 @Override public void setMinCount(int count) { config.flightConditionMinCount = count; }
             };
-            if (minecraft != null) minecraft.setScreen(new ConditionListScreen(this, flightOwner));
+            KineticClientRuntime.openScreen(new ConditionListScreen(this, flightOwner));
         });
 
         int listTop = row2Y + 30;
         int listBottom = canvasHeight() - padding - 35;
         int listWidth = (canvasWidth() - padding * 2) - 20;
 
-        listWidget = new DetailListWidget(this.minecraft, listWidth, listBottom - listTop, listTop, 22);
+        listWidget = new DetailListWidget(listWidth, listBottom - listTop, listTop, 22);
         listWidget.setLeftPos(cx - listWidth / 2);
-        this.addEventListWidget(listWidget);
+        addSmoothSelectionList(listWidget);
 
-        addButton(cx - 50, canvasHeight() - padding - 25, 100, Component.translatable("gui.kineticarmory.armorsets.back"), null, b -> {
-            if (minecraft != null) navigateBack();
+        addButtonWithHandler(cx - 50, canvasHeight() - padding - 25, 100, Component.translatable("gui.kineticarmory.armorsets.back"), null, b -> {
+            navigateBack();
         });
 
         refreshList();
@@ -126,7 +123,7 @@ public class ArmorDetailScreen extends KineticScreen {
         listWidget.clearAllEntries();
 
         config.potionEffects.forEach(d -> listWidget.addDetailEntry(new DetailEntry(ArmorTipGenerator.genPotTip(d), () -> {
-            if (minecraft != null) minecraft.setScreen(new PotionEditor(this, config, d));
+            KineticClientRuntime.openScreen(new PotionEditor(this, config, d));
         }, () -> {
             config.tips.remove(ArmorTipGenerator.genPotTip(d));
             config.potionEffects.remove(d);
@@ -134,7 +131,7 @@ public class ArmorDetailScreen extends KineticScreen {
         })));
 
         config.attributes.forEach(d -> listWidget.addDetailEntry(new DetailEntry(ArmorTipGenerator.genAttrTip(d), () -> {
-            if (minecraft != null) minecraft.setScreen(new AttributeEditor(this, config, d));
+            KineticClientRuntime.openScreen(new AttributeEditor(this, config, d));
         }, () -> {
             config.tips.remove(ArmorTipGenerator.genAttrTip(d));
             config.attributes.remove(d);
@@ -142,7 +139,7 @@ public class ArmorDetailScreen extends KineticScreen {
         })));
 
         config.damageImmunities.forEach(d -> listWidget.addDetailEntry(new DetailEntry(ArmorTipGenerator.genImmTip(d), () -> {
-            if (minecraft != null) minecraft.setScreen(new ImmunityEditor(this, config, d));
+            KineticClientRuntime.openScreen(new ImmunityEditor(this, config, d));
         }, () -> {
             config.tips.remove(ArmorTipGenerator.genImmTip(d));
             config.damageImmunities.remove(d);
@@ -150,7 +147,7 @@ public class ArmorDetailScreen extends KineticScreen {
         })));
 
         config.effectImmunities.forEach(d -> listWidget.addDetailEntry(new DetailEntry(ArmorTipGenerator.genEffImmTip(d), () -> {
-            if (minecraft != null) minecraft.setScreen(new PotionImmunityEditor(this, config, d));
+            KineticClientRuntime.openScreen(new PotionImmunityEditor(this, config, d));
         }, () -> {
             config.tips.remove(ArmorTipGenerator.genEffImmTip(d));
             config.effectImmunities.remove(d);
@@ -158,7 +155,7 @@ public class ArmorDetailScreen extends KineticScreen {
         })));
 
         config.attackEffects.forEach(d -> listWidget.addDetailEntry(new DetailEntry(ArmorTipGenerator.genAtkTip(d), () -> {
-            if (minecraft != null) minecraft.setScreen(new AttackEffectEditor(this, config, d));
+            KineticClientRuntime.openScreen(new AttackEffectEditor(this, config, d));
         }, () -> {
             config.tips.remove(ArmorTipGenerator.genAtkTip(d));
             config.attackEffects.remove(d);
@@ -166,7 +163,7 @@ public class ArmorDetailScreen extends KineticScreen {
         })));
 
         config.damageConversions.forEach(d -> listWidget.addDetailEntry(new DetailEntry(ArmorTipGenerator.genConvTip(d), () -> {
-            if (minecraft != null) minecraft.setScreen(new DamageConversionEditor(this, config, d));
+            KineticClientRuntime.openScreen(new DamageConversionEditor(this, config, d));
         }, () -> {
             config.tips.remove(ArmorTipGenerator.genConvTip(d));
             config.damageConversions.remove(d);
@@ -174,7 +171,7 @@ public class ArmorDetailScreen extends KineticScreen {
         })));
 
         config.attackDamageMultipliers.forEach(d -> listWidget.addDetailEntry(new DetailEntry(ArmorTipGenerator.genAtkDmgTip(d), () -> {
-            if (minecraft != null) minecraft.setScreen(new AttackDamageEditor(this, config, d));
+            KineticClientRuntime.openScreen(new AttackDamageEditor(this, config, d));
         }, () -> {
             config.tips.remove(ArmorTipGenerator.genAtkDmgTip(d));
             config.attackDamageMultipliers.remove(d);
@@ -190,7 +187,7 @@ public class ArmorDetailScreen extends KineticScreen {
                     @Override public int getMinCount() { return Math.max(config.flightConditionMinCount, 1); }
                     @Override public void setMinCount(int count) { config.flightConditionMinCount = count; }
                 };
-                if (minecraft != null) minecraft.setScreen(new ConditionListScreen(this, flightOwner));
+                KineticClientRuntime.openScreen(new ConditionListScreen(this, flightOwner));
             }, () -> {
                 config.tips.remove(ArmorTipGenerator.genFlightTip(config.flightConditions, config.flightConditionMatchMode, config.flightConditionMinCount));
                 config.allowFlight = false;
@@ -210,42 +207,15 @@ public class ArmorDetailScreen extends KineticScreen {
         GuiTheme.panel(g, cx - panelWidth / 2, padding, panelWidth, panelHeight);
         g.drawCenteredString(font, title, cx, padding + 10, 0xFFFFFF);
 
-        renderScaledList(listWidget, g, mx, my, pt);
+        renderSmoothSelectionList(listWidget, g, mx, my, pt);
     }
 
     public static class DetailListWidget extends SmoothSelectionList<DetailEntry> {
-        private final int listTop;
-        private final int listBottom;
-
-        public DetailListWidget(Minecraft mc, int w, int h, int t, int itemH) {
-            super(mc, w, h, t, t + h, itemH);
-            this.listTop = t;
-            this.listBottom = t + h;
-            this.setRenderBackground(false);
-            this.setRenderHeader(false, 0);
-            this.setRenderTopAndBottom(false);
-        }
-
-        @Override
-        public void render(@NotNull GuiGraphics g, int mx, int my, float pt) {
-            super.render(g, mx, my, pt);
-            if (this.getMaxScroll() > 0) {
-                int height = Math.max(1, listBottom - listTop);
-                int thumbH = Math.max(20, (int) ((float) height * height / this.getMaxPosition()));
-                Scroll.renderScrollbar(
-                        g,
-                        mx,
-                        my,
-                        this.getScrollbarPosition() + 2,
-                        listTop,
-                        4,
-                        height,
-                        thumbH,
-                        (int) Math.ceil(this.getMaxScroll()),
-                        this.getScrollAmount(),
-                        false
-                );
-            }
+        public DetailListWidget(int width, int height, int top, int itemHeight) {
+            super(width, height, top, top + height, itemHeight);
+            setRenderBackground(false);
+            setRenderHeader(false, 0);
+            setRenderTopAndBottom(false);
         }
 
         public void clearAllEntries() {
@@ -257,35 +227,41 @@ public class ArmorDetailScreen extends KineticScreen {
         }
 
         @Override public int getRowWidth() { return this.width - 20; }
-        @Override protected int getScrollbarPosition() { return this.getLeft() + this.width - 6; }
     }
 
-    public class DetailEntry extends ObjectSelectionList.Entry<DetailEntry> {
+    public class DetailEntry extends SmoothEntry<DetailEntry> {
         private static final int DELETE_BUTTON_W = 44;
         private static final int DELETE_BUTTON_H = 18;
 
         private final String text;
         private final Runnable onEdit;
-        private final Button deleteButton;
+        private final StateButton deleteButton;
 
         private int lastT;
 
         public DetailEntry(String text, Runnable onEdit, Runnable onDelete) {
             this.text = text;
             this.onEdit = onEdit;
-            this.deleteButton = KineticWidgets.createCompactButton(0, 0, DELETE_BUTTON_W, Component.translatable("gui.kineticarmory.armorsets.delete"), null, b -> onDelete.run());
+            this.deleteButton = KineticWidgets.createCompactButton(0, 0, DELETE_BUTTON_W, Component.translatable("gui.kineticarmory.armorsets.delete"), null, onDelete);
         }
 
         @Override
         public void render(@NotNull GuiGraphics g, int index, int t, int l, int w, int h, int mx, int my, boolean hv, float pt) {
             this.lastT = t;
-            int bgColor = hv ? 0x88777777 : ((index % 2 == 0) ? 0x88444444 : 0x88222222);
-
-            g.fill(l, t, l + w, t + 20, bgColor);
-            g.renderOutline(l, t, w, 20, 0xFF555555);
+            GuiTheme.stateSurface(
+                    g,
+                    l,
+                    t,
+                    w,
+                    20,
+                    GuiTheme.Surface.PANEL_ALT,
+                    false,
+                    hv,
+                    false
+            );
 
             int deleteX = l + w - 16 - DELETE_BUTTON_W;
-            renderTextWithIcons(g, Minecraft.getInstance().font, text, l + 5, t + 6, deleteX - l - 10);
+            renderTextWithIcons(g, KineticClientRuntime.font(), text, l + 5, t + 6, deleteX - l - 10);
 
             deleteButton.setX(deleteX);
             deleteButton.setY(t + 1);
@@ -307,7 +283,7 @@ public class ArmorDetailScreen extends KineticScreen {
             contentWidth += font.width(text.substring(lastEnd));
 
             int offset = KineticText.scrollOffset(contentWidth, maxWidth);
-            ArmorDetailScreen.this.enableCanvasScissor(g, x, y - 2, x + maxWidth, y + font.lineHeight + 3);
+            ArmorDetailScreen.this.enableUiScissor(g, x, y - 2, x + maxWidth, y + font.lineHeight + 3);
             try {
                 Matcher matcher = pattern.matcher(text);
                 int currentX = x - offset;
@@ -320,9 +296,9 @@ public class ArmorDetailScreen extends KineticScreen {
                     String type = matcher.group(1);
                     String id = matcher.group(2);
                     if (type.equals("item")) {
-                        net.minecraft.resources.ResourceLocation rl = net.minecraft.resources.ResourceLocation.tryParse(id);
+                        net.minecraft.resources.ResourceLocation rl = KineticResourceIds.tryParse(id);
                         if (rl != null) {
-                            net.minecraft.world.item.Item item = net.minecraftforge.registries.ForgeRegistries.ITEMS.getValue(rl);
+                            net.minecraft.world.item.Item item = KineticRegistries.items().get(rl);
                             if (item != null && item != net.minecraft.world.item.Items.AIR) {
                                 g.pose().pushPose();
                                 g.pose().translate(currentX, y - 2, 0);
@@ -338,7 +314,7 @@ public class ArmorDetailScreen extends KineticScreen {
                 }
                 g.drawString(font, text.substring(lastEnd), currentX, y, 0xFFFFFF);
             } finally {
-                ArmorDetailScreen.this.disableCanvasScissor(g);
+                ArmorDetailScreen.this.disableUiScissor(g);
             }
         }
 
@@ -346,7 +322,7 @@ public class ArmorDetailScreen extends KineticScreen {
         public boolean mouseClicked(double mx, double my, int btn) {
             if (my < lastT || my >= lastT + 20) return false;
             if (deleteButton.mouseClicked(mx, my, btn)) return true;
-            if (btn == 0) {
+            if (KineticMouseButtons.isPrimary(btn)) {
                 onEdit.run();
                 return true;
             }

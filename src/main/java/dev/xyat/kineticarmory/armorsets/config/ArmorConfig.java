@@ -7,14 +7,14 @@ import dev.xyat.kineticarmory.armorsets.data.ArmorEntityRule;
 import dev.xyat.kineticarmory.armorsets.event.ArmorManager;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.fml.loading.FMLPaths;
+import dev.xyat.kineticcore.api.runtime.KineticPaths;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ArmorConfig {
-    private static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get().resolve("kineticcore/armorsets.toml");
+    private static final Path CONFIG_PATH = KineticPaths.configDirectory().resolve("kineticcore/armorsets.toml");
     private static CommentedFileConfig configData;
     private static volatile ArmorEntityRule entityRuleCache = ArmorEntityRule.empty();
     private static volatile boolean entityFilterAllowAll = true;

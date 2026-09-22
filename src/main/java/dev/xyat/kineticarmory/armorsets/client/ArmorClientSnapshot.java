@@ -3,8 +3,6 @@ package dev.xyat.kineticarmory.armorsets.client;
 import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
 import dev.xyat.kineticarmory.armorsets.json.ArmorLoader;
 import net.minecraft.world.item.Item;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-@OnlyIn(Dist.CLIENT)
 public final class ArmorClientSnapshot {
     private static final Map<String, ArmorDataConfig> CONFIGS = new HashMap<>();
     private static final Map<Item, Set<ArmorDataConfig>> ITEM_CACHE = new HashMap<>();

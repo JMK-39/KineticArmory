@@ -4,6 +4,8 @@ import com.google.gson.Gson;
 
 import dev.xyat.kineticarmory.armorsets.predicate.ConditionData;
 import dev.xyat.kineticarmory.armorsets.predicate.IConditionOwner;
+import dev.xyat.kineticcore.api.registry.KineticRegistries;
+import dev.xyat.kineticcore.api.resource.KineticResourceIds;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.TagParser;
@@ -17,7 +19,6 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.registries.ForgeRegistries;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -165,8 +166,8 @@ public class ArmorDataConfig {
         public void prepareCache() {
             if (runtimeCacheReady) return;
             runtimeCacheReady = true;
-            ResourceLocation rl = attribute == null ? null : ResourceLocation.tryParse(attribute);
-            cachedAttribute = rl == null ? null : ForgeRegistries.ATTRIBUTES.getValue(rl);
+            ResourceLocation rl = attribute == null ? null : KineticResourceIds.tryParse(attribute);
+            cachedAttribute = rl == null ? null : KineticRegistries.attributes().get(rl);
             try { cachedUuid = uuid == null ? null : UUID.fromString(uuid); } catch (Exception ignored) { cachedUuid = null; }
             cachedOperation = parseAttributeOperation(operation);
         }
@@ -200,8 +201,8 @@ public class ArmorDataConfig {
         public void prepareCache() {
             if (runtimeCacheReady) return;
             runtimeCacheReady = true;
-            ResourceLocation rl = effectId == null ? null : ResourceLocation.tryParse(effectId);
-            cachedEffect = rl == null ? null : ForgeRegistries.MOB_EFFECTS.getValue(rl);
+            ResourceLocation rl = effectId == null ? null : KineticResourceIds.tryParse(effectId);
+            cachedEffect = rl == null ? null : KineticRegistries.mobEffects().get(rl);
             cachedDurationTicks = Math.max(1, duration * 20);
         }
 
@@ -225,8 +226,8 @@ public class ArmorDataConfig {
         public void prepareCache() {
             if (runtimeCacheReady) return;
             runtimeCacheReady = true;
-            ResourceLocation rl = effectId == null ? null : ResourceLocation.tryParse(effectId);
-            cachedEffect = rl == null ? null : ForgeRegistries.MOB_EFFECTS.getValue(rl);
+            ResourceLocation rl = effectId == null ? null : KineticResourceIds.tryParse(effectId);
+            cachedEffect = rl == null ? null : KineticRegistries.mobEffects().get(rl);
             cachedDurationTicks = Math.max(1, (int)(duration * 20));
         }
 
@@ -412,8 +413,8 @@ public class ArmorDataConfig {
             invalidNbt = false;
 
             if (needsItemLookup) {
-                ResourceLocation rl = ResourceLocation.tryParse(cachedId);
-                cachedItem = rl == null ? null : ForgeRegistries.ITEMS.getValue(rl);
+                ResourceLocation rl = KineticResourceIds.tryParse(cachedId);
+                cachedItem = rl == null ? null : KineticRegistries.items().get(rl);
             }
 
             CompoundTag parsedTag = null;
@@ -461,7 +462,7 @@ public class ArmorDataConfig {
             tagKey = null;
             if (matchAll) return;
             if (k.startsWith("#")) {
-                ResourceLocation loc = ResourceLocation.tryParse(k.substring(1));
+                ResourceLocation loc = KineticResourceIds.tryParse(k.substring(1));
                 if (loc != null) tagKey = TagKey.create(Registries.DAMAGE_TYPE, loc);
             } else {
                 directMsgId = k;
@@ -519,8 +520,8 @@ public class ArmorDataConfig {
         public void prepareCache() {
             if (runtimeCacheReady) return;
             runtimeCacheReady = true;
-            ResourceLocation rl = effectId == null ? null : ResourceLocation.tryParse(effectId);
-            cachedEffect = rl == null ? null : ForgeRegistries.MOB_EFFECTS.getValue(rl);
+            ResourceLocation rl = effectId == null ? null : KineticResourceIds.tryParse(effectId);
+            cachedEffect = rl == null ? null : KineticRegistries.mobEffects().get(rl);
         }
         @Override public List<ConditionData> getConditions() { return conditions; }
         @Override public String getMatchMode() { return conditionMatchMode == null ? "ANY" : conditionMatchMode; }

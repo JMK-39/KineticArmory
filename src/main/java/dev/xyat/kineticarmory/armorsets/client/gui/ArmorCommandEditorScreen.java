@@ -1,21 +1,20 @@
 package dev.xyat.kineticarmory.armorsets.client.gui;
 
-import dev.xyat.kineticcore.api.client.text.KineticText;
 import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
 import dev.xyat.kineticarmory.armorsets.predicate.client.ConditionListScreen;
-import dev.xyat.kineticcore.api.client.theme.GuiTheme;
-import dev.xyat.kineticcore.api.client.overlay.GuiOverlay;
+import dev.xyat.kineticcore.api.client.input.KineticMouseButtons;
+import dev.xyat.kineticcore.api.client.command.KineticCommandSuggestions;
+import dev.xyat.kineticcore.api.client.overlay.KineticOverlays;
 import dev.xyat.kineticcore.api.client.screen.KineticScreen;
+import dev.xyat.kineticcore.api.client.text.KineticText;
+import dev.xyat.kineticcore.api.client.theme.GuiTheme;
 import dev.xyat.kineticcore.api.client.widget.KineticWidgets;
-import dev.xyat.kineticcore.api.client.widget.KineticWidgets.Scroll;
-import dev.xyat.kineticcore.api.client.widget.KineticWidgets.SmoothSelectionList;
-import net.minecraft.client.Minecraft;
+import dev.xyat.kineticcore.api.client.widget.button.KineticButtons.StateButton;
+import dev.xyat.kineticcore.api.client.widget.input.KineticTextFields.KineticEditBox;
+import dev.xyat.kineticcore.api.client.widget.scroll.KineticScroll.SmoothEntry;
+import dev.xyat.kineticcore.api.client.widget.scroll.KineticScroll.SmoothSelectionList;
+import dev.xyat.kineticcore.api.runtime.KineticClientRuntime;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.CommandSuggestions;
-import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.components.ObjectSelectionList;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import org.jetbrains.annotations.NotNull;
@@ -23,246 +22,254 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 public class ArmorCommandEditorScreen extends KineticScreen {
-    private final KineticScreen parent;
     private final ArmorDataConfig config;
-    private EditBox input;
-    private CommandSuggestions commandSuggestions;
+    private KineticEditBox input;
+    private KineticCommandSuggestions.Session commandSuggestions;
     private CommandListWidget activeList;
     private CommandListWidget deactiveList;
 
-    private Button btnAddActive;
-    private Button btnAddDeactive;
-    private Button btnSaveEdit;
-    private Button btnCancelEdit;
+    private StateButton btnAddActive;
+    private StateButton btnAddDeactive;
+    private StateButton btnSaveEdit;
+    private StateButton btnCancelEdit;
 
-    private List<ArmorDataConfig.CommandData> editingTargetList = null;
+    private List<ArmorDataConfig.CommandData> editingTargetList;
     private int editingIndex = -1;
-    private String tempInput = null;
+    private String tempInput;
 
     public ArmorCommandEditorScreen(KineticScreen parent, ArmorDataConfig config) {
         super(Component.translatable("gui.kineticarmory.armorsets.commands.title"));
-        this.parent = parent;
+        setParentScreen(parent);
         this.config = config;
-        useResponsiveCanvas(
-                640f,
-                360f,
-                6
-        );
     }
 
     @Override
-    public void tick() {
-        super.tick();
+    protected void canvasTick() {
         if (input != null) tempInput = input.getValue();
     }
 
     @Override
     protected void buildUi() {
-        int cx = this.canvasWidth() / 2;
-        int guiW = Math.min(this.canvasWidth() - 20, 800);
-        int guiH = this.canvasHeight() - 55;
+        int cx = canvasWidth() / 2;
+        int guiW = Math.min(canvasWidth() - 20, 800);
+        int guiH = canvasHeight() - 55;
         int x0 = cx - guiW / 2;
         int y0 = 20;
-
         int inputY = y0 + guiH - 28;
 
-        this.input = addTextField(
-                x0 + 10,
+        input = addTextField(x0 + 10, inputY, guiW - 160, Component.empty());
+        input.setPlaceholder(Component.translatable("gui.kineticarmory.armorsets.commands.hint"));
+        input.setMaxLength(2048);
+        if (tempInput != null) input.setValue(tempInput);
+        input.setResponder(this::onEdited);
+
+        btnAddActive = addButtonWithHandler(
+                x0 + guiW - 145,
                 inputY,
-                guiW - 160,
-                Component.empty()
+                65,
+                Component.translatable("gui.kineticarmory.armorsets.commands.add_active"),
+                null,
+                b -> {
+                    if (!input.getValue().trim().isEmpty()) {
+                        ArmorDataConfig.CommandData data = new ArmorDataConfig.CommandData();
+                        data.command = input.getValue();
+                        config.activationCommands.add(data);
+                        input.setValue("");
+                        activeList.refresh();
+                    }
+                }
         );
-        this.input.setMaxLength(2048);
-        if (tempInput != null) this.input.setValue(tempInput);
-        this.input.setResponder(this::onEdited);
-this.btnAddActive = addButton(x0 + guiW - 145, inputY, 65, Component.translatable("gui.kineticarmory.armorsets.commands.add_active"), null, b -> {
-            if (!input.getValue().trim().isEmpty()) {
-                ArmorDataConfig.CommandData cd = new ArmorDataConfig.CommandData();
-                cd.command = input.getValue();
-                config.activationCommands.add(cd);
-                input.setValue(""); activeList.refresh();
-            }
-        });
-this.btnAddDeactive = addButton(x0 + guiW - 75, inputY, 65, Component.translatable("gui.kineticarmory.armorsets.commands.add_deactive"), null, b -> {
-            if (!input.getValue().trim().isEmpty()) {
-                ArmorDataConfig.CommandData cd = new ArmorDataConfig.CommandData();
-                cd.command = input.getValue();
-                config.deactivationCommands.add(cd);
-                input.setValue(""); deactiveList.refresh();
-            }
-        });
-this.btnSaveEdit = addButton(x0 + guiW - 145, inputY, 65, Component.translatable("gui.kineticarmory.armorsets.commands.save_edit"), null, b -> {
-            if (editingTargetList != null && editingIndex >= 0 && editingIndex < editingTargetList.size()) {
-                editingTargetList.get(editingIndex).command = input.getValue();
-                cancelEdit();
-                activeList.refresh();
-                deactiveList.refresh();
-                GuiOverlay.toast(Component.translatable("msg.kineticarmory.common.saved"));
-            }
-        });
-this.btnCancelEdit = addButton(x0 + guiW - 75, inputY, 65, Component.translatable("gui.kineticarmory.armorsets.commands.cancel_edit"), null, b -> cancelEdit());
-updateButtonVisibility();
+        btnAddDeactive = addButtonWithHandler(
+                x0 + guiW - 75,
+                inputY,
+                65,
+                Component.translatable("gui.kineticarmory.armorsets.commands.add_deactive"),
+                null,
+                b -> {
+                    if (!input.getValue().trim().isEmpty()) {
+                        ArmorDataConfig.CommandData data = new ArmorDataConfig.CommandData();
+                        data.command = input.getValue();
+                        config.deactivationCommands.add(data);
+                        input.setValue("");
+                        deactiveList.refresh();
+                    }
+                }
+        );
+        btnSaveEdit = addButtonWithHandler(
+                x0 + guiW - 145,
+                inputY,
+                65,
+                Component.translatable("gui.kineticarmory.armorsets.commands.save_edit"),
+                null,
+                b -> {
+                    if (editingTargetList != null && editingIndex >= 0 && editingIndex < editingTargetList.size()) {
+                        editingTargetList.get(editingIndex).command = input.getValue();
+                        cancelEdit();
+                        activeList.refresh();
+                        deactiveList.refresh();
+                        KineticOverlays.toast(Component.translatable("msg.kineticarmory.common.saved"));
+                    }
+                }
+        );
+        btnCancelEdit = addButtonWithHandler(
+                x0 + guiW - 75,
+                inputY,
+                65,
+                Component.translatable("gui.kineticarmory.armorsets.commands.cancel_edit"),
+                null,
+                b -> cancelEdit()
+        );
+        updateButtonVisibility();
 
         int listW = guiW / 2 - 15;
-        this.activeList = new CommandListWidget(this.minecraft, listW, guiH - 60, y0 + 25, y0 + guiH - 35, 20, config.activationCommands);
-        this.activeList.setLeftPos(x0 + 10);
-        this.addEventListWidget(activeList);
+        activeList = new CommandListWidget(listW, guiH - 60, y0 + 25, y0 + guiH - 35, 20, config.activationCommands);
+        activeList.setLeftPos(x0 + 10);
+        addSmoothSelectionList(activeList);
 
-        this.deactiveList = new CommandListWidget(this.minecraft, listW, guiH - 60, y0 + 25, y0 + guiH - 35, 20, config.deactivationCommands);
-        this.deactiveList.setLeftPos(cx + 5);
-        this.addEventListWidget(deactiveList);
+        deactiveList = new CommandListWidget(listW, guiH - 60, y0 + 25, y0 + guiH - 35, 20, config.deactivationCommands);
+        deactiveList.setLeftPos(cx + 5);
+        addSmoothSelectionList(deactiveList);
 
         int actionBtnW = 80;
-        int bottomBtnY = this.canvasHeight() - 25;
+        int bottomBtnY = canvasHeight() - 25;
+        addButtonWithHandler(
+                cx - actionBtnW - 5,
+                bottomBtnY,
+                actionBtnW,
+                Component.translatable("gui.kineticarmory.armorsets.save"),
+                null,
+                b -> {
+                    KineticOverlays.toast(Component.translatable("msg.kineticarmory.common.saved"));
+                    navigateBack();
+                }
+        );
+        addButtonWithHandler(
+                cx + 5,
+                bottomBtnY,
+                actionBtnW,
+                Component.translatable("gui.kineticarmory.armorsets.back"),
+                null,
+                b -> navigateBack()
+        );
 
-        addButton(cx - actionBtnW - 5, bottomBtnY, actionBtnW, Component.translatable("gui.kineticarmory.armorsets.save"), null, b -> {
-            GuiOverlay.toast(Component.translatable("msg.kineticarmory.common.saved"));
-            if (minecraft != null) navigateBack();
-        });
-
-        addButton(cx + 5, bottomBtnY, actionBtnW, Component.translatable("gui.kineticarmory.armorsets.back"), null, b -> {
-            if (minecraft != null) navigateBack();
-        });
-
-        Screen dummyScreen = new Screen(Component.empty()) {};
-        if (this.minecraft != null) {
-            dummyScreen.init(this.minecraft, this.canvasWidth(), inputY + 12);
-        }
-
-        if (this.minecraft != null) {
-            this.commandSuggestions = new CommandSuggestions(this.minecraft, dummyScreen, this.input, this.font, false, true, 0, 7, true, Integer.MIN_VALUE);
-            this.commandSuggestions.setAllowSuggestions(true);
-            this.commandSuggestions.updateCommandInfo();
-        }
+        commandSuggestions = KineticCommandSuggestions.create(
+                input,
+                canvasWidth(),
+                canvasHeight(),
+                KineticCommandSuggestions.Options.fieldAligned(false, true, 7, Integer.MIN_VALUE)
+        );
+        commandSuggestions.setAllowSuggestions(true);
+        commandSuggestions.update();
     }
 
     public void startEdit(List<ArmorDataConfig.CommandData> targetList, int index, String text) {
-        this.editingTargetList = targetList;
-        this.editingIndex = index;
-        this.input.setValue(text);
-        this.input.setFocused(true);
-        this.setFocused(this.input);
+        editingTargetList = targetList;
+        editingIndex = index;
+        input.setValue(text);
+        focusControl(input);
         updateButtonVisibility();
     }
 
     private void cancelEdit() {
-        this.editingTargetList = null;
-        this.editingIndex = -1;
-        this.input.setValue("");
+        editingTargetList = null;
+        editingIndex = -1;
+        input.setValue("");
         updateButtonVisibility();
     }
 
     private void updateButtonVisibility() {
-        boolean editing = this.editingTargetList != null;
-        if (this.btnAddActive != null) this.btnAddActive.visible = !editing;
-        if (this.btnAddDeactive != null) this.btnAddDeactive.visible = !editing;
-        if (this.btnSaveEdit != null) this.btnSaveEdit.visible = editing;
-        if (this.btnCancelEdit != null) this.btnCancelEdit.visible = editing;
+        boolean editing = editingTargetList != null;
+        if (btnAddActive != null) btnAddActive.setVisible(!editing);
+        if (btnAddDeactive != null) btnAddDeactive.setVisible(!editing);
+        if (btnSaveEdit != null) btnSaveEdit.setVisible(editing);
+        if (btnCancelEdit != null) btnCancelEdit.setVisible(editing);
     }
 
     private void onEdited(String text) {
-        if (this.commandSuggestions != null) {
-            this.commandSuggestions.setAllowSuggestions(true);
-            this.commandSuggestions.updateCommandInfo();
+        if (commandSuggestions != null) {
+            commandSuggestions.setAllowSuggestions(true);
+            commandSuggestions.update();
         }
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (this.commandSuggestions != null && this.commandSuggestions.keyPressed(keyCode, scanCode, modifiers)) {
-            return true;
-        }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+    protected boolean canvasKeyPressed(int keyCode, int scanCode, int modifiers) {
+        return commandSuggestions != null && commandSuggestions.keyPressed(keyCode, scanCode, modifiers);
     }
 
     @Override
-    protected boolean canvasMouseClicked(double mx, double my, int btn) {
-        if (this.commandSuggestions != null && this.commandSuggestions.mouseClicked(mx, my, btn)) {
-            return true;
-        }
-        return super.canvasMouseClicked(mx, my, btn);
+    protected boolean canvasMouseClicked(double mouseX, double mouseY, int button) {
+        if (commandSuggestions != null && commandSuggestions.mouseClicked(mouseX, mouseY, button)) return true;
+        return super.canvasMouseClicked(mouseX, mouseY, button);
     }
 
     @Override
-    protected void renderCanvasForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        renderTextFieldPlaceholder(
-                g,
-                input,
-                Component.translatable("gui.kineticarmory.armorsets.commands.hint")
-        );
+    protected boolean canvasMouseScrolled(double mouseX, double mouseY, double delta) {
+        if (commandSuggestions != null && commandSuggestions.mouseScrolled(Mth.clamp(delta, -1.0D, 1.0D))) return true;
+        return super.canvasMouseScrolled(mouseX, mouseY, delta);
     }
 
     @Override
-    protected boolean canvasMouseScrolled(double mx, double my, double d) {
-        if (this.commandSuggestions != null && this.commandSuggestions.mouseScrolled(Mth.clamp(d, -1.0, 1.0))) {
-            return true;
-        }
-        return super.canvasMouseScrolled(mx, my, d);
-    }
-
-    @Override
-    protected void renderCanvasBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        int cx = this.canvasWidth() / 2;
-        int guiW = Math.min(this.canvasWidth() - 20, 800);
-        int guiH = this.canvasHeight() - 55;
+    protected void renderCanvasBackground(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        int cx = canvasWidth() / 2;
+        int guiW = Math.min(canvasWidth() - 20, 800);
+        int guiH = canvasHeight() - 55;
         int x0 = cx - guiW / 2;
         int y0 = 20;
 
-        GuiTheme.panel(g, x0, y0, guiW, guiH);
-        g.drawCenteredString(this.font, this.title, cx, 5, 0xFFFFFF);
+        GuiTheme.panel(graphics, x0, y0, guiW, guiH);
+        graphics.drawCenteredString(font, title, cx, 5, 0xFFFFFF);
+        graphics.drawCenteredString(font, Component.translatable("gui.kineticarmory.armorsets.commands.activation_label"), x0 + guiW / 4, y0 + 10, 0xFFFFFF);
+        graphics.drawCenteredString(font, Component.translatable("gui.kineticarmory.armorsets.commands.deactivation_label"), x0 + guiW * 3 / 4, y0 + 10, 0xFFFFFF);
+        GuiTheme.verticalSeparator(graphics, cx, y0 + 25, guiH - 60);
 
-        g.drawCenteredString(this.font, Component.translatable("gui.kineticarmory.armorsets.commands.activation_label"), x0 + guiW/4, y0 + 10, 0xFFFFFF);
-        g.drawCenteredString(this.font, Component.translatable("gui.kineticarmory.armorsets.commands.deactivation_label"), x0 + guiW*3/4, y0 + 10, 0xFFFFFF);
+        renderSmoothSelectionList(activeList, graphics, mouseX, mouseY, partialTick);
+        renderSmoothSelectionList(deactiveList, graphics, mouseX, mouseY, partialTick);
+    }
 
-        g.fill(cx - 1, y0 + 25, cx + 1, y0 + guiH - 35, 0xFF555555);
-
-        renderScaledList(activeList, g, mx, my, pt);
-        renderScaledList(deactiveList, g, mx, my, pt);
-
-        if (this.commandSuggestions != null) {
-            g.pose().pushPose();
-            g.pose().translate(0, 0, 400);
-            this.commandSuggestions.render(g, mx, my);
-            g.pose().popPose();
+    @Override
+    protected void renderCanvasForeground(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        if (commandSuggestions == null) return;
+        graphics.pose().pushPose();
+        graphics.pose().translate(0, 0, 400);
+        try {
+            commandSuggestions.render(graphics, mouseX, mouseY);
+        } finally {
+            graphics.pose().popPose();
         }
     }
 
     class CommandListWidget extends SmoothSelectionList<CommandListWidget.Entry> {
-        private final int listTop, listBottom;
         private final List<ArmorDataConfig.CommandData> commandList;
 
-        public CommandListWidget(Minecraft mc, int w, int h, int t, int b, int ih, List<ArmorDataConfig.CommandData> commandList) {
-            super(mc, w, h, t, b, ih); this.listTop = t; this.listBottom = b; this.commandList = commandList;
-            setRenderBackground(false); setRenderTopAndBottom(false); refresh();
+        public CommandListWidget(
+                int width,
+                int height,
+                int top,
+                int bottom,
+                int itemHeight,
+                List<ArmorDataConfig.CommandData> commandList
+        ) {
+            super(width, height, top, bottom, itemHeight);
+            this.commandList = commandList;
+            setRenderBackground(false);
+            setRenderTopAndBottom(false);
+            refresh();
+        }
+
+        public void refresh() {
+            clearEntries();
+            for (int i = 0; i < commandList.size(); i++) {
+                addEntry(new Entry(i, commandList.get(i).command, commandList));
+            }
         }
 
         @Override
-        public void render(@NotNull GuiGraphics g, int mx, int my, float pt) {
-            super.render(g, mx, my, pt);
-            if (this.getMaxScroll() > 0) {
-                int barX = this.getScrollbarPosition();
-                int height = listBottom - listTop;
-                int thumbH = Math.max(20, (int) ((float) height * height / this.getMaxPosition()));
-                Scroll.renderScrollbar(
-                        g,
-                        mx,
-                        my,
-                        barX + 2,
-                        listTop,
-                        4,
-                        height,
-                        thumbH,
-                        (int) Math.ceil(this.getMaxScroll()),
-                        this.getScrollAmount(),
-                        false
-                );
-            }
+        public int getRowWidth() {
+            return width;
         }
-        public void refresh() { clearEntries(); for (int i = 0; i < commandList.size(); i++) addEntry(new Entry(i, commandList.get(i).command, commandList)); }
-        @Override public int getRowWidth() { return this.width; }
-        @Override protected int getScrollbarPosition() { return this.x0 + this.width - 6; }
 
-        class Entry extends ObjectSelectionList.Entry<Entry> {
+        class Entry extends SmoothEntry<Entry> {
             private static final int ROW_BUTTON_W = 42;
             private static final int ROW_BUTTON_H = 18;
             private static final int ROW_BUTTON_GAP = 2;
@@ -270,42 +277,79 @@ updateButtonVisibility();
             private final int index;
             private final String text;
             private final List<ArmorDataConfig.CommandData> targetList;
-            private final Button deleteButton;
-            private final Button conditionsButton;
+            private final StateButton deleteButton;
+            private final StateButton conditionsButton;
             private int lastTop;
 
             public Entry(int index, String text, List<ArmorDataConfig.CommandData> targetList) {
                 this.index = index;
                 this.text = text;
                 this.targetList = targetList;
-                this.deleteButton = KineticWidgets.createCompactButton(0, 0, ROW_BUTTON_W, Component.translatable("gui.kineticarmory.armorsets.delete"), null, b -> deleteEntry());
-                this.conditionsButton = KineticWidgets.createCompactButton(0, 0, ROW_BUTTON_W, Component.translatable("gui.kineticarmory.armorsets.conditions"), null, b -> openConditions());
+                deleteButton = KineticWidgets.createCompactButton(
+                        0,
+                        0,
+                        ROW_BUTTON_W,
+                        Component.translatable("gui.kineticarmory.armorsets.delete"),
+                        null,
+                        this::deleteEntry
+                );
+                conditionsButton = KineticWidgets.createCompactButton(
+                        0,
+                        0,
+                        ROW_BUTTON_W,
+                        Component.translatable("gui.kineticarmory.armorsets.conditions"),
+                        null,
+                        this::openConditions
+                );
             }
 
             @Override
-            public void render(@NotNull GuiGraphics g, int index, int t, int l, int w, int h, int mx, int my, boolean hv, float pt) {
-                this.lastTop = t;
-                int bgColor = hv ? 0x88777777 : ((index % 2 == 0) ? 0x88444444 : 0x88222222);
-                if (editingTargetList == targetList && editingIndex == this.index) {
-                    bgColor = 0xAA228822;
-                }
-                g.fill(l, t, l + w, t + h - 2, bgColor);
-                g.renderOutline(l, t, w, h - 2, 0xFF555555);
+            public void render(
+                    @NotNull GuiGraphics graphics,
+                    int rowIndex,
+                    int top,
+                    int left,
+                    int rowWidth,
+                    int rowHeight,
+                    int mouseX,
+                    int mouseY,
+                    boolean hovered,
+                    float partialTick
+            ) {
+                lastTop = top;
+                boolean selected = editingTargetList == targetList && editingIndex == index;
+                GuiTheme.stateSurface(
+                        graphics,
+                        left,
+                        top,
+                        rowWidth,
+                        rowHeight - 2,
+                        GuiTheme.Surface.PANEL_ALT,
+                        selected,
+                        hovered,
+                        false
+                );
 
-                int deleteX = l + w - ROW_BUTTON_W - 5;
+                int deleteX = left + rowWidth - ROW_BUTTON_W - 5;
                 int conditionsX = deleteX - ROW_BUTTON_W - ROW_BUTTON_GAP;
-                int maxW = Math.max(0, conditionsX - l - 8);
+                int maxWidth = Math.max(0, conditionsX - left - 8);
                 KineticText.drawScrollingLeft(
-                        g, Minecraft.getInstance().font, text, l + 4, t + 5, maxW, 0xFFFFFF, false
+                        graphics,
+                        KineticClientRuntime.font(),
+                        Component.literal(text),
+                        left + 4,
+                        top + 5,
+                        maxWidth,
+                        0xFFFFFF,
+                        false
                 );
 
                 conditionsButton.setX(conditionsX);
-                conditionsButton.setY(t);
-                conditionsButton.render(g, mx, my, pt);
-
+                conditionsButton.setY(top);
+                conditionsButton.render(graphics, mouseX, mouseY, partialTick);
                 deleteButton.setX(deleteX);
-                deleteButton.setY(t);
-                deleteButton.render(g, mx, my, pt);
+                deleteButton.setY(top);
+                deleteButton.render(graphics, mouseX, mouseY, partialTick);
             }
 
             private void deleteEntry() {
@@ -318,24 +362,25 @@ updateButtonVisibility();
             private void openConditions() {
                 if (index < 0 || index >= targetList.size()) return;
                 if (targetList.get(index).conditions == null) targetList.get(index).conditions = new java.util.ArrayList<>();
-                if (ArmorCommandEditorScreen.this.minecraft != null) {
-                    ArmorCommandEditorScreen.this.minecraft.setScreen(new ConditionListScreen(ArmorCommandEditorScreen.this, targetList.get(index)));
-                }
+                KineticClientRuntime.openScreen(new ConditionListScreen(ArmorCommandEditorScreen.this, targetList.get(index)));
             }
 
             @Override
-            public boolean mouseClicked(double mx, double my, int btn) {
-                if (my < lastTop || my >= lastTop + ROW_BUTTON_H) return false;
-                if (deleteButton.mouseClicked(mx, my, btn)) return true;
-                if (conditionsButton.mouseClicked(mx, my, btn)) return true;
-                if (btn == 0) {
-                    ArmorCommandEditorScreen.this.startEdit(this.targetList, this.index, this.text);
+            public boolean mouseClicked(double mouseX, double mouseY, int button) {
+                if (mouseY < lastTop || mouseY >= lastTop + ROW_BUTTON_H) return false;
+                if (deleteButton.mouseClicked(mouseX, mouseY, button)) return true;
+                if (conditionsButton.mouseClicked(mouseX, mouseY, button)) return true;
+                if (KineticMouseButtons.isPrimary(button)) {
+                    ArmorCommandEditorScreen.this.startEdit(targetList, index, text);
                     return true;
                 }
                 return false;
             }
 
-            @Override public @NotNull Component getNarration() { return Component.empty(); }
+            @Override
+            public @NotNull Component getNarration() {
+                return Component.empty();
+            }
         }
     }
 }

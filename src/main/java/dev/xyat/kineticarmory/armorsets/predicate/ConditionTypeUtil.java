@@ -1,16 +1,15 @@
 package dev.xyat.kineticarmory.armorsets.predicate;
 
 import dev.xyat.kineticcore.api.client.search.KineticSearch;
-import net.minecraft.client.Minecraft;
+import dev.xyat.kineticcore.api.client.widget.input.KineticAutoComplete.Suggestion;
+import dev.xyat.kineticcore.api.registry.KineticRegistries;
+import dev.xyat.kineticcore.api.runtime.KineticClientRuntime;
+import dev.xyat.kineticcore.api.runtime.KineticPlatform;
 import net.minecraft.network.chat.Component;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.loading.FMLEnvironment;
-import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class ConditionTypeUtil {
 
@@ -46,18 +45,25 @@ public class ConditionTypeUtil {
         };
     }
 
-    public static List<String> getSuggestionsFor(ParamDataType type) {
-        if (FMLEnvironment.dist == Dist.DEDICATED_SERVER) return Collections.emptyList();
+    public static List<Suggestion> getSuggestionsFor(ParamDataType type) {
+        if (KineticPlatform.isDedicatedServer()) return Collections.emptyList();
 
         return switch (type) {
-            case BLOCK -> ForgeRegistries.BLOCKS.getKeys().stream().map(Object::toString).collect(Collectors.toList());
+            case BLOCK -> KineticRegistries.blocks().ids().stream()
+                    .map(id -> new Suggestion(id.toString(), Component.empty()))
+                    .toList();
             case DIMENSION -> {
-                if (Minecraft.getInstance().getConnection() != null) {
-                    yield Minecraft.getInstance().getConnection().levels().stream()
-                            .map(key -> key.location().toString())
-                            .collect(Collectors.toList());
+                var levels = KineticClientRuntime.knownLevels();
+                if (!levels.isEmpty()) {
+                    yield levels.stream()
+                            .map(key -> new Suggestion(key.location().toString(), Component.empty()))
+                            .toList();
                 }
-                yield Arrays.asList("minecraft:overworld", "minecraft:the_nether", "minecraft:the_end");
+                yield List.of(
+                        new Suggestion("minecraft:overworld", Component.empty()),
+                        new Suggestion("minecraft:the_nether", Component.empty()),
+                        new Suggestion("minecraft:the_end", Component.empty())
+                );
             }
             case ATTRIBUTE -> KineticSearch.attributeDictionary();
             case POTION -> KineticSearch.potionDictionary();
@@ -65,12 +71,16 @@ public class ConditionTypeUtil {
         };
     }
 
-    public static List<String> getSuggestions() {
-        return ALL_TYPES.stream().map(t -> {
-            String trans = Component.translatable("gui.kineticarmory.predicate.type." + t.toLowerCase()).getString();
-            if (trans.equalsIgnoreCase(t) || trans.startsWith("gui.")) return t;
-            return t + " - " + trans;
-        }).collect(Collectors.toList());
+    public static List<Suggestion> getSuggestions() {
+        return ALL_TYPES.stream().map(type -> {
+            String translated = Component.translatable(
+                    "gui.kineticarmory.predicate.type." + type.toLowerCase()
+            ).getString();
+            Component translation = translated.equalsIgnoreCase(type) || translated.startsWith("gui.")
+                    ? Component.empty()
+                    : Component.literal(translated);
+            return new Suggestion(type, translation);
+        }).toList();
     }
 
     public static String getRawType(String input) {

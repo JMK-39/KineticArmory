@@ -3,11 +3,12 @@ package dev.xyat.kineticarmory.armorsets.json;
 import com.google.gson.*;
 import dev.xyat.kineticarmory.KineticArmory;
 import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
+import dev.xyat.kineticcore.api.registry.KineticRegistries;
+import dev.xyat.kineticcore.api.resource.KineticResourceIds;
+import dev.xyat.kineticcore.api.runtime.KineticPaths;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.fml.loading.FMLPaths;
-import net.minecraftforge.registries.ForgeRegistries;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
@@ -33,7 +34,7 @@ public class ArmorLoader {
     private static int cacheVersion = 0;
     private static volatile boolean loadedOnce = false;
     public static final List<String> FAILED_SETS = new ArrayList<>();
-    public static final Path CONFIG_DIR = FMLPaths.CONFIGDIR.get().resolve("kineticcore").resolve("armorsets");
+    public static final Path CONFIG_DIR = KineticPaths.configDirectory().resolve("kineticcore").resolve("armorsets");
 
     public static void cleanUpConfig(ArmorDataConfig config) {
         config.normalizeEquipmentVariants();
@@ -234,9 +235,9 @@ public class ArmorLoader {
         if (id.isEmpty() || id.equals("minecraft:air") || id.equalsIgnoreCase("ANY") || id.equalsIgnoreCase("EMPTY")) {
             return new CacheResult(false, true);
         }
-        ResourceLocation rl = ResourceLocation.tryParse(id);
-        if (rl != null && ForgeRegistries.ITEMS.containsKey(rl)) {
-            Item item = ForgeRegistries.ITEMS.getValue(rl);
+        ResourceLocation rl = KineticResourceIds.tryParse(id);
+        if (rl != null && KineticRegistries.items().contains(rl)) {
+            Item item = KineticRegistries.items().get(rl);
             if (item != null) {
                 Set<ArmorDataConfig> sets = itemCache.computeIfAbsent(item, k -> new LinkedHashSet<>());
                 sets.add(config);

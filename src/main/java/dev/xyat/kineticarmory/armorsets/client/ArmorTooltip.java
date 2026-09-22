@@ -1,28 +1,26 @@
 package dev.xyat.kineticarmory.armorsets.client;
 
+import javax.annotation.Nonnull;
+
 import dev.xyat.kineticarmory.util.ColorText;
-import com.mojang.datafixers.util.Either;
 import dev.xyat.kineticarmory.armorsets.config.ArmorConfig;
 import dev.xyat.kineticarmory.armorsets.config.ArmorClientConfig;
 import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
 import dev.xyat.kineticarmory.armorsets.data.ArmorTipGenerator;
-import net.minecraft.client.Minecraft;
+import dev.xyat.kineticcore.api.client.tooltip.KineticItemTooltips;
+import dev.xyat.kineticcore.api.registry.KineticRegistries;
+import dev.xyat.kineticcore.api.resource.KineticResourceIds;
+import dev.xyat.kineticcore.api.runtime.KineticClientRuntime;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.client.event.RegisterClientTooltipComponentFactoriesEvent;
-import net.minecraftforge.client.event.RenderTooltipEvent;
-import net.minecraftforge.event.entity.player.ItemTooltipEvent;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -45,9 +43,8 @@ public class ArmorTooltip {
     private static final Pattern ICON_PATTERN = Pattern.compile(ICON_REGEX);
     private static final String COLOR_CODE_REGEX = "§[0-9a-fk-or]";
 
-    public static void onTooltip(ItemTooltipEvent event) {
+    public static void onTooltip(ItemStack stack, List<Component> tooltip) {
         if (!ArmorConfig.enableSets) return;
-        ItemStack stack = event.getItemStack();
         if (stack.isEmpty()) return;
 
         Set<ArmorDataConfig> potentialSets = ArmorClientSnapshot.configsForItem(stack.getItem());
@@ -64,20 +61,20 @@ public class ArmorTooltip {
         }
 
         if (!rejectedBySets.isEmpty()) {
-            event.getToolTip().add(Component.empty());
-            if (Screen.hasAltDown()) {
-                event.getToolTip().add(ColorText.translatable("gui.kineticarmory.armorsets.tooltip.conflict_header"));
+            tooltip.add(Component.empty());
+            if (KineticClientRuntime.altModifierDown()) {
+                tooltip.add(ColorText.translatable("gui.kineticarmory.armorsets.tooltip.conflict_header"));
                 int count = 0;
                 for (ArmorDataConfig config : rejectedBySets) {
                     if (count >= MAX_DISPLAY_COUNT) break;
-                    event.getToolTip().add(ColorText.translatable("gui.kineticarmory.armorsets.tooltip.conflict_row", stripColor(config.displayName)));
+                    tooltip.add(ColorText.translatable("gui.kineticarmory.armorsets.tooltip.conflict_row", stripColor(config.displayName)));
                     count++;
                 }
                 if (rejectedBySets.size() > MAX_DISPLAY_COUNT) {
-                    event.getToolTip().add(ColorText.translatable("gui.kineticarmory.armorsets.tooltip.conflict_more", rejectedBySets.size() - MAX_DISPLAY_COUNT));
+                    tooltip.add(ColorText.translatable("gui.kineticarmory.armorsets.tooltip.conflict_more", rejectedBySets.size() - MAX_DISPLAY_COUNT));
                 }
             } else {
-                event.getToolTip().add(ColorText.translatable("gui.kineticarmory.armorsets.tooltip.hold_alt_conflict"));
+                tooltip.add(ColorText.translatable("gui.kineticarmory.armorsets.tooltip.hold_alt_conflict"));
             }
         }
     }
@@ -106,9 +103,9 @@ public class ArmorTooltip {
         return false;
     }
 
-    public static void onGatherTooltipComponents(RenderTooltipEvent.GatherComponents event) {
+    public static void onGatherTooltipComponents(KineticItemTooltips.GatherContext context) {
         if (!ArmorConfig.enableSets) return;
-        ItemStack itemStack = event.getItemStack();
+        ItemStack itemStack = context.stack();
         if (itemStack.isEmpty()) return;
 
         Set<ArmorDataConfig> potentialSets = ArmorClientSnapshot.configsForItem(itemStack.getItem());
@@ -128,8 +125,8 @@ public class ArmorTooltip {
 
         if (matchedSets.isEmpty()) return;
 
-        if (shouldReplaceOriginalTooltip) keepOnlyItemName(event);
-        addText(event, Component.empty());
+        if (shouldReplaceOriginalTooltip) keepOnlyItemName(context);
+        addText(context, Component.empty());
 
         boolean anyActive = false;
         for (ArmorDataConfig config : matchedSets) {
@@ -144,21 +141,21 @@ public class ArmorTooltip {
             int pieceCount = tooltipState.pieceCount();
             int total = Math.max(1, config.getTotalPieceCount());
             int shownPieceCount = Math.max(0, Math.min(pieceCount, total));
-            addText(event, ColorText.translatable("gui.kineticarmory.armorsets.tooltip.name_with_pieces", stripColor(config.displayName), shownPieceCount, total));
+            addText(context, ColorText.translatable("gui.kineticarmory.armorsets.tooltip.name_with_pieces", stripColor(config.displayName), shownPieceCount, total));
             if (isDetailKeyDown(config)) {
-                addSetDetails(event, config, ArmorCache.isSetActive(config.id), anyActive, tooltipState);
+                addSetDetails(context, config, ArmorCache.isSetActive(config.id), anyActive, tooltipState);
             } else if (!"none".equalsIgnoreCase(getTipKey(config))) {
-                addText(event, ColorText.translatable("gui.kineticarmory.armorsets.tooltip.hold_key_details", getTipKeyDisplayName(config)));
+                addText(context, ColorText.translatable("gui.kineticarmory.armorsets.tooltip.hold_key_details", getTipKeyDisplayName(config)));
             }
         }
     }
 
     private static TooltipSetState buildClientTooltipSetState(ArmorDataConfig config) {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.player == null) {
+        var player = KineticClientRuntime.localPlayer();
+        if (player == null) {
             return new TooltipSetState(ArmorCache.getSetPieceCount(config.id));
         }
-        return calculateClientTooltipSetState(config, minecraft.player);
+        return calculateClientTooltipSetState(config, player);
     }
 
     private static TooltipSetState calculateClientTooltipSetState(ArmorDataConfig set, LivingEntity entity) {
@@ -215,14 +212,11 @@ public class ArmorTooltip {
         return curios;
     }
 
-    private static void keepOnlyItemName(RenderTooltipEvent.GatherComponents event) {
-        if (event.getTooltipElements().isEmpty()) return;
-        Either<FormattedText, TooltipComponent> firstLine = event.getTooltipElements().get(0);
-        event.getTooltipElements().clear();
-        event.getTooltipElements().add(firstLine);
+    private static void keepOnlyItemName(KineticItemTooltips.GatherContext context) {
+        context.keepOnlyFirst();
     }
 
-    private static void addSetDetails(RenderTooltipEvent.GatherComponents event, ArmorDataConfig config, boolean active, boolean anyActive, TooltipSetState tooltipState) {
+    private static void addSetDetails(KineticItemTooltips.GatherContext context, ArmorDataConfig config, boolean active, boolean anyActive, TooltipSetState tooltipState) {
         config.preparePieceBonusData();
         int pieceCount = tooltipState.pieceCount();
         int total = Math.max(1, config.getTotalPieceCount());
@@ -232,28 +226,28 @@ public class ArmorTooltip {
         for (ArmorTipGenerator.TooltipLine line : lines) {
             if (line.text() == null || line.text().isBlank()) continue;
             if (line.iconLine()) {
-                addIconTip(event, line.text(), line.isActive(pieceCount, total, active), line.hasAnyActive(pieceCount, anyActive));
+                addIconTip(context, line.text(), line.isActive(pieceCount, total, active), line.hasAnyActive(pieceCount, anyActive));
             } else {
-                addText(event, Component.literal(line.text()));
+                addText(context, Component.literal(line.text()));
             }
         }
     }
 
-    private static void addText(RenderTooltipEvent.GatherComponents event, Component component) {
-        event.getTooltipElements().add(Either.left(component));
+    private static void addText(KineticItemTooltips.GatherContext context, Component component) {
+        context.addText(component);
     }
 
-    private static void addIconTip(RenderTooltipEvent.GatherComponents event, String text, boolean active, boolean anyActive) {
-        event.getTooltipElements().add(Either.right(new IconTipTooltipData(text, active, anyActive)));
+    private static void addIconTip(KineticItemTooltips.GatherContext context, String text, boolean active, boolean anyActive) {
+        context.addComponent(new IconTipTooltipData(text, active, anyActive));
     }
 
     private static boolean isDetailKeyDown(ArmorDataConfig config) {
         String key = getTipKey(config);
         return switch (key) {
-            case "ctrl", "control" -> Screen.hasControlDown();
-            case "alt" -> Screen.hasAltDown();
+            case "ctrl", "control" -> KineticClientRuntime.controlModifierDown();
+            case "alt" -> KineticClientRuntime.altModifierDown();
             case "none" -> true;
-            default -> Screen.hasShiftDown();
+            default -> KineticClientRuntime.shiftModifierDown();
         };
     }
 
@@ -306,7 +300,7 @@ public class ArmorTooltip {
         }
 
         @Override
-        public void renderText(@NotNull Font font, int x, int y, @NotNull org.joml.Matrix4f matrix, net.minecraft.client.renderer.MultiBufferSource.@NotNull BufferSource bufferSource) {
+        public void renderText(@NotNull Font font, int x, int y, @NotNull org.joml.Matrix4f matrix, @Nonnull net.minecraft.client.renderer.MultiBufferSource.@NotNull BufferSource bufferSource) {
             String dispText = this.isActive ? this.cleanText : stripColor(this.cleanText);
             String prefix = this.isActive ? "§f" : (this.anyActive ? "§m" : "§f");
             MutableComponent comp = Component.literal(prefix + dispText);
@@ -322,9 +316,9 @@ public class ArmorTooltip {
                 String id = matcher.group(2);
                 int iconX = x + font.width(stripColor(this.rawText.substring(0, matcher.start()).replaceAll(ICON_REGEX, "")));
                 if (type.equals("item")) {
-                    ResourceLocation rl = ResourceLocation.tryParse(id);
+                    ResourceLocation rl = KineticResourceIds.tryParse(id);
                     if (rl != null) {
-                        var item = ForgeRegistries.ITEMS.getValue(rl);
+                        var item = KineticRegistries.items().get(rl);
                         if (item != null && item != net.minecraft.world.item.Items.AIR) {
                             g.pose().pushPose();
                             g.pose().translate(iconX, y, 0);
@@ -345,7 +339,7 @@ public class ArmorTooltip {
 
         public ClientRejectedTooltipComponent(RejectedTooltipData data) {
             this.stacks = data.itemIds().stream()
-                    .map(id -> new ItemStack(Objects.requireNonNull(ForgeRegistries.ITEMS.getValue(new ResourceLocation(id)))))
+                    .map(id -> new ItemStack(Objects.requireNonNull(KineticRegistries.items().get(KineticResourceIds.tryParse(id)))))
                     .collect(Collectors.toList());
         }
 
@@ -367,8 +361,8 @@ public class ArmorTooltip {
         }
     }
 
-    public static void registerTooltipComponents(RegisterClientTooltipComponentFactoriesEvent event) {
-        event.register(RejectedTooltipData.class, ClientRejectedTooltipComponent::new);
-        event.register(IconTipTooltipData.class, ClientIconTipComponent::new);
+    public static void registerTooltipComponents() {
+        KineticItemTooltips.registerComponentFactory(RejectedTooltipData.class, ClientRejectedTooltipComponent::new);
+        KineticItemTooltips.registerComponentFactory(IconTipTooltipData.class, ClientIconTipComponent::new);
     }
 }

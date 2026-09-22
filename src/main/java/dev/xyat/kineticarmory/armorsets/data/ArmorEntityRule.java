@@ -4,7 +4,8 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
-import net.minecraftforge.registries.ForgeRegistries;
+import dev.xyat.kineticcore.api.registry.KineticRegistries;
+import dev.xyat.kineticcore.api.resource.KineticResourceIds;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -57,12 +58,12 @@ public final class ArmorEntityRule {
             }
 
             if (rule.charAt(0) == '#') {
-                ResourceLocation id = ResourceLocation.tryParse(rule.substring(1).trim());
+                ResourceLocation id = KineticResourceIds.tryParse(rule.substring(1).trim());
                 if (id != null) tagRules.add(TagKey.create(Registries.ENTITY_TYPE, id));
                 continue;
             }
 
-            ResourceLocation id = ResourceLocation.tryParse(rule);
+            ResourceLocation id = KineticResourceIds.tryParse(rule);
             if (id != null) exact.add(id);
         }
 
@@ -76,16 +77,13 @@ public final class ArmorEntityRule {
     }
 
     private boolean computeMatch(EntityType<?> type) {
-        ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(type);
+        ResourceLocation id = KineticRegistries.entityTypes().id(type);
         if (id == null) return false;
         if (exactIds.contains(id) || namespaces.contains(id.getNamespace())) return true;
 
         if (!tags.isEmpty()) {
-            var manager = ForgeRegistries.ENTITY_TYPES.tags();
-            if (manager != null) {
-                for (TagKey<EntityType<?>> tag : tags) {
-                    if (manager.getTag(tag).contains(type)) return true;
-                }
+            for (TagKey<EntityType<?>> tag : tags) {
+                if (KineticRegistries.entityTypes().isInTag(type, tag)) return true;
             }
         }
 

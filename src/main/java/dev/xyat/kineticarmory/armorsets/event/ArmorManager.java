@@ -8,8 +8,13 @@ import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
 import dev.xyat.kineticarmory.armorsets.json.ArmorLoader;
 import dev.xyat.kineticarmory.armorsets.predicate.ConditionData;
 import dev.xyat.kineticarmory.armorsets.predicate.ConditionEvaluator;
-import dev.xyat.kineticcore.feature.flight.api.FlightAPI;
-import top.theillusivec4.curios.api.event.CurioChangeEvent;
+import dev.xyat.kineticcore.api.flight.KineticFlight;
+import dev.xyat.kineticcore.api.compat.curios.KineticCuriosEvents;
+import dev.xyat.kineticcore.api.entity.event.KineticLivingEvents;
+import dev.xyat.kineticcore.api.event.KineticEventPriority;
+import dev.xyat.kineticcore.api.event.KineticExternalEvents;
+import dev.xyat.kineticcore.api.server.event.KineticServerEvents;
+import dev.xyat.kineticcore.api.world.event.KineticWorldEvents;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
@@ -33,15 +38,6 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.entity.EntityJoinLevelEvent;
-import net.minecraftforge.event.entity.living.*;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.server.ServerStartedEvent;
-import net.minecraftforge.eventbus.api.Event;
-import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.server.ServerLifecycleHooks;
 import top.theillusivec4.curios.api.CuriosApi;
 import top.theillusivec4.curios.api.type.inventory.IDynamicStackHandler;
 
@@ -55,21 +51,21 @@ public class ArmorManager {
     public static synchronized void registerEvents() {
         if (eventsRegistered) return;
         eventsRegistered = true;
-        MinecraftForge.EVENT_BUS.addListener(ArmorManager::onLivingTick);
-        MinecraftForge.EVENT_BUS.addListener(ArmorManager::onCurioChange);
-        MinecraftForge.EVENT_BUS.addListener(ArmorManager::onEquipmentChange);
-        MinecraftForge.EVENT_BUS.addListener(ArmorManager::onPlayerLogin);
-        MinecraftForge.EVENT_BUS.addListener(ArmorManager::onPlayerLogout);
-        MinecraftForge.EVENT_BUS.addListener(ArmorManager::onLivingDeath);
-        MinecraftForge.EVENT_BUS.addListener(ArmorManager::onPlayerRespawn);
-        MinecraftForge.EVENT_BUS.addListener(ArmorManager::onDimensionChange);
-        MinecraftForge.EVENT_BUS.addListener(ArmorManager::onServerStarted);
-        MinecraftForge.EVENT_BUS.addListener(ArmorManager::onServerTick);
-        MinecraftForge.EVENT_BUS.addListener(ArmorManager::onEntityJoin);
-        MinecraftForge.EVENT_BUS.addListener(ArmorManager::onLivingHurt);
-        MinecraftForge.EVENT_BUS.addListener(ArmorManager::onLivingDamage);
-        MinecraftForge.EVENT_BUS.addListener(ArmorManager::onLivingAttack);
-        MinecraftForge.EVENT_BUS.addListener(ArmorManager::onPotionApplicable);
+        KineticLivingEvents.onTick(KineticEventPriority.NORMAL, ArmorManager::onLivingTick);
+        KineticCuriosEvents.onChange(context -> onCurioChange(context.entity()));
+        KineticLivingEvents.onEquipmentChange(KineticEventPriority.NORMAL, (entity, slot, from, to) -> onEquipmentChange(entity));
+        KineticServerEvents.onPlayerLogin(KineticEventPriority.NORMAL, ArmorManager::handlePlayerLogin);
+        KineticServerEvents.onPlayerLogout(KineticEventPriority.NORMAL, ArmorManager::clearRuntimeCache);
+        KineticLivingEvents.onDeath(KineticEventPriority.NORMAL, false, context -> clearRuntimeCache(context.entity()));
+        KineticServerEvents.onPlayerRespawn(KineticEventPriority.NORMAL, (player, endConquered) -> onPlayerRespawn(player));
+        KineticServerEvents.onPlayerChangedDimension(KineticEventPriority.NORMAL, (player, from, to) -> onDimensionChange(player));
+        KineticServerEvents.onStarted(KineticEventPriority.NORMAL, ArmorManager::onServerStarted);
+        KineticServerEvents.onTick(KineticEventPriority.NORMAL, KineticServerEvents.TickPhase.END, ArmorManager::onServerTick);
+        KineticWorldEvents.onEntityJoin(KineticEventPriority.NORMAL, context -> onEntityJoin(context.entity()));
+        KineticLivingEvents.onHurt(KineticEventPriority.NORMAL, ArmorManager::onLivingHurt);
+        KineticLivingEvents.onDamage(KineticEventPriority.NORMAL, ArmorManager::onLivingDamage);
+        KineticLivingEvents.onAttack(KineticEventPriority.NORMAL, ArmorManager::onLivingAttack);
+        KineticLivingEvents.onPotionApplicable(KineticEventPriority.NORMAL, ArmorManager::onPotionApplicable);
     }
 
     private static final String NBT_KEY_ACTIVE_SETS = "kt_active_armorsets";
@@ -144,7 +140,7 @@ public class ArmorManager {
             removeAttributes(entity, runtime.config());
             executeCommands(entity, runtime.config(), runtime.config().deactivationCommands, runtime.pieceCount());
         }
-        if (entity instanceof ServerPlayer player) FlightAPI.removeFlightSource(player, "armor_set");
+        if (entity instanceof ServerPlayer player) KineticFlight.removeSource(player, "armor_set");
         persistSets(entity, Set.of(), Map.of());
         DYNAMIC_ACTIVE_STATES.remove(entity.getUUID());
     }
@@ -281,9 +277,8 @@ public class ArmorManager {
         }
     }
 
-    public static void onLivingTick(LivingEvent.LivingTickEvent event) {
+    public static void onLivingTick(LivingEntity entity) {
         if (!ArmorConfig.enableSets) return;
-        LivingEntity entity = event.getEntity();
         if (entity.level().isClientSide()) return;
         int interval = Math.max(1, ArmorConfig.potionRefreshInterval);
         if (entity.tickCount % interval != 0 || !isEntityAllowed(entity)) return;
@@ -331,21 +326,15 @@ public class ArmorManager {
         return config.isEffectAllowedByPieces(effectKey, pieceCount, legacyRequiredPieces);
     }
 
-    public static void onCurioChange(CurioChangeEvent event) { if (ArmorConfig.enableSets) updateEntitySets(event.getEntity()); }
+    public static void onCurioChange(LivingEntity entity) { if (ArmorConfig.enableSets) updateEntitySets(entity); }
 
-    public static void onEquipmentChange(LivingEquipmentChangeEvent event) {
+    public static void onEquipmentChange(LivingEntity entity) {
         if (!ArmorConfig.enableSets) return;
-        updateEntitySets(event.getEntity());
+        updateEntitySets(entity);
     }
 
-    public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) handlePlayerLogin(player);
-    }
-
-    public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) { clearRuntimeCache(event.getEntity()); }
-    public static void onLivingDeath(LivingDeathEvent event) { clearRuntimeCache(event.getEntity()); }
-    public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) { if (ArmorConfig.enableSets) updateEntitySets(event.getEntity(), true); }
-    public static void onDimensionChange(PlayerEvent.PlayerChangedDimensionEvent event) { if (ArmorConfig.enableSets) updateEntitySets(event.getEntity(), true); }
+    public static void onPlayerRespawn(ServerPlayer player) { if (ArmorConfig.enableSets) updateEntitySets(player, true); }
+    public static void onDimensionChange(ServerPlayer player) { if (ArmorConfig.enableSets) updateEntitySets(player, true); }
 
     private static void clearRuntimeCache(LivingEntity entity) {
         UUID uuid = entity.getUUID();
@@ -357,18 +346,17 @@ public class ArmorManager {
         PENDING_LOGIN_RECHECKS.remove(uuid);
     }
 
-    public static void onServerStarted(ServerStartedEvent event) {
+    public static void onServerStarted(MinecraftServer server) {
         ArmorLoader.load();
-        forceRecalculateAll(event.getServer());
+        forceRecalculateAll(server);
     }
 
-    public static void onServerTick(TickEvent.ServerTickEvent event) {
+    public static void onServerTick(MinecraftServer server) {
         if (!ArmorConfig.enableSets) {
             PENDING_LOGIN_RECHECKS.clear();
             return;
         }
-        if (event.phase != TickEvent.Phase.END || PENDING_LOGIN_RECHECKS.isEmpty()) return;
-        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        if (PENDING_LOGIN_RECHECKS.isEmpty()) return;
         if (server == null || server.getTickCount() % 20 != 0) return;
 
         Iterator<Map.Entry<UUID, Integer>> iterator = PENDING_LOGIN_RECHECKS.entrySet().iterator();
@@ -391,17 +379,17 @@ public class ArmorManager {
 
     public static void handlePlayerLogin(ServerPlayer player) {
         ArmorLoader.ensureLoaded();
-        ArmorNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new ArmorNetwork.SyncEntityFilterPacket(ArmorConfig.entityFilterMode, ArmorConfig.allowedEntities, false));
-        ArmorNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new ArmorNetwork.SyncArmorConfigsPacket(ArmorLoader.LOADED_SETS, false));
+        ArmorNetwork.syncEntityFilter(player, false);
+        ArmorNetwork.syncArmorConfigs(player, false);
         if (ArmorConfig.enableSets) {
             updateEntitySets(player, true);
             PENDING_LOGIN_RECHECKS.put(player.getUUID(), 3);
         }
     }
 
-    public static void onEntityJoin(EntityJoinLevelEvent event) {
+    public static void onEntityJoin(Entity joined) {
         if (!ArmorConfig.enableSets) return;
-        if (event.getEntity() instanceof LivingEntity entity && !(entity instanceof ServerPlayer) && !entity.level().isClientSide()) {
+        if (joined instanceof LivingEntity entity && !(entity instanceof ServerPlayer) && !entity.level().isClientSide()) {
             updateEntitySets(entity, true);
         }
     }
@@ -444,7 +432,7 @@ public class ArmorManager {
                         executeCommands(entity, config, config.deactivationCommands, previousPieceCounts.getOrDefault(id, 0));
                     }
                     removeDynamicStatePrefix(entity.getUUID(), id + "_");
-                    MinecraftForge.EVENT_BUS.post(new ArmorEvents.StatusChange(entity, id, false));
+                    KineticExternalEvents.post(new ArmorEvents.StatusChange(entity, id, false));
                 }
 
                 for (String id : scratch.toAdd) {
@@ -455,7 +443,7 @@ public class ArmorManager {
                         executeCommands(entity, config, config.activationCommands, pieceCount);
                         evaluateImmediateConditions(entity, config, pieceCount);
                     }
-                    MinecraftForge.EVENT_BUS.post(new ArmorEvents.StatusChange(entity, id, true));
+                    KineticExternalEvents.post(new ArmorEvents.StatusChange(entity, id, true));
                 }
 
                 for (String id : scratch.toRefresh) {
@@ -480,7 +468,7 @@ public class ArmorManager {
 
                 if (entity instanceof ServerPlayer player) {
                     syncFlight(player, currentSets, currentPieceCounts);
-                    ArmorNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new ArmorNetwork.SyncActiveSetsPacket(new ArrayList<>(currentSetIds), currentPieceCounts));
+                    ArmorNetwork.syncActiveSets(player, new ArrayList<>(currentSetIds), currentPieceCounts);
                 }
 
                 persistSets(entity, currentSetIds, currentPieceCounts);
@@ -554,13 +542,13 @@ public class ArmorManager {
     }
 
     private static void setFlightState(ServerPlayer player, boolean enabled) {
-        if (enabled) FlightAPI.addFlightSource(player, "armor_set");
-        else FlightAPI.removeFlightSource(player, "armor_set");
+        if (enabled) KineticFlight.addSource(player, "armor_set");
+        else KineticFlight.removeSource(player, "armor_set");
     }
 
-    public static void onLivingHurt(LivingHurtEvent event) {
+    public static void onLivingHurt(KineticLivingEvents.HurtContext event) {
         if (!ArmorConfig.enableSets) return;
-        LivingEntity victim = event.getEntity();
+        LivingEntity victim = event.entity();
         if (isEntityAllowed(victim)) {
             float damageBonus = 0.0f;
             for (ActiveSetRuntime runtime : getActiveRuntimeSets(victim)) {
@@ -568,7 +556,7 @@ public class ArmorManager {
                 int pieceCount = runtime.pieceCount();
                 if (config.damageImmunities != null) {
                     for (ArmorDataConfig.DamageImmunityData imm : config.damageImmunities) {
-                        if (isEffectActive(victim, config, pieceCount, config.keyOf(imm), imm.requiredPieces, imm.conditions, imm.conditionMatchMode, imm.conditionMinCount) && isDamageMatch(event.getSource(), imm.damageCache)) {
+                        if (isEffectActive(victim, config, pieceCount, config.keyOf(imm), imm.requiredPieces, imm.conditions, imm.conditionMatchMode, imm.conditionMinCount) && isDamageMatch(event.source(), imm.damageCache)) {
                             damageBonus += ((float) getConfiguredDamageImmunityMultiplier(config, imm, pieceCount) - 1.0f);
                         }
                     }
@@ -582,14 +570,14 @@ public class ArmorManager {
                 }
             }
             float totalMultiplier = Math.max(0.0f, 1.0f + damageBonus);
-            if (totalMultiplier != 1.0f) event.setAmount(event.getAmount() * totalMultiplier);
+            if (totalMultiplier != 1.0f) event.amount(event.amount() * totalMultiplier);
         }
         handleDamageConversion(event);
     }
 
-    public static void onLivingDamage(LivingDamageEvent event) {
+    public static void onLivingDamage(KineticLivingEvents.DamageContext event) {
         if (!ArmorConfig.enableSets) return;
-        if (event.getSource().getEntity() instanceof LivingEntity attacker && isEntityAllowed(attacker)) {
+        if (event.source().getEntity() instanceof LivingEntity attacker && isEntityAllowed(attacker)) {
             float damageBonus = 0.0f;
             for (ActiveSetRuntime runtime : getActiveRuntimeSets(attacker)) {
                 ArmorDataConfig config = runtime.config();
@@ -602,27 +590,27 @@ public class ArmorManager {
                 }
             }
             float totalMultiplier = Math.max(0.0f, 1.0f + damageBonus);
-            if (totalMultiplier != 1.0f) event.setAmount(event.getAmount() * totalMultiplier);
+            if (totalMultiplier != 1.0f) event.amount(event.amount() * totalMultiplier);
         }
     }
 
-    public static void onLivingAttack(LivingAttackEvent event) {
+    public static void onLivingAttack(KineticLivingEvents.AttackContext event) {
         if (!ArmorConfig.enableSets) return;
-        LivingEntity victim = event.getEntity();
+        LivingEntity victim = event.entity();
         if (isEntityAllowed(victim)) {
             for (ActiveSetRuntime runtime : getActiveRuntimeSets(victim)) {
                 ArmorDataConfig config = runtime.config();
                 if (config.damageImmunities == null) continue;
                 int pieceCount = runtime.pieceCount();
                 for (ArmorDataConfig.DamageImmunityData entry : config.damageImmunities) {
-                    if (getConfiguredDamageImmunityMultiplier(config, entry, pieceCount) <= 0.0 && isEffectActive(victim, config, pieceCount, config.keyOf(entry), entry.requiredPieces, entry.conditions, entry.conditionMatchMode, entry.conditionMinCount) && isDamageMatch(event.getSource(), entry.damageCache)) {
-                        event.setCanceled(true);
+                    if (getConfiguredDamageImmunityMultiplier(config, entry, pieceCount) <= 0.0 && isEffectActive(victim, config, pieceCount, config.keyOf(entry), entry.requiredPieces, entry.conditions, entry.conditionMatchMode, entry.conditionMinCount) && isDamageMatch(event.source(), entry.damageCache)) {
+                        event.cancel();
                         return;
                     }
                 }
             }
         }
-        if (event.getSource().getEntity() instanceof LivingEntity attacker && isEntityAllowed(attacker)) {
+        if (event.source().getEntity() instanceof LivingEntity attacker && isEntityAllowed(attacker)) {
             Set<String> dynamicStates = DYNAMIC_ACTIVE_STATES.getOrDefault(attacker.getUUID(), Collections.emptySet());
             for (ActiveSetRuntime runtime : getActiveRuntimeSets(attacker)) {
                 ArmorDataConfig config = runtime.config();
@@ -638,18 +626,18 @@ public class ArmorManager {
         }
     }
 
-    public static void onPotionApplicable(MobEffectEvent.Applicable event) {
+    public static void onPotionApplicable(KineticLivingEvents.PotionApplicableContext event) {
         if (!ArmorConfig.enableSets) return;
-        LivingEntity entity = event.getEntity();
+        LivingEntity entity = event.entity();
         if (!isEntityAllowed(entity)) return;
-        MobEffect incomingEffect = event.getEffectInstance().getEffect();
+        MobEffect incomingEffect = event.effectInstance().getEffect();
         for (ActiveSetRuntime runtime : getActiveRuntimeSets(entity)) {
             ArmorDataConfig config = runtime.config();
             if (config.effectImmunities == null) continue;
             int pieceCount = runtime.pieceCount();
             for (ArmorDataConfig.EffectImmunityData eff : config.effectImmunities) {
                 if (eff.cachedEffect == incomingEffect && isEffectActive(entity, config, pieceCount, config.keyOf(eff), eff.requiredPieces, eff.conditions, eff.conditionMatchMode, eff.conditionMinCount)) {
-                    event.setResult(Event.Result.DENY);
+                    event.applicability(KineticLivingEvents.Applicability.DENY);
                     return;
                 }
             }
@@ -748,12 +736,12 @@ public class ArmorManager {
         }
     }
 
-    private static void handleDamageConversion(LivingHurtEvent event) {
-        if (IS_CONVERTING_DAMAGE.get() || !(event.getSource().getEntity() instanceof LivingEntity attacker) || !isEntityAllowed(attacker)) return;
+    private static void handleDamageConversion(KineticLivingEvents.HurtContext event) {
+        if (IS_CONVERTING_DAMAGE.get() || !(event.source().getEntity() instanceof LivingEntity attacker) || !isEntityAllowed(attacker)) return;
         List<ActiveSetRuntime> activeSets = getActiveRuntimeSets(attacker);
         if (activeSets.isEmpty()) return;
 
-        float originalAmount = event.getAmount();
+        float originalAmount = event.amount();
         float remainingAmount = originalAmount;
         Map<String, Float> newDamages = null;
 
@@ -765,8 +753,8 @@ public class ArmorManager {
                 if (conv.targetType == null || conv.targetType.isEmpty()) continue;
                 if (!isEffectActive(attacker, config, runtime.pieceCount(), config.keyOf(conv), conv.requiredPieces, conv.conditions, conv.conditionMatchMode, conv.conditionMinCount)) continue;
                 if (remainingAmount <= 0) break outer;
-                if (attacker.getRandom().nextDouble() > conv.chance || event.getSource().getMsgId().equals(conv.targetType)) continue;
-                if (!isDamageMatch(event.getSource(), conv.sourceCache)) continue;
+                if (attacker.getRandom().nextDouble() > conv.chance || event.source().getMsgId().equals(conv.targetType)) continue;
+                if (!isDamageMatch(event.source(), conv.sourceCache)) continue;
 
                 float actualConvert = Math.min(remainingAmount, originalAmount * (float) getConfiguredDamageConversionRatio(config, conv, runtime.pieceCount()));
                 if (actualConvert <= 0) continue;
@@ -777,8 +765,8 @@ public class ArmorManager {
         }
 
         if (remainingAmount >= originalAmount || newDamages == null || newDamages.isEmpty()) return;
-        event.setAmount(Math.max(0, remainingAmount));
-        if (event.getAmount() <= 0) event.setCanceled(true);
+        event.amount(Math.max(0, remainingAmount));
+        if (event.amount() <= 0) event.cancel();
         IS_CONVERTING_DAMAGE.set(true);
         try {
             var registry = attacker.level().registryAccess().registryOrThrow(Registries.DAMAGE_TYPE);
@@ -788,8 +776,8 @@ public class ArmorManager {
                 if (targetKey == null) continue;
                 var targetHolder = registry.getHolder(targetKey).orElse(null);
                 if (targetHolder != null) {
-                    event.getEntity().invulnerableTime = 0;
-                    event.getEntity().hurt(new DamageSource(targetHolder, attacker), entry.getValue());
+                    event.entity().invulnerableTime = 0;
+                    event.entity().hurt(new DamageSource(targetHolder, attacker), entry.getValue());
                 }
             }
         } finally {

@@ -1,19 +1,22 @@
 package dev.xyat.kineticarmory.armorsets.predicate.client;
 
-import dev.xyat.kineticarmory.util.ColorText;
+import javax.annotation.Nonnull;
+
 import dev.xyat.kineticarmory.armorsets.predicate.ConditionData;
 import dev.xyat.kineticarmory.armorsets.predicate.ConditionTypeUtil;
 import dev.xyat.kineticarmory.armorsets.predicate.IConditionOwner;
-import dev.xyat.kineticcore.api.client.theme.GuiTheme;
+import dev.xyat.kineticarmory.util.ColorText;
+import dev.xyat.kineticcore.api.client.input.KineticMouseButtons;
 import dev.xyat.kineticcore.api.client.screen.KineticScreen;
-import dev.xyat.kineticcore.api.client.widget.KineticWidgets.Scroll;
-import dev.xyat.kineticcore.api.client.widget.KineticWidgets.SmoothSelectionList;
-import net.minecraft.client.Minecraft;
+import dev.xyat.kineticcore.api.client.theme.GuiTheme;
+import dev.xyat.kineticcore.api.client.widget.KineticWidgets;
+import dev.xyat.kineticcore.api.client.widget.button.KineticButtons.StateButton;
+import dev.xyat.kineticcore.api.client.widget.button.KineticButtons.ToggleButton;
+import dev.xyat.kineticcore.api.client.widget.input.KineticTextFields.KineticEditBox;
+import dev.xyat.kineticcore.api.client.widget.scroll.KineticScroll.SmoothEntry;
+import dev.xyat.kineticcore.api.client.widget.scroll.KineticScroll.SmoothSelectionList;
+import dev.xyat.kineticcore.api.runtime.KineticClientRuntime;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.components.ObjectSelectionList;
-import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.NotNull;
 
@@ -21,62 +24,59 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ConditionListScreen extends KineticScreen {
-    private final KineticScreen parent;
     private final IConditionOwner owner;
     private final List<ConditionData> conditions;
     protected ConditionListWidget listWidget;
 
-    private EditBox minCountInput;
-
-    private List<Component> delayedTooltip = null;
-    private int delayedTooltipX = 0;
-    private int delayedTooltipY = 0;
+    private KineticEditBox minCountInput;
+    private List<Component> delayedTooltip;
 
     public ConditionListScreen(KineticScreen parent, IConditionOwner owner) {
         super(ColorText.translatable("gui.kineticarmory.predicate.list_title"));
-        this.parent = parent;
+        setParentScreen(parent);
         this.owner = owner;
         this.conditions = owner.getConditions();
-        useResponsiveCanvas(
-                640f,
-                360f,
-                6
-        );
     }
 
-    private void updateModeUI(Button modeBtn) {
+    private void updateModeUI(StateButton modeBtn) {
         boolean isMin = "MIN".equals(owner.getMatchMode());
         modeBtn.setWidth(isMin ? 60 : 90);
         if (minCountInput != null) {
-            minCountInput.visible = isMin;
+            minCountInput.setVisible(isMin);
             if (isMin && minCountInput.getValue().isEmpty()) {
                 minCountInput.setValue(String.valueOf(Math.max(1, owner.getMinCount())));
             }
         }
 
         if ("ALL".equals(owner.getMatchMode())) {
-            modeBtn.setMessage(ColorText.translatable("gui.kineticarmory.predicate.mode.all"));
+            modeBtn.setText(ColorText.translatable("gui.kineticarmory.predicate.mode.all"));
         } else if ("MIN".equals(owner.getMatchMode())) {
-            modeBtn.setMessage(ColorText.translatable("gui.kineticarmory.predicate.mode.min_btn"));
+            modeBtn.setText(ColorText.translatable("gui.kineticarmory.predicate.mode.min_btn"));
         } else {
-            modeBtn.setMessage(ColorText.translatable("gui.kineticarmory.predicate.mode.any"));
+            modeBtn.setText(ColorText.translatable("gui.kineticarmory.predicate.mode.any"));
         }
     }
 
-    @Override protected void buildUi() {
-        int cx = canvasWidth() / 2; int cy = canvasHeight() / 2; int guiW = 400; int guiH = 220; int y0 = cy - guiH / 2;
+    @Override
+    protected void buildUi() {
+        int cx = canvasWidth() / 2;
+        int cy = canvasHeight() / 2;
+        int guiW = 400;
+        int guiH = 220;
+        int y0 = cy - guiH / 2;
 
-        this.listWidget = new ConditionListWidget(this.minecraft, guiW, guiH - 60, y0 + 30, y0 + guiH - 30, 24);
-        this.listWidget.setLeftPos(cx - guiW / 2); this.addEventListWidget(listWidget);
+        this.listWidget = new ConditionListWidget(guiW, guiH - 60, y0 + 30, y0 + guiH - 30, 24);
+        this.listWidget.setLeftPos(cx - guiW / 2);
+        addSmoothSelectionList(listWidget);
 
         int btnW = 90;
         int gap = 15;
         int startX = cx - (btnW * 3 + gap * 2) / 2;
         int bottomY = y0 + guiH - 25;
 
-        addButton(startX, bottomY, btnW, ColorText.translatable("gui.kineticarmory.predicate.add"), null, b -> {
+        addButtonWithHandler(startX, bottomY, btnW, ColorText.translatable("gui.kineticarmory.predicate.add"), null, b -> {
             ConditionData newCond = new ConditionData();
-            if (minecraft != null) minecraft.setScreen(new ConditionEditScreen(this, conditions, newCond, true));
+            KineticClientRuntime.openScreen(new ConditionEditScreen(this, conditions, newCond, true));
         });
 
         this.minCountInput = addTextField(startX + btnW + gap + 65, bottomY, 25, Component.empty());
@@ -85,110 +85,141 @@ public class ConditionListScreen extends KineticScreen {
             try {
                 int val = Integer.parseInt(s);
                 owner.setMinCount(Math.max(1, val));
-            } catch (NumberFormatException ignored) {}
+            } catch (NumberFormatException ignored) {
+            }
         });
-Button modeBtn = addButton(startX + btnW + gap, bottomY, btnW, Component.empty(), ColorText.translatable("gui.kineticarmory.predicate.mode.tooltip"), b -> {
-            String currentMode = owner.getMatchMode();
-            if ("ANY".equals(currentMode)) { owner.setMatchMode("ALL"); }
-            else if ("ALL".equals(currentMode)) { owner.setMatchMode("MIN"); }
-            else { owner.setMatchMode("ANY"); }
-            updateModeUI(b);
-        });
-updateModeUI(modeBtn);
 
-        addButton(startX + (btnW + gap) * 2, bottomY, btnW, ColorText.translatable("gui.kineticarmory.predicate.back"), null, b -> {
-            if (minecraft != null) navigateBack();
-        });
+        StateButton modeBtn = addButtonWithHandler(
+                startX + btnW + gap,
+                bottomY,
+                btnW,
+                Component.empty(),
+                ColorText.translatable("gui.kineticarmory.predicate.mode.tooltip"),
+                b -> {
+                    String currentMode = owner.getMatchMode();
+                    if ("ANY".equals(currentMode)) {
+                        owner.setMatchMode("ALL");
+                    } else if ("ALL".equals(currentMode)) {
+                        owner.setMatchMode("MIN");
+                    } else {
+                        owner.setMatchMode("ANY");
+                    }
+                    updateModeUI(b);
+                }
+        );
+        updateModeUI(modeBtn);
+
+        addButtonWithHandler(
+                startX + (btnW + gap) * 2,
+                bottomY,
+                btnW,
+                ColorText.translatable("gui.kineticarmory.predicate.back"),
+                null,
+                b -> navigateBack()
+        );
     }
 
-    @Override protected void renderCanvasBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        int cx = canvasWidth() / 2; int cy = canvasHeight() / 2; int guiW = 400; int guiH = 220;
+    @Override
+    protected void renderCanvasBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
+        int cx = canvasWidth() / 2;
+        int cy = canvasHeight() / 2;
+        int guiW = 400;
+        int guiH = 220;
         GuiTheme.panel(g, cx - guiW / 2 - 10, cy - guiH / 2 - 10, guiW + 20, guiH + 20);
         g.drawCenteredString(font, title, cx, cy - guiH / 2 + 5, 0xFFFFFF);
-        renderScaledList(listWidget, g, mx, my, pt);
-        if (conditions.isEmpty()) g.drawCenteredString(font, ColorText.translatable("gui.kineticarmory.predicate.empty"), cx, cy, 0xAAAAAA);
+        renderSmoothSelectionList(listWidget, g, mx, my, pt);
+        if (conditions.isEmpty()) {
+            g.drawCenteredString(font, ColorText.translatable("gui.kineticarmory.predicate.empty"), cx, cy, 0xAAAAAA);
+        }
     }
 
-    @Override protected void renderCanvasForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {
+    @Override
+    protected void renderCanvasForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {
         if (delayedTooltip != null && !delayedTooltip.isEmpty()) {
-            showTooltip(delayedTooltip);
+            showTooltip(delayedTooltip, null);
             delayedTooltip = null;
         }
     }
 
-    @Override protected boolean canvasMouseClicked(double mx, double my, int btn) {
-        if (minCountInput != null && minCountInput.visible) {
-            if (minCountInput.mouseClicked(mx, my, btn)) {
-                this.setFocused(minCountInput);
-                return true;
-            } else if (minCountInput.isFocused() && !minCountInput.isMouseOver(mx, my)) {
-                minCountInput.setFocused(false);
-                this.setFocused(null);
-            }
-        }
-        return super.canvasMouseClicked(mx, my, btn);
-    }
-
-    @Override public boolean keyPressed(int k, int s, int m) {
-        if (minCountInput != null && minCountInput.visible && minCountInput.isFocused()) {
-            if (minCountInput.keyPressed(k, s, m)) return true;
-        }
-        return super.keyPressed(k, s, m);
-    }
-
-    @Override public boolean charTyped(char c, int m) {
-        if (minCountInput != null && minCountInput.visible && minCountInput.isFocused()) {
-            if (minCountInput.charTyped(c, m)) return true;
-        }
-        return super.charTyped(c, m);
-    }
-
     class ConditionListWidget extends SmoothSelectionList<ConditionListWidget.Entry> {
-        private final int listTop;
-        private final int listBottom;
-
-        public ConditionListWidget(Minecraft mc, int w, int h, int t, int b, int ih) {
-            super(mc, w, h, t, b, ih);
-            this.listTop = t;
-            this.listBottom = b;
+        public ConditionListWidget(int width, int height, int top, int bottom, int itemHeight) {
+            super(width, height, top, bottom, itemHeight);
             setRenderBackground(false);
             setRenderTopAndBottom(false);
             refresh();
         }
 
-        @Override
-        public void render(@NotNull GuiGraphics g, int mx, int my, float pt) {
-            super.render(g, mx, my, pt);
-            if (this.getMaxScroll() > 0) {
-                int height = Math.max(1, listBottom - listTop);
-                int thumbH = Math.max(20, (int) ((float) height * height / this.getMaxPosition()));
-                Scroll.renderScrollbar(
-                        g,
-                        mx,
-                        my,
-                        this.getScrollbarPosition() + 2,
-                        listTop,
-                        4,
-                        height,
-                        thumbH,
-                        (int) Math.ceil(this.getMaxScroll()),
-                        this.getScrollAmount(),
-                        false
-                );
+        public void refresh() {
+            clearEntries();
+            for (ConditionData condition : conditions) {
+                addEntry(new Entry(condition));
             }
         }
 
-        public void refresh() { clearEntries(); for (ConditionData cond : conditions) addEntry(new Entry(cond)); }
-        @Override public int getRowWidth() { return this.width; }
-        @Override protected int getScrollbarPosition() { return this.x0 + this.width - 6; }
+        @Override
+        public int getRowWidth() {
+            return this.width;
+        }
 
-        class Entry extends ObjectSelectionList.Entry<Entry> {
+        class Entry extends SmoothEntry<Entry> {
             private final ConditionData data;
-            public Entry(ConditionData data) { this.data = data; }
+            private final StateButton deleteButton;
+            private final ToggleButton invertButton;
 
-            @Override public void render(GuiGraphics g, int index, int t, int l, int w, int h, int mx, int my, boolean hv, float pt) {
-                int bgColor = hv ? 0x88777777 : ((index % 2 == 0) ? 0x88444444 : 0x88222222);
-                g.fill(l, t, l + w, t + h - 2, bgColor); g.renderOutline(l, t, w, h - 2, 0xFF555555);
+            public Entry(ConditionData data) {
+                this.data = data;
+                this.deleteButton = KineticWidgets.createCompactButton(
+                        0,
+                        0,
+                        35,
+                        ColorText.translatable("gui.kineticarmory.predicate.delete"),
+                        null,
+                        () -> {
+                            conditions.remove(data);
+                            refresh();
+                        }
+                );
+                this.deleteButton.setError(true);
+                this.invertButton = KineticWidgets.createCompactToggleButton(
+                        0,
+                        0,
+                        35,
+                        data.invert,
+                        ColorText.translatable("gui.kineticarmory.predicate.invert.true"),
+                        ColorText.translatable("gui.kineticarmory.predicate.invert.false"),
+                        null,
+                        value -> {
+                            data.invert = value;
+                            refresh();
+                        }
+                );
+            }
+
+            @Override
+            public void render(
+                    @Nonnull GuiGraphics g,
+                    int index,
+                    int top,
+                    int left,
+                    int width,
+                    int height,
+                    int mouseX,
+                    int mouseY,
+                    boolean hovered,
+                    float partialTick
+            ) {
+                int contentHeight = height - 2;
+                GuiTheme.stateSurface(
+                        g,
+                        left,
+                        top,
+                        width,
+                        contentHeight,
+                        index % 2 == 0 ? GuiTheme.Surface.PANEL : GuiTheme.Surface.PANEL_ALT,
+                        false,
+                        hovered,
+                        false
+                );
 
                 String typeStr = (data.type == null || data.type.isEmpty()) ? "empty_type" : data.type.toLowerCase();
                 String typeName = ConditionTypeUtil.getTranslatedName(typeStr);
@@ -199,44 +230,48 @@ updateModeUI(modeBtn);
                                 typeName
                         )
                         : ColorText.translatable("gui.kineticarmory.predicate.list.type", typeName);
-                g.drawString(Minecraft.getInstance().font, typeLine, l + 5, t + 5, 0xFFFFFF);
+                g.drawString(KineticClientRuntime.font(), typeLine, left + 5, top + 5, 0xFFFFFF);
 
-                int delW = 35; int delX = l + w - delW - 5;
-                boolean delHover = mx >= delX && mx < delX + delW && my >= t + 2 && my < t + h - 4;
-                g.fill(delX, t + 2, delX + delW, t + h - 4, delHover ? 0xFFFF5555 : 0xFFAA0000);
-                g.drawCenteredString(Minecraft.getInstance().font, ColorText.translatable("gui.kineticarmory.predicate.delete"), delX + delW / 2, t + 6, 0xFFFFFF);
+                int deleteWidth = 35;
+                int deleteX = left + width - deleteWidth - 5;
+                int controlY = top + Math.max(0, (contentHeight - deleteButton.getHeight()) / 2);
+                deleteButton.setX(deleteX);
+                deleteButton.setY(controlY);
+                deleteButton.setWidth(deleteWidth);
+                KineticWidgets.renderControl(deleteButton, g, mouseX, mouseY, partialTick);
 
-                int invW = 35; int invX = delX - invW - 5;
-                boolean invHover = mx >= invX && mx < invX + invW && my >= t + 2 && my < t + h - 4;
-                g.fill(invX, t + 2, invX + invW, t + h - 4, invHover ? (data.invert ? 0xFF884444 : 0xFF448844) : (data.invert ? 0xFF552222 : 0xFF225522));
-                String invStr = data.invert ? ColorText.translatable("gui.kineticarmory.predicate.invert.true").getString() : ColorText.translatable("gui.kineticarmory.predicate.invert.false").getString();
-                g.drawCenteredString(Minecraft.getInstance().font, invStr, invX + invW / 2, t + 6, data.invert ? 0xFFFF5555 : 0xFF55FF55);
+                int invertWidth = 35;
+                int invertX = deleteX - invertWidth - 5;
+                invertButton.setX(invertX);
+                invertButton.setY(controlY);
+                invertButton.setWidth(invertWidth);
+                invertButton.setValue(data.invert);
+                KineticWidgets.renderControl(invertButton, g, mouseX, mouseY, partialTick);
 
-                if (invHover) {
+                if (invertButton.isMouseOver(mouseX, mouseY)) {
                     List<Component> tooltip = new ArrayList<>();
                     tooltip.add(ColorText.translatable("gui.kineticarmory.predicate.invert.tooltip.title"));
                     tooltip.add(ColorText.translatable("gui.kineticarmory.predicate.invert.tooltip.is"));
                     tooltip.add(ColorText.translatable("gui.kineticarmory.predicate.invert.tooltip.not"));
                     ConditionListScreen.this.delayedTooltip = tooltip;
-                    ConditionListScreen.this.delayedTooltipX = mx;
-                    ConditionListScreen.this.delayedTooltipY = my;
                 }
             }
-            @Override public boolean mouseClicked(double mx, double my, int btn) {
-                if (btn == 0) {
-                    int w = getRowWidth();
-                    int delW = 35; int delX = getLeft() + w - delW - 5;
-                    int invW = 35; int invX = delX - invW - 5;
 
-                    if (mx >= delX && mx < delX + delW) { conditions.remove(data); refresh(); }
-                    else if (mx >= invX && mx < invX + invW) { data.invert = !data.invert; refresh(); }
-                    else {
-                        minecraft.setScreen(new ConditionEditScreen(ConditionListScreen.this, conditions, data, false));
-                    }
-                    return true;
-                } return false;
+            @Override
+            public boolean mouseClicked(double mouseX, double mouseY, int button) {
+                if (!KineticMouseButtons.isPrimary(button)) return false;
+
+                if (deleteButton.mouseClicked(mouseX, mouseY, button)) return true;
+                if (invertButton.mouseClicked(mouseX, mouseY, button)) return true;
+
+                KineticClientRuntime.openScreen(new ConditionEditScreen(ConditionListScreen.this, conditions, data, false));
+                return true;
             }
-            @Override public @NotNull Component getNarration() { return Component.empty(); }
+
+            @Override
+            public @NotNull Component getNarration() {
+                return Component.empty();
+            }
         }
     }
 }

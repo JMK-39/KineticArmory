@@ -1,29 +1,26 @@
 package dev.xyat.kineticarmory.armorsets.client.gui;
 
+import dev.xyat.kineticcore.api.client.input.KineticMouseButtons;
 import dev.xyat.kineticcore.api.client.text.KineticText;
 import dev.xyat.kineticarmory.util.ColorText;
 import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
 import dev.xyat.kineticcore.api.client.theme.GuiTheme;
-import dev.xyat.kineticcore.api.client.overlay.GuiOverlay;
-import dev.xyat.kineticcore.api.client.search.ItemSearchIndex;
-import dev.xyat.kineticcore.api.client.selector.ItemSelectorScreen;
+import dev.xyat.kineticcore.api.client.overlay.KineticOverlays;
 import dev.xyat.kineticcore.api.client.screen.KineticScreen;
-import dev.xyat.kineticcore.api.client.selector.NbtEditorScreen;
-import dev.xyat.kineticcore.api.client.widget.KineticWidgets.GridScrollController;
-import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
+import dev.xyat.kineticcore.api.client.selector.KineticSelectors;
+import dev.xyat.kineticcore.api.client.widget.button.KineticButtons.StateButton;
+import dev.xyat.kineticcore.api.registry.KineticRegistries;
+import dev.xyat.kineticcore.api.runtime.KineticClientRuntime;
+import dev.xyat.kineticcore.api.client.widget.scroll.KineticScroll.GridScrollController;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public class ArmorEquipmentVariantScreen extends KineticScreen {
     private static final int PANEL_COLOR = 0xFF1C1C1C;
@@ -42,15 +39,15 @@ public class ArmorEquipmentVariantScreen extends KineticScreen {
     private final ArmorDataConfig config;
     private final String slotKey;
 
-    private Button addItemButton;
-    private Button addEquippedButton;
-    private Button slotModeButton;
-    private Button clearButton;
-    private Button backButton;
-    private final List<Button> modeButtons = new ArrayList<>();
-    private final List<Button> nbtButtons = new ArrayList<>();
-    private final List<Button> replaceButtons = new ArrayList<>();
-    private final List<Button> deleteButtons = new ArrayList<>();
+    private StateButton addItemButton;
+    private StateButton addEquippedButton;
+    private StateButton slotModeButton;
+    private StateButton clearButton;
+    private StateButton backButton;
+    private final List<StateButton> modeButtons = new ArrayList<>();
+    private final List<StateButton> nbtButtons = new ArrayList<>();
+    private final List<StateButton> replaceButtons = new ArrayList<>();
+    private final List<StateButton> deleteButtons = new ArrayList<>();
 
     private int panelX;
     private int panelY;
@@ -70,20 +67,15 @@ public class ArmorEquipmentVariantScreen extends KineticScreen {
 
     public ArmorEquipmentVariantScreen(KineticScreen parent, ArmorDataConfig config, String slotKey, Component slotName) {
         super(ColorText.translatable("gui.kineticarmory.armorsets.variant.title", slotName));
+        setParentScreen(parent);
         this.parent = parent;
         this.config = config;
         this.slotKey = slotKey;
-        useResponsiveCanvas(
-                640f,
-                360f,
-                6
-        );
         this.selectedIndex = 0;
     }
 
     @Override
-    public void tick() {
-        super.tick();
+    protected void canvasTick() {
         clampSelectionAndScroll();
         updateActionButtons();
     }
@@ -98,13 +90,11 @@ public class ArmorEquipmentVariantScreen extends KineticScreen {
         int controlY = panelY + 36;
         int startX = canvasWidth() / 2 - (btnW * 5 + gap * 4) / 2;
 
-        slotModeButton = addButton(startX, controlY, btnW, getSlotModeButtonText(), null, b -> toggleSlotRequirementMode());
-addItemButton = addButton(startX + (btnW + gap), controlY, btnW, ColorText.translatable("gui.kineticarmory.armorsets.variant.add_item"), null, b -> addFromSelector());
-addEquippedButton = addButton(startX + (btnW + gap) * 2, controlY, btnW, ColorText.translatable("gui.kineticarmory.armorsets.variant.add_equipped"), null, b -> addEquipped());
-clearButton = addButton(startX + (btnW + gap) * 3, controlY, btnW, ColorText.translatable("gui.kineticarmory.armorsets.variant.clear"), null, b -> clearAll());
-backButton = addButton(startX + (btnW + gap) * 4, controlY, btnW, ColorText.translatable("gui.kineticarmory.armorsets.back"), null, b -> {
-            if (minecraft != null) navigateBack();
-        });
+        slotModeButton = addButtonWithHandler(startX, controlY, btnW, getSlotModeButtonText(), null, b -> toggleSlotRequirementMode());
+addItemButton = addButtonWithHandler(startX + (btnW + gap), controlY, btnW, ColorText.translatable("gui.kineticarmory.armorsets.variant.add_item"), null, b -> addFromSelector());
+addEquippedButton = addButtonWithHandler(startX + (btnW + gap) * 2, controlY, btnW, ColorText.translatable("gui.kineticarmory.armorsets.variant.add_equipped"), null, b -> addEquipped());
+clearButton = addButtonWithHandler(startX + (btnW + gap) * 3, controlY, btnW, ColorText.translatable("gui.kineticarmory.armorsets.variant.clear"), null, b -> clearAll());
+backButton = addButtonWithHandler(startX + (btnW + gap) * 4, controlY, btnW, ColorText.translatable("gui.kineticarmory.armorsets.back"), null, b -> navigateBack());
 createRowButtons();
         clampSelectionAndScroll();
         updateActionButtons();
@@ -125,13 +115,13 @@ createRowButtons();
             int modeX = nbtX - ROW_BUTTON_W - ROW_BUTTON_GAP;
             int buttonY = rowY + (ROW_H - ROW_BUTTON_H) / 2;
 
-            Button mode = addButton(modeX, buttonY, ROW_BUTTON_W, ColorText.translatable("gui.kineticarmory.armorsets.variant.mode"), null, b -> toggleVisibleRowNbtMode(row));
+            StateButton mode = addButtonWithHandler(modeX, buttonY, ROW_BUTTON_W, ColorText.translatable("gui.kineticarmory.armorsets.variant.mode"), null, b -> toggleVisibleRowNbtMode(row));
             modeButtons.add(mode);
-Button nbt = addButton(nbtX, buttonY, ROW_BUTTON_W, ColorText.translatable("gui.kineticarmory.armorsets.variant.nbt"), null, b -> editVisibleRowNbt(row));
+StateButton nbt = addButtonWithHandler(nbtX, buttonY, ROW_BUTTON_W, ColorText.translatable("gui.kineticarmory.armorsets.variant.nbt"), null, b -> editVisibleRowNbt(row));
             nbtButtons.add(nbt);
-Button replace = addButton(replaceX, buttonY, ROW_BUTTON_W, ColorText.translatable("gui.kineticarmory.armorsets.variant.edit"), null, b -> replaceVisibleRowFromSelector(row));
+StateButton replace = addButtonWithHandler(replaceX, buttonY, ROW_BUTTON_W, ColorText.translatable("gui.kineticarmory.armorsets.variant.edit"), null, b -> replaceVisibleRowFromSelector(row));
             replaceButtons.add(replace);
-Button delete = addButton(deleteX, buttonY, ROW_BUTTON_W, ColorText.translatable("gui.kineticarmory.armorsets.delete"), null, b -> deleteVisibleRow(row));
+StateButton delete = addButtonWithHandler(deleteX, buttonY, ROW_BUTTON_W, ColorText.translatable("gui.kineticarmory.armorsets.delete"), null, b -> deleteVisibleRow(row));
             deleteButtons.add(delete);
 }
     }
@@ -200,7 +190,7 @@ Button delete = addButton(deleteX, buttonY, ROW_BUTTON_W, ColorText.translatable
         } else {
             setSlotRequirementMode(SlotRequirementMode.NORMAL);
         }
-        GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.common.saved"));
+        KineticOverlays.toast(ColorText.translatable("msg.kineticarmory.common.saved"));
         clampSelectionAndScroll();
         updateActionButtons();
     }
@@ -252,39 +242,39 @@ Button delete = addButton(deleteX, buttonY, ROW_BUTTON_W, ColorText.translatable
     }
 
     private String getId(ItemStack stack) {
-        return stack.isEmpty() ? "minecraft:air" : Objects.requireNonNull(ForgeRegistries.ITEMS.getKey(stack.getItem())).toString();
+        return stack.isEmpty() ? "minecraft:air" : KineticRegistries.items().id(stack.getItem()).toString();
     }
 
     private void addFromSelector() {
-        if (isSpecialSlotMode() || minecraft == null) return;
-        ItemSearchIndex.prepareCache(() -> minecraft.setScreen(new ItemSelectorScreen(this, selection -> {
+        if (isSpecialSlotMode()) return;
+        KineticSelectors.openItemSelector(this, selection -> {
             if (!selection.isItem()) return;
             ItemStack stack = selection.stack();
             if (stack.isEmpty()) return;
             variants().add(createReq(stack));
             selectedIndex = variants().size() - 1;
             config.normalizeEquipmentVariants();
-            GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.common.saved"));
+            KineticOverlays.toast(ColorText.translatable("msg.kineticarmory.common.saved"));
             clampSelectionAndScroll();
-        })));
+        });
     }
 
     private void addEquipped() {
         if (isSpecialSlotMode()) return;
         ItemStack stack = getEquippedStackForSlot();
         if (stack.isEmpty()) {
-            GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.armorsets.variant.empty_equipped"));
+            KineticOverlays.toast(ColorText.translatable("msg.kineticarmory.armorsets.variant.empty_equipped"));
             return;
         }
         variants().add(createReq(stack));
         selectedIndex = variants().size() - 1;
         config.normalizeEquipmentVariants();
-        GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.common.saved"));
+        KineticOverlays.toast(ColorText.translatable("msg.kineticarmory.common.saved"));
         clampSelectionAndScroll();
     }
 
     private ItemStack getEquippedStackForSlot() {
-        Player player = Minecraft.getInstance().player;
+        Player player = KineticClientRuntime.localPlayer();
         if (player == null) return ItemStack.EMPTY;
         return switch (slotKey) {
             case "head" -> player.getItemBySlot(EquipmentSlot.HEAD);
@@ -299,7 +289,7 @@ Button delete = addButton(deleteX, buttonY, ROW_BUTTON_W, ColorText.translatable
 
     private void clearAll() {
         setSlotRequirementMode(SlotRequirementMode.NORMAL);
-        GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.common.saved"));
+        KineticOverlays.toast(ColorText.translatable("msg.kineticarmory.common.saved"));
         updateActionButtons();
     }
 
@@ -310,8 +300,8 @@ Button delete = addButton(deleteX, buttonY, ROW_BUTTON_W, ColorText.translatable
     }
 
     private void replaceFromSelector(ArmorDataConfig.ItemReq req) {
-        if (minecraft == null || req == null) return;
-        ItemSearchIndex.prepareCache(() -> minecraft.setScreen(new ItemSelectorScreen(this, selection -> {
+        if (req == null) return;
+        KineticSelectors.openItemSelector(this, selection -> {
             if (!selection.isItem()) return;
             ItemStack stack = selection.stack();
             if (stack.isEmpty()) return;
@@ -320,9 +310,9 @@ Button delete = addButton(deleteX, buttonY, ROW_BUTTON_W, ColorText.translatable
             req.nbtTag = newReq.nbtTag;
             if (req.nbtMode == null) req.nbtMode = "NONE";
             config.normalizeEquipmentVariants();
-            GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.common.saved"));
+            KineticOverlays.toast(ColorText.translatable("msg.kineticarmory.common.saved"));
             clampSelectionAndScroll();
-        })));
+        });
     }
 
     private void editVisibleRowNbt(int visibleRow) {
@@ -332,14 +322,14 @@ Button delete = addButton(deleteX, buttonY, ROW_BUTTON_W, ColorText.translatable
     }
 
     private void editNbt(ArmorDataConfig.ItemReq req) {
-        if (!canEditNbt(req) || minecraft == null) return;
+        if (!canEditNbt(req)) return;
         String initNbt = (req.nbtTag != null && !req.nbtTag.trim().isEmpty()) ? req.nbtTag : "";
-        minecraft.setScreen(new NbtEditorScreen(initNbt, savedNbt -> {
+        KineticSelectors.openNbtEditor(this, initNbt, savedNbt -> {
             req.nbtTag = savedNbt;
             if (req.nbtMode == null || req.nbtMode.equals("NONE")) req.nbtMode = "WEAK";
             config.normalizeEquipmentVariants();
-            GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.common.saved"));
-        }, this));
+            KineticOverlays.toast(ColorText.translatable("msg.kineticarmory.common.saved"));
+        });
     }
 
     private void toggleVisibleRowNbtMode(int visibleRow) {
@@ -351,7 +341,7 @@ Button delete = addButton(deleteX, buttonY, ROW_BUTTON_W, ColorText.translatable
     private void toggleNbtMode(ArmorDataConfig.ItemReq req) {
         if (!canEditNbt(req)) return;
         req.nbtMode = ("NONE".equals(req.nbtMode) || req.nbtMode == null) ? "WEAK" : ("WEAK".equals(req.nbtMode) ? "STRONG" : "NONE");
-        GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.common.saved"));
+        KineticOverlays.toast(ColorText.translatable("msg.kineticarmory.common.saved"));
     }
 
     private void deleteVisibleRow(int visibleRow) {
@@ -373,7 +363,7 @@ Button delete = addButton(deleteX, buttonY, ROW_BUTTON_W, ColorText.translatable
 
         selectedIndex = Math.min(index, list.size() - 1);
         config.normalizeEquipmentVariants();
-        GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.common.deleted"));
+        KineticOverlays.toast(ColorText.translatable("msg.kineticarmory.common.deleted"));
         clampSelectionAndScroll();
         updateActionButtons();
     }
@@ -413,10 +403,10 @@ Button delete = addButton(deleteX, buttonY, ROW_BUTTON_W, ColorText.translatable
         List<ArmorDataConfig.ItemReq> list = variants();
         SlotRequirementMode mode = getSlotRequirementMode();
         boolean normalMode = mode == SlotRequirementMode.NORMAL;
-        if (slotModeButton != null) slotModeButton.setMessage(getSlotModeButtonText());
-        if (addItemButton != null) addItemButton.active = normalMode;
-        if (addEquippedButton != null) addEquippedButton.active = normalMode;
-        if (clearButton != null) clearButton.active = !normalMode || !list.isEmpty();
+        if (slotModeButton != null) slotModeButton.setText(getSlotModeButtonText());
+        if (addItemButton != null) addItemButton.setEnabled(normalMode);
+        if (addEquippedButton != null) addEquippedButton.setEnabled(normalMode);
+        if (clearButton != null) clearButton.setEnabled(!normalMode || !list.isEmpty());
         for (int i = 0; i <= visibleRows; i++) {
             int index = indexOfVisibleRow(i);
             boolean hasItem = normalMode && index >= 0 && index < list.size();
@@ -441,18 +431,18 @@ Button delete = addButton(deleteX, buttonY, ROW_BUTTON_W, ColorText.translatable
         }
     }
 
-    private void setRowButtonY(List<Button> buttons, int index, int y, boolean inside) {
+    private void setRowButtonY(List<StateButton> buttons, int index, int y, boolean inside) {
         if (index < 0 || index >= buttons.size()) return;
-        Button button = buttons.get(index);
+        StateButton button = buttons.get(index);
         button.setY(y);
-        button.visible = button.visible && inside;
+        button.setVisible(button.isVisible() && inside);
     }
 
-    private void setButtonState(List<Button> buttons, int index, boolean visible, boolean active) {
+    private void setButtonState(List<StateButton> buttons, int index, boolean visible, boolean active) {
         if (index < 0 || index >= buttons.size()) return;
-        Button button = buttons.get(index);
-        button.visible = visible;
-        button.active = active;
+        StateButton button = buttons.get(index);
+        button.setVisible(visible);
+        button.setEnabled(active);
     }
 
     private void clampSelectionAndScroll() {
@@ -485,8 +475,7 @@ Button delete = addButton(deleteX, buttonY, ROW_BUTTON_W, ColorText.translatable
         clampSelectionAndScroll();
         updateActionButtons();
         updateRowButtonPositions();
-        GuiTheme.panel(g, panelX, panelY, panelW, panelH, PANEL_COLOR, PANEL_OUTLINE);
-        g.renderOutline(panelX + 1, panelY + 1, panelW - 2, panelH - 2, 0xFF3A3A3A);
+        GuiTheme.panel(g, panelX, panelY, panelW, panelH);
         renderListArea(g, mx, my);
     }
 
@@ -498,12 +487,11 @@ Button delete = addButton(deleteX, buttonY, ROW_BUTTON_W, ColorText.translatable
     @Override
     protected void renderTooltips(GuiGraphics g, int scaledMouseX, int scaledMouseY, int mouseX, int mouseY) {
         List<Component> tooltip = getTooltipAt(scaledMouseX, scaledMouseY);
-        if (!tooltip.isEmpty()) showTooltip(tooltip);
+        if (!tooltip.isEmpty()) showTooltip(tooltip, null);
     }
 
     private void renderListArea(GuiGraphics g, int mx, int my) {
-        GuiTheme.panel(g, listX, listY, listW, listH, LIST_COLOR, LIST_OUTLINE);
-        g.renderOutline(listX + 1, listY + 1, listW - 2, listH - 2, 0xFF3A3A3A);
+        GuiTheme.panelAlt(g, listX, listY, listW, listH);
 
         SlotRequirementMode mode = getSlotRequirementMode();
         if (mode == SlotRequirementMode.EMPTY) {
@@ -527,7 +515,7 @@ Button delete = addButton(deleteX, buttonY, ROW_BUTTON_W, ColorText.translatable
         int start = listScroll.smoothIndexOffset();
         int shift = listScroll.visualShift(ROW_H + ROW_GAP);
         int end = Math.min(list.size(), start + visibleRows + 1);
-                enableCanvasScissor(g, listX + 6, listY + 6, listX + listW - 6, listY + listH - 6);
+                enableUiScissor(g, listX + 6, listY + 6, listX + listW - 6, listY + listH - 6);
         try {
 for (int index = start; index < end; index++) {
             int visibleRow = index - start;
@@ -536,11 +524,17 @@ for (int index = start; index < end; index++) {
             ArmorDataConfig.ItemReq req = list.get(index);
             boolean selected = index == selectedIndex;
             boolean hover = GuiTheme.hovering(mx, my, rowX, rowY, rowW, ROW_H);
-            int bg = selected ? 0xAA775500 : (hover ? 0x88444444 : ((index % 2 == 0) ? 0x88333333 : 0x88222222));
-            int outline = selected ? 0xFFFFB000 : (hover ? 0xFFAAAAAA : 0xFF707070);
-
-            g.fill(rowX, rowY, rowX + rowW, rowY + ROW_H, bg);
-            g.renderOutline(rowX, rowY, rowW, ROW_H, outline);
+            GuiTheme.stateSurface(
+                    g,
+                    rowX,
+                    rowY,
+                    rowW,
+                    ROW_H,
+                    GuiTheme.Surface.PANEL_ALT,
+                    selected,
+                    hover,
+                    false
+            );
 
             int iconX = rowX + 8;
             int iconY = rowY + 6;
@@ -554,7 +548,7 @@ for (int index = start; index < end; index++) {
             drawInfoLine(g, req, textX, rowY + 20, textW);
         }
         } finally {
-            disableCanvasScissor(g);
+            disableUiScissor(g);
         }
     }
 
@@ -601,14 +595,14 @@ for (int index = start; index < end; index++) {
 
     private Component getReqName(ArmorDataConfig.ItemReq req) {
         if (req == null || req.id == null) return ColorText.translatable("gui.kineticarmory.armorsets.variant.invalid");
-        if ("EMPTY".equalsIgnoreCase(req.id)) return ColorText.translatable("gui.kineticarmory.armorsets.slot_state.empty").withStyle(ChatFormatting.RED);
-        if ("ANY".equalsIgnoreCase(req.id)) return ColorText.translatable("gui.kineticarmory.armorsets.slot_state.any").withStyle(ChatFormatting.GREEN);
+        if ("EMPTY".equalsIgnoreCase(req.id)) return ColorText.translatable("gui.kineticarmory.armorsets.slot_state.empty");
+        if ("ANY".equalsIgnoreCase(req.id)) return ColorText.translatable("gui.kineticarmory.armorsets.slot_state.any");
         ItemStack stack = req.createDisplayStack();
         return stack.isEmpty() ? Component.literal(req.id) : stack.getHoverName();
     }
 
     private void drawTrimmedText(GuiGraphics g, String text, int x, int y, int maxWidth) {
-        KineticText.drawScrollingLeft(g, font, text == null ? "" : text, x, y, Math.max(0, maxWidth), -1, false);
+        KineticText.drawScrollingLeft(g, font, Component.literal(text == null ? "" : text), x, y, Math.max(0, maxWidth), -1, false);
     }
 
     private List<Component> getTooltipAt(int mx, int my) {
@@ -633,12 +627,12 @@ for (int index = start; index < end; index++) {
         return List.of();
     }
 
-    private boolean isButtonHovered(List<Button> buttons, int index, int mx, int my) {
+    private boolean isButtonHovered(List<StateButton> buttons, int index, int mx, int my) {
         return index >= 0 && index < buttons.size() && isButtonHovered(buttons.get(index), mx, my);
     }
 
-    private boolean isButtonHovered(Button button, int mx, int my) {
-        return button != null && button.visible && button.isMouseOver(mx, my);
+    private boolean isButtonHovered(StateButton button, int mx, int my) {
+        return button != null && button.isVisible() && button.isMouseOver(mx, my);
     }
 
     private List<Component> getRowTooltip(int mx, int my) {
@@ -684,7 +678,7 @@ for (int index = start; index < end; index++) {
     }
 
     private boolean tryStartScrollbarDrag(double mx, double my, int btn) {
-        if (btn != 0 || isSpecialSlotMode()) return false;
+        if (!KineticMouseButtons.isPrimary(btn) || isSpecialSlotMode()) return false;
         listScroll.update(variants().size(), visibleRows);
         return listScroll.beginDrag(
                 mx, my,

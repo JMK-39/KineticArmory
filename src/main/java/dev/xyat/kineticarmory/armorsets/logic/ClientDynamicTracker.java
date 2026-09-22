@@ -1,11 +1,9 @@
 package dev.xyat.kineticarmory.armorsets.logic;
 
 import dev.xyat.kineticarmory.armorsets.Network.ArmorNetwork;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraftforge.event.TickEvent;
+import dev.xyat.kineticcore.api.runtime.KineticClientRuntime;
 
-public class ClientDynamicTracker {
+public final class ClientDynamicTracker {
 
     private static int leftMouseTicks = 0;
     private static int rightMouseTicks = 0;
@@ -18,15 +16,14 @@ public class ClientDynamicTracker {
     private static boolean lastSentRightClick = false;
     private static int syncCooldown = 0;
 
+    private ClientDynamicTracker() {
+    }
 
-    public static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) return;
-        Minecraft mc = Minecraft.getInstance();
-        LocalPlayer player = mc.player;
-        if (player == null || mc.level == null) return;
+    public static void onClientTick() {
+        if (KineticClientRuntime.localPlayer() == null || KineticClientRuntime.currentLevel() == null) return;
 
-        boolean leftDown = mc.options.keyAttack.isDown();
-        boolean rightDown = mc.options.keyUse.isDown();
+        boolean leftDown = KineticClientRuntime.attackKeyDown();
+        boolean rightDown = KineticClientRuntime.useKeyDown();
         leftMouseClick = false;
         rightMouseClick = false;
 
@@ -48,7 +45,7 @@ public class ClientDynamicTracker {
     }
 
     private static void syncToServer() {
-        if (ArmorNetwork.CHANNEL == null) return;
+        if (!KineticClientRuntime.connected()) return;
         if (syncCooldown > 0) syncCooldown--;
 
         boolean changed = leftMouseTicks != lastSentLeftTicks
@@ -67,6 +64,6 @@ public class ClientDynamicTracker {
         lastSentLeftClick = leftMouseClick;
         lastSentRightClick = rightMouseClick;
 
-        ArmorNetwork.CHANNEL.sendToServer(new ArmorNetwork.ClientInputStatePacket(leftMouseTicks, rightMouseTicks, leftMouseClick, rightMouseClick));
+        ArmorNetwork.sendClientInputState(leftMouseTicks, rightMouseTicks, leftMouseClick, rightMouseClick);
     }
 }

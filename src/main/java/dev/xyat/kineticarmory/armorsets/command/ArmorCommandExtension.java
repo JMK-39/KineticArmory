@@ -4,17 +4,17 @@ import dev.xyat.kineticarmory.util.ColorText;
 import dev.xyat.kineticarmory.KineticArmory;
 import dev.xyat.kineticarmory.armorsets.ArmorCommand;
 import dev.xyat.kineticarmory.armorsets.json.ArmorLoader;
-import dev.xyat.kineticcore.command.KTCommandApi;
-import dev.xyat.kineticcore.command.KTCommandExtension;
+import dev.xyat.kineticcore.api.command.CommandExtension;
+import dev.xyat.kineticcore.api.command.KineticCommands;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 
-public final class ArmorCommandExtension implements KTCommandExtension {
+public final class ArmorCommandExtension implements CommandExtension {
     private ArmorCommandExtension() {
     }
 
     public static void install() {
-        KTCommandApi.register(KineticArmory.MODID, new ArmorCommandExtension());
+        KineticCommands.registerExtension(KineticArmory.MODID, new ArmorCommandExtension());
     }
 
     @Override

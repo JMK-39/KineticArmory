@@ -5,21 +5,18 @@ import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
 import dev.xyat.kineticarmory.armorsets.data.ArmorTipGenerator;
 import dev.xyat.kineticarmory.armorsets.predicate.client.ConditionListScreen;
 import dev.xyat.kineticcore.api.client.theme.GuiTheme;
-import dev.xyat.kineticcore.api.client.overlay.GuiOverlay;
+import dev.xyat.kineticcore.api.client.overlay.KineticOverlays;
 import dev.xyat.kineticcore.api.client.search.KineticSearch;
 import dev.xyat.kineticcore.api.client.screen.KineticScreen;
-import dev.xyat.kineticcore.api.client.widget.KineticWidgets.AutoCompleteBox;
-import dev.xyat.kineticcore.api.client.widget.KineticWidgets.AutoCompleteBoxGroup;
-import dev.xyat.kineticcore.api.client.widget.KineticWidgets.NumericAutoCompleteBox;
+import dev.xyat.kineticcore.api.runtime.KineticClientRuntime;
+import dev.xyat.kineticcore.api.client.widget.input.KineticAutoComplete.AutoCompleteBox;
+import dev.xyat.kineticcore.api.client.widget.input.KineticAutoComplete.NumericAutoCompleteBox;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 
 public class PotionEditor extends KineticScreen {
-    private final AutoCompleteBoxGroup inputGroup =
-            new AutoCompleteBoxGroup();
     private final KineticScreen parent; private final ArmorDataConfig config;
     private final ArmorDataConfig.PotionEffectData data; private final boolean isNew;
     private AutoCompleteBox idInput;
@@ -29,18 +26,13 @@ public class PotionEditor extends KineticScreen {
 
     public PotionEditor(KineticScreen p, ArmorDataConfig c, ArmorDataConfig.PotionEffectData d) {
         super(ColorText.translatable("gui.kineticarmory.armorsets.editor.potion.title"));
-        useResponsiveCanvas(
-                640f,
-                360f,
-                6
-        );
+        setParentScreen(p);
         parent = p; config = c; isNew = (d == null); data = isNew ? new ArmorDataConfig.PotionEffectData() : d;
         if (!isNew) oldTip = ArmorTipGenerator.genPotTip(data);
     }
 
     @Override
-    public void tick() {
-        super.tick();
+    protected void canvasTick() {
         if (idInput != null) tempId = idInput.getValue();
         if (lvlInput != null) tempLvl = lvlInput.getValue();
         if (timeInput != null) tempTime = timeInput.getValue();
@@ -48,37 +40,32 @@ public class PotionEditor extends KineticScreen {
 
     @Override protected void buildUi() {
         int cx = canvasWidth() / 2; int cy = canvasHeight() / 2 - 50;
-        idInput = addAutoCompleteField(cx - 100, cy - 35, 200, Component.empty(), KineticSearch::getPotionDict, null);
+        idInput = addAutoCompleteField(cx - 100, cy - 35, 200, Component.empty(), ColorText.translatable("gui.kineticarmory.armorsets.input.id"), KineticSearch::potionDictionary, null);
         idInput.setValue(tempId != null ? tempId : (isNew ? "" : (data.effectId != null ? data.effectId : "")));
 
-        lvlInput = addIntegerAutoCompleteField(cx - 100, cy - 10, 95, Component.empty(), ArrayList::new, true, null, null, null);
+        lvlInput = addIntegerAutoCompleteField(cx - 100, cy - 10, 95, Component.empty(), ArrayList::new, true, null, null, null, null);
+        lvlInput.setPlaceholder(ColorText.translatable("gui.kineticarmory.armorsets.input.level"));
         lvlInput.setValue(tempLvl != null ? tempLvl : (isNew ? "" : String.valueOf(data.amplifier)));
 
-        timeInput = addIntegerAutoCompleteField(cx + 5, cy - 10, 95, Component.empty(), ArrayList::new, true, null, null, null);
+        timeInput = addIntegerAutoCompleteField(cx + 5, cy - 10, 95, Component.empty(), ArrayList::new, true, null, null, null, null);
+        timeInput.setPlaceholder(ColorText.translatable("gui.kineticarmory.armorsets.input.duration"));
         timeInput.setValue(tempTime != null ? tempTime : (isNew ? "" : String.valueOf(data.duration)));
 
-        addButton(cx - 100, cy + 15, 200, ColorText.translatable("gui.kineticarmory.armorsets.editor.conditions", data.conditions.size()), null, b -> {
+        addButtonWithHandler(cx - 100, cy + 15, 200, ColorText.translatable("gui.kineticarmory.armorsets.editor.conditions", data.conditions.size()), null, b -> {
             if (syncToData()) return;
-            if (minecraft != null) minecraft.setScreen(new ConditionListScreen(this, data));
+            KineticClientRuntime.openScreen(new ConditionListScreen(this, data));
         });
 
-        addButton(cx - 60, cy + 45, 55, ColorText.translatable("gui.kineticarmory.armorsets.save"), null, b -> {
+        addButtonWithHandler(cx - 60, cy + 45, 55, ColorText.translatable("gui.kineticarmory.armorsets.save"), null, b -> {
             if (syncToData()) return;
-            if (data.effectId.isEmpty()) { GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.armorsets.empty_field")); return; }
+            if (data.effectId.isEmpty()) { KineticOverlays.toast(ColorText.translatable("msg.kineticarmory.armorsets.empty_field")); return; }
             if (!isNew && oldTip != null) config.tips.remove(oldTip);
             if (isNew) config.potionEffects.add(data);
             config.tips.add(ArmorTipGenerator.genPotTip(data));
-            if (minecraft != null) navigateBack();
+            navigateBack();
         });
 
-        addButton(cx + 5, cy + 45, 55, ColorText.translatable("gui.kineticarmory.armorsets.back"), null, b -> { if (minecraft != null) navigateBack(); });
-
-
-        inputGroup.set(
-                idInput,
-                lvlInput,
-                timeInput
-        );
+        addButtonWithHandler(cx + 5, cy + 45, 55, ColorText.translatable("gui.kineticarmory.armorsets.back"), null, b -> { navigateBack(); });
     }
 
     private boolean syncToData() {
@@ -87,15 +74,13 @@ public class PotionEditor extends KineticScreen {
         if (timeInput != null) tempTime = timeInput.getValue();
 
         data.effectId =
-                AutoCompleteBox.normalizeValue(
-                        tempId
-                );
+                (tempId == null ? "" : tempId.trim());
 
         Integer amplifier = lvlInput == null ? null : lvlInput.getIntValue();
         Integer duration = timeInput == null ? null : timeInput.getIntValue();
 
         if (amplifier == null || duration == null) {
-            GuiOverlay.toast(
+            KineticOverlays.toast(
                     ColorText.translatable("msg.kineticarmory.common.invalid_number")
             );
             return true;
@@ -106,118 +91,9 @@ public class PotionEditor extends KineticScreen {
         return false;
     }
 
-    private void renderInputHint(GuiGraphics g, AutoCompleteBox box, String key) {
-        renderTextFieldPlaceholder(g, box, ColorText.translatable(key));
-    }
-
     @Override protected void renderCanvasBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
         int cx = canvasWidth() / 2; int cy = canvasHeight() / 2 - 50; GuiTheme.panel(g, cx - 120, cy - 70, 240, 150);
         g.drawCenteredString(font, title, cx, cy - 60, 0xFFFFFF);
-    }
-    @Override protected void renderCanvasForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        renderInputHint(g, idInput, "gui.kineticarmory.armorsets.input.id");
-        renderInputHint(g, lvlInput, "gui.kineticarmory.armorsets.input.level");
-        renderInputHint(g, timeInput, "gui.kineticarmory.armorsets.input.duration");
-        inputGroup.renderSuggestions(g, mx, my);
-    }
-    @Override
-    protected boolean canvasMouseScrolled(
-            double mouseX,
-            double mouseY,
-            double delta
-    ) {
-        if (inputGroup.handleMouseScrolled(delta)) {
-            return true;
-        }
-
-        return super.canvasMouseScrolled(
-                mouseX,
-                mouseY,
-                delta
-        );
-    }
-
-    @Override
-    protected boolean canvasMouseClicked(
-            double mouseX,
-            double mouseY,
-            int button
-    ) {
-        if (inputGroup.handleSuggestionClick(
-                mouseX,
-                mouseY
-        )) {
-            return true;
-        }
-
-        boolean handled =
-                super.canvasMouseClicked(
-                        mouseX,
-                        mouseY,
-                        button
-                );
-
-        inputGroup.clearFocusOutside(
-                mouseX,
-                mouseY
-        );
-
-        return handled;
-    }
-
-    @Override
-    protected boolean canvasMouseDragged(
-            double mouseX,
-            double mouseY,
-            int button,
-            double dragX,
-            double dragY
-    ) {
-        if (inputGroup.handleMouseDragged(
-                mouseX,
-                mouseY
-        )) {
-            return true;
-        }
-
-        return super.canvasMouseDragged(
-                mouseX,
-                mouseY,
-                button,
-                dragX,
-                dragY
-        );
-    }
-
-    @Override
-    protected boolean canvasMouseReleased(
-            double mouseX,
-            double mouseY,
-            int button
-    ) {
-        if (inputGroup.handleMouseReleased(button)) {
-            return true;
-        }
-
-        return super.canvasMouseReleased(
-                mouseX,
-                mouseY,
-                button
-        );
-    }
-
-    @Override
-    public boolean keyPressed(
-            int keyCode,
-            int scanCode,
-            int modifiers
-    ) {
-        return inputGroup.handleKeyPressed(keyCode)
-                || super.keyPressed(
-                        keyCode,
-                        scanCode,
-                        modifiers
-                );
     }
 
 }

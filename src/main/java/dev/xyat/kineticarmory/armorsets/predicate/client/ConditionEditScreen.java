@@ -4,19 +4,19 @@ import dev.xyat.kineticarmory.util.ColorText;
 import dev.xyat.kineticarmory.armorsets.predicate.ConditionData;
 import dev.xyat.kineticarmory.armorsets.predicate.ConditionTypeUtil;
 import dev.xyat.kineticcore.api.client.theme.GuiTheme;
-import dev.xyat.kineticcore.api.client.overlay.GuiOverlay;
-import dev.xyat.kineticcore.api.client.selector.ItemSelectorScreen;
+import dev.xyat.kineticcore.api.client.overlay.KineticOverlays;
+import dev.xyat.kineticcore.api.client.selector.KineticSelectors;
 import dev.xyat.kineticcore.api.client.screen.KineticScreen;
-import dev.xyat.kineticcore.api.client.widget.KineticWidgets.AutoCompleteBox;
-import dev.xyat.kineticcore.api.client.widget.KineticWidgets.NumericEditBox;
+import dev.xyat.kineticcore.api.client.widget.KineticControl;
+import dev.xyat.kineticcore.api.client.widget.button.KineticButtons.StateButton;
+import dev.xyat.kineticcore.api.client.widget.input.KineticNumericFields;
+import dev.xyat.kineticcore.api.client.widget.input.KineticTextFields.KineticEditBox;
+import dev.xyat.kineticcore.api.registry.KineticRegistries;
+import dev.xyat.kineticcore.api.client.widget.input.KineticAutoComplete.AutoCompleteBox;
+import dev.xyat.kineticcore.api.client.widget.input.KineticNumericFields.NumericEditBox;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -36,46 +36,41 @@ public class ConditionEditScreen extends KineticScreen {
     private String lastTickType = "";
 
     private List<ConditionTypeUtil.ParamDef> currentSchema = new ArrayList<>();
-    private final List<AbstractWidget> dynamicWidgets = new ArrayList<>();
+    private final List<KineticControl> dynamicWidgets = new ArrayList<>();
     private final List<AutoCompleteBox> dynamicAcBoxes = new ArrayList<>();
     private final Map<String, String> currentParamValues = new HashMap<>();
     private final Set<String> invalidParams = new HashSet<>();
 
-    private Button saveBtn;
-    private Button backBtn;
+    private StateButton saveBtn;
+    private StateButton backBtn;
     private int dynamicPanelHeight = 120;
 
     public ConditionEditScreen(ConditionListScreen parent, List<ConditionData> parentList, ConditionData data, boolean isNew) {
         super(ColorText.translatable("gui.kineticarmory.predicate.edit_title"));
+        setParentScreen(parent);
         this.parent = parent;
         this.parentList = parentList;
         this.data = data;
         this.isNew = isNew;
-        useResponsiveCanvas(
-                640f,
-                360f,
-                6
-        );
         if (data.params != null) this.currentParamValues.putAll(data.params);
     }
 
     @Override protected void buildUi() {
         int cx = canvasWidth() / 2; int cy = canvasHeight() / 2;
 
-        typeInput = addAutoCompleteField(cx - 120, cy - 50, 240, Component.empty(), ConditionTypeUtil::getSuggestions, null);
+        typeInput = addAutoCompleteField(cx - 120, cy - 50, 240, Component.empty(), null, ConditionTypeUtil::getSuggestions, null);
         typeInput.setValue((data.type != null && !data.type.isEmpty()) ? data.type.toUpperCase() : "");
 
-        saveBtn = addButton(cx - 60, cy + 30, 55, ColorText.translatable("gui.kineticarmory.predicate.save"), null, b -> saveAndClose());
-        backBtn = addButton(cx + 5, cy + 30, 55, ColorText.translatable("gui.kineticarmory.predicate.back"), null, b -> {
-            if (minecraft != null) navigateBack();
+        saveBtn = addButtonWithHandler(cx - 60, cy + 30, 55, ColorText.translatable("gui.kineticarmory.predicate.save"), null, b -> saveAndClose());
+        backBtn = addButtonWithHandler(cx + 5, cy + 30, 55, ColorText.translatable("gui.kineticarmory.predicate.back"), null, b -> {
+            navigateBack();
         });
-lastTickType = ConditionTypeUtil.getRawType(typeInput.getValue());
+        lastTickType = ConditionTypeUtil.getRawType(typeInput.getValue());
         rebuildParamsUI(lastTickType);
     }
 
     @Override
-    public void tick() {
-        super.tick();
+    protected void canvasTick() {
         String currentType = ConditionTypeUtil.getRawType(typeInput.getValue());
         if (!currentType.equals(lastTickType)) {
             lastTickType = currentType;
@@ -84,7 +79,7 @@ lastTickType = ConditionTypeUtil.getRawType(typeInput.getValue());
     }
 
     private void rebuildParamsUI(String newType) {
-        for (AbstractWidget w : dynamicWidgets) removeControl(w);
+        for (KineticControl control : dynamicWidgets) removeKineticControl(control);
         dynamicWidgets.clear();
         dynamicAcBoxes.clear();
         invalidParams.clear();
@@ -106,24 +101,20 @@ lastTickType = ConditionTypeUtil.getRawType(typeInput.getValue());
                 box.setResponder(value -> updateSecondsParam(def.key(), box, allowEmpty));
                 updateSecondsParam(def.key(), box, allowEmpty);
                 dynamicWidgets.add(box);
-}
-            else if (def.type() == ConditionTypeUtil.ParamDataType.ITEM) {
+            } else if (def.type() == ConditionTypeUtil.ParamDataType.ITEM) {
                 String displayStr = initialVal.isEmpty() ? ColorText.translatable("gui.kineticarmory.predicate.select_item").getString() : initialVal;
-                Button btn = addButton(cx - 120, currentY + 12, 240, Component.literal(displayStr), null, b -> {
+                StateButton btn = addButtonWithHandler(cx - 120, currentY + 12, 240, Component.literal(displayStr), null, b -> {
                     syncCurrentValues();
-                    if (minecraft != null) {
-                        minecraft.setScreen(new ItemSelectorScreen(this, selection -> {
-                            if (!selection.isItem()) return;
-                            String itemId = selectedItemId(selection.stack());
-                            if (!itemId.isEmpty()) currentParamValues.put(def.key(), itemId);
-                            minecraft.setScreen(this);
-                        }));
-                    }
+                    KineticSelectors.openItemSelector(this, selection -> {
+                        if (!selection.isItem()) return;
+                        String itemId = selectedItemId(selection.stack());
+                        if (!itemId.isEmpty()) currentParamValues.put(def.key(), itemId);
+                    });
                 });
                 dynamicWidgets.add(btn);
             }
             else if (def.type() == ConditionTypeUtil.ParamDataType.NUMBER || def.type() == ConditionTypeUtil.ParamDataType.STRING) {
-                EditBox box = addTextField(cx - 120, currentY + 12, 240, Component.empty());
+                KineticEditBox box = addTextField(cx - 120, currentY + 12, 240, Component.empty());
                 box.setValue(initialVal);
 
                 if (def.key().equals("stage")) {
@@ -141,7 +132,7 @@ lastTickType = ConditionTypeUtil.getRawType(typeInput.getValue());
                 dynamicWidgets.add(box);
             }
             else {
-                AutoCompleteBox acBox = addAutoCompleteField(cx - 120, currentY + 12, 240, Component.empty(), () -> ConditionTypeUtil.getSuggestionsFor(def.type()), null);
+                AutoCompleteBox acBox = addAutoCompleteField(cx - 120, currentY + 12, 240, Component.empty(), null, () -> ConditionTypeUtil.getSuggestionsFor(def.type()), null);
                 acBox.setValue(initialVal);
                 acBox.setResponder(s -> currentParamValues.put(def.key(), ConditionTypeUtil.extractValue(s)));
                 dynamicAcBoxes.add(acBox); dynamicWidgets.add(acBox);
@@ -159,7 +150,7 @@ lastTickType = ConditionTypeUtil.getRawType(typeInput.getValue());
 
     private String selectedItemId(ItemStack stack) {
         if (stack == null || stack.isEmpty()) return "";
-        ResourceLocation id = ForgeRegistries.ITEMS.getKey(stack.getItem());
+        var id = KineticRegistries.items().id(stack.getItem());
         return id == null ? "" : id.toString();
     }
 
@@ -171,25 +162,25 @@ lastTickType = ConditionTypeUtil.getRawType(typeInput.getValue());
 
     private void saveAndClose() {
         String typeStr = ConditionTypeUtil.getRawType(typeInput.getValue());
-        if (typeStr.isEmpty()) { GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.predicate.empty_type")); return; }
+        if (typeStr.isEmpty()) { KineticOverlays.toast(ColorText.translatable("msg.kineticarmory.predicate.empty_type")); return; }
 
         if ("STAGE".equals(typeStr)) {
             String stageVal = currentParamValues.getOrDefault("stage", "");
             if (stageVal.isEmpty()) {
-                GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.predicate.invalid_stage"));
+                KineticOverlays.toast(ColorText.translatable("msg.kineticarmory.predicate.invalid_stage"));
                 return;
             }
         }
 
         if (!invalidParams.isEmpty()) {
-            GuiOverlay.toast(ColorText.translatable("msg.kineticarmory.predicate.invalid_seconds"));
+            KineticOverlays.toast(ColorText.translatable("msg.kineticarmory.predicate.invalid_seconds"));
             return;
         }
 
         syncCurrentValues();
         if (isNew) parentList.add(data);
         parent.listWidget.refresh();
-        if (minecraft != null) navigateBack();
+        navigateBack();
     }
 
     @Override protected void renderCanvasBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
@@ -223,58 +214,11 @@ lastTickType = ConditionTypeUtil.getRawType(typeInput.getValue());
             if (mx >= cx - 120 && mx <= cx + 120 && my >= y && my <= y + 10) {
                 String hint = ConditionTypeUtil.getTranslatedParamHint(def.key());
                 if (!hint.isEmpty() && !hint.startsWith("gui.")) {
-                    showTooltip(ColorText.translatable("gui.kineticarmory.predicate.param.hint", hint));
+                    showTooltipLine(ColorText.translatable("gui.kineticarmory.predicate.param.hint", hint));
                 }
             }
         }
 
-        typeInput.renderSuggestions(g, mx, my);
-        for (int i = dynamicAcBoxes.size() - 1; i >= 0; i--) {
-            dynamicAcBoxes.get(i).renderSuggestions(g, mx, my);
-        }
-    }
-
-    @Override protected boolean canvasMouseScrolled(double x, double y, double d) {
-        if(typeInput.handleMouseScrolled(d)) return true;
-        for (AutoCompleteBox box : dynamicAcBoxes) if (box.visible && box.handleMouseScrolled(d)) return true;
-        return super.canvasMouseScrolled(x, y, d);
-    }
-
-    @Override protected boolean canvasMouseDragged(double mx, double my, int btn, double dx, double dy) {
-        if (typeInput != null && typeInput.handleMouseDragged(mx, my)) return true;
-        for (AutoCompleteBox box : dynamicAcBoxes) if (box.visible && box.handleMouseDragged(mx, my)) return true;
-        return super.canvasMouseDragged(mx, my, btn, dx, dy);
-    }
-
-    @Override protected boolean canvasMouseReleased(double mx, double my, int btn) {
-        if (typeInput != null && typeInput.handleMouseReleased(btn)) return true;
-        for (AutoCompleteBox box : dynamicAcBoxes) if (box.visible && box.handleMouseReleased(btn)) return true;
-        return super.canvasMouseReleased(mx, my, btn);
-    }
-
-    @Override protected boolean canvasMouseClicked(double x, double y, int b) {
-        boolean handled = (typeInput != null && typeInput.handleMouseClick(x, y)) ||
-                dynamicAcBoxes.stream().anyMatch(box -> box.visible && box.handleMouseClick(x, y));
-
-        boolean res = super.canvasMouseClicked(x, y, b);
-
-        boolean clickedInput = (typeInput != null && typeInput.isMouseOver(x, y)) ||
-                dynamicAcBoxes.stream().anyMatch(box -> box.visible && box.isMouseOver(x, y)) ||
-                dynamicWidgets.stream().anyMatch(w -> (w instanceof EditBox || w instanceof Button) && w.isMouseOver(x, y));
-
-        if (!clickedInput && !handled) {
-            if (typeInput != null) typeInput.setFocused(false);
-            dynamicAcBoxes.forEach(box -> box.setFocused(false));
-            this.setFocused(null);
-        }
-
-        return handled || res;
-    }
-
-    @Override public boolean keyPressed(int k, int s, int m) {
-        if (typeInput.handleKeyPressed(k)) return true;
-        for (AutoCompleteBox box : dynamicAcBoxes) if (box.visible && box.handleKeyPressed(k)) return true;
-        return super.keyPressed(k, s, m);
     }
 
     private static boolean isSecondsParam(String conditionType, String key) {
@@ -287,7 +231,7 @@ lastTickType = ConditionTypeUtil.getRawType(typeInput.getValue());
         if (storedTicks == null || storedTicks.isBlank()) return allowEmpty ? "" : "0.05";
         try {
             double ticks = Double.parseDouble(storedTicks.trim());
-            return NumericEditBox.format(ticks / 20.0D);
+            return KineticNumericFields.formatDecimal(ticks / 20.0D);
         } catch (NumberFormatException ignored) {
             return allowEmpty ? "" : "0.05";
         }
@@ -298,19 +242,16 @@ lastTickType = ConditionTypeUtil.getRawType(typeInput.getValue());
         if (allowEmpty && raw.isEmpty()) {
             currentParamValues.put(key, "");
             invalidParams.remove(key);
-            box.setTextColor(0xFFE0E0E0);
             return;
         }
         Double seconds = box.getDoubleValue();
         if (seconds == null) {
             invalidParams.add(key);
-            box.setTextColor(0xFFFF5555);
             return;
         }
         long ticks = Math.round(seconds * 20.0D);
         if (!allowEmpty) ticks = Math.max(1L, ticks);
         currentParamValues.put(key, Long.toString(ticks));
         invalidParams.remove(key);
-        box.setTextColor(0xFFE0E0E0);
     }
 }

@@ -3,9 +3,10 @@ package dev.xyat.kineticarmory.armorsets.data;
 import dev.xyat.kineticarmory.armorsets.predicate.ConditionData;
 import dev.xyat.kineticarmory.armorsets.predicate.ConditionTypeUtil;
 import dev.xyat.kineticcore.api.client.search.KineticSearch;
+import dev.xyat.kineticcore.api.registry.KineticRegistries;
+import dev.xyat.kineticcore.api.resource.KineticResourceIds;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,12 +28,12 @@ public class ArmorTipGenerator {
     private static String fmt(double d) { return d == (long) d ? String.valueOf((long) d) : String.valueOf(d); }
 
     private static ResourceLocation safeResourceLocation(String id) {
-        return id == null || id.isBlank() ? null : ResourceLocation.tryParse(id);
+        return id == null || id.isBlank() ? null : KineticResourceIds.tryParse(id);
     }
 
     private static String getPotionName(String id) {
         ResourceLocation rl = safeResourceLocation(id);
-        var effect = rl == null ? null : ForgeRegistries.MOB_EFFECTS.getValue(rl);
+        var effect = rl == null ? null : KineticRegistries.mobEffects().get(rl);
         if (effect != null) {
             String key = effect.getDescriptionId();
             String translated = Component.translatable(key).getString();
@@ -43,7 +44,7 @@ public class ArmorTipGenerator {
 
     private static String getAttrName(String id) {
         ResourceLocation rl = safeResourceLocation(id);
-        var attr = rl == null ? null : ForgeRegistries.ATTRIBUTES.getValue(rl);
+        var attr = rl == null ? null : KineticRegistries.attributes().get(rl);
         if (attr != null) {
             String key = attr.getDescriptionId();
             String translated = Component.translatable(key).getString();
@@ -54,7 +55,7 @@ public class ArmorTipGenerator {
 
     private static String getItemName(String id) {
         ResourceLocation rl = safeResourceLocation(id);
-        var item = rl == null ? null : ForgeRegistries.ITEMS.getValue(rl);
+        var item = rl == null ? null : KineticRegistries.items().get(rl);
         if (item != null) {
             String key = item.getDescriptionId();
             String translated = Component.translatable(key).getString();

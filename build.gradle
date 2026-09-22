@@ -231,4 +231,3 @@ tasks.withType(JavaCompile).configureEach {
     ])
 }
 
-apply from: 'gradle/github-release.gradle'

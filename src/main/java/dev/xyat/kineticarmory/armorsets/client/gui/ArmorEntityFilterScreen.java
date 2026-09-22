@@ -4,24 +4,25 @@ import dev.xyat.kineticarmory.util.ColorText;
 import dev.xyat.kineticarmory.armorsets.Network.ArmorNetwork;
 import dev.xyat.kineticarmory.armorsets.client.ArmorClientSnapshot;
 import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
+import dev.xyat.kineticcore.api.client.input.KineticMouseButtons;
 import dev.xyat.kineticcore.api.client.search.KineticSearch;
-import dev.xyat.kineticcore.api.client.overlay.GuiOverlay;
+import dev.xyat.kineticcore.api.client.overlay.KineticOverlays;
 import dev.xyat.kineticcore.api.client.screen.KineticScreen;
-import dev.xyat.kineticcore.api.client.widget.KineticWidgets.Scroll;
-import dev.xyat.kineticcore.api.client.widget.KineticWidgets.EntityPreviewRenderer;
+import dev.xyat.kineticcore.api.client.widget.scroll.KineticScroll;
+import dev.xyat.kineticcore.api.client.widget.KineticWidgets;
+import dev.xyat.kineticcore.api.registry.KineticRegistries;
+import dev.xyat.kineticcore.api.resource.KineticResourceIds;
+import dev.xyat.kineticcore.api.client.widget.render.KineticEntityPreview.EntityPreviewRenderer;
 import dev.xyat.kineticcore.api.client.theme.GuiTheme;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.screens.Screen;
+import dev.xyat.kineticcore.api.client.widget.input.KineticTextFields.KineticEditBox;
+import dev.xyat.kineticcore.api.runtime.KineticClientRuntime;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -60,11 +61,11 @@ public class ArmorEntityFilterScreen extends KineticScreen {
     private final List<EntityEntryData> leftEntities = new ArrayList<>();
     private final List<EntityEntryData> rightEntities = new ArrayList<>();
     private final EntityPreviewRenderer entityPreviewRenderer =
-            new EntityPreviewRenderer();
+            KineticWidgets.createEntityPreviewRenderer();
 
-    private EditBox leftSearchBox;
-    private EditBox rotationSpeedBox;
-    private EditBox rightSearchBox;
+    private KineticEditBox leftSearchBox;
+    private KineticEditBox rotationSpeedBox;
+    private KineticEditBox rightSearchBox;
     private String globalMode;
     private boolean setFilterEnabled;
     private boolean rulesDirty;
@@ -76,6 +77,7 @@ public class ArmorEntityFilterScreen extends KineticScreen {
 
     public ArmorEntityFilterScreen(KineticScreen parent) {
         super(ColorText.translatable("gui.kineticarmory.armorsets.entity_filter.global_title"));
+        setParentScreen(parent);
         this.parent = parent;
         this.armorSet = null;
         this.global = true;
@@ -89,6 +91,7 @@ public class ArmorEntityFilterScreen extends KineticScreen {
 
     public ArmorEntityFilterScreen(KineticScreen parent, ArmorDataConfig armorSet) {
         super(ColorText.translatable("gui.kineticarmory.armorsets.entity_filter.set_title"));
+        setParentScreen(parent);
         this.parent = parent;
         this.armorSet = armorSet;
         this.global = false;
@@ -102,24 +105,19 @@ public class ArmorEntityFilterScreen extends KineticScreen {
     }
 
     private void setupScale() {
-        useResponsiveCanvas(
-                V_WIDTH,
-                V_HEIGHT,
-                6
-        );
 entityPreviewRenderer.setRotationSpeedPercent(rotationSpeedPercent);
         entityPreviewRenderer.setClockwise(clockwiseRotation);
     }
 
     private void initEntities() {
-        for (EntityType<?> type : ForgeRegistries.ENTITY_TYPES.getValues()) {
+        for (EntityType<?> type : KineticRegistries.entityTypes().values()) {
             if (type.getCategory() == MobCategory.MISC) continue;
             addEntityEntry(type);
         }
     }
 
     private void addEntityEntry(EntityType<?> type) {
-        ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(type);
+        ResourceLocation id = KineticRegistries.entityTypes().id(type);
         if (id == null || !knownEntityIds.add(id.toString())) return;
 
         Component name = ColorText.translatable(type.getDescriptionId());
@@ -173,8 +171,8 @@ entityPreviewRenderer.setRotationSpeedPercent(rotationSpeedPercent);
                 String namespace = rule.substring(1).trim();
                 if (namespace.isEmpty()) continue;
 
-                for (EntityType<?> type : ForgeRegistries.ENTITY_TYPES.getValues()) {
-                    ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(type);
+                for (EntityType<?> type : KineticRegistries.entityTypes().values()) {
+                    ResourceLocation id = KineticRegistries.entityTypes().id(type);
 
                     if (id != null
                             && namespace.equalsIgnoreCase(id.getNamespace())
@@ -190,20 +188,16 @@ entityPreviewRenderer.setRotationSpeedPercent(rotationSpeedPercent);
             if (rule.startsWith("#")) {
                 originalRules.add(rule);
 
-                ResourceLocation tagId = ResourceLocation.tryParse(rule.substring(1).trim());
-                var manager = ForgeRegistries.ENTITY_TYPES.tags();
-
-                if (tagId == null || manager == null) continue;
+                ResourceLocation tagId = KineticResourceIds.tryParse(rule.substring(1).trim());
+                if (tagId == null) continue;
 
                 TagKey<EntityType<?>> tag = TagKey.create(Registries.ENTITY_TYPE, tagId);
 
-                for (EntityType<?> type : ForgeRegistries.ENTITY_TYPES.getValues()) {
+                for (EntityType<?> type : KineticRegistries.entityTypes().valuesInTag(tag)) {
                     if (type.getCategory() == MobCategory.MISC) continue;
-                    if (!manager.getTag(tag).contains(type)) continue;
-
                     addEntityEntry(type);
 
-                    ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(type);
+                    ResourceLocation id = KineticRegistries.entityTypes().id(type);
                     if (id != null) {
                         selectedIds.add(id.toString());
                     }
@@ -212,10 +206,10 @@ entityPreviewRenderer.setRotationSpeedPercent(rotationSpeedPercent);
                 continue;
             }
 
-            ResourceLocation configuredId = ResourceLocation.tryParse(rule);
+            ResourceLocation configuredId = KineticResourceIds.tryParse(rule);
             if (configuredId == null) continue;
 
-            EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(configuredId);
+            EntityType<?> type = KineticRegistries.entityTypes().get(configuredId);
             if (type != null) {
                 addEntityEntry(type);
             } else {
@@ -233,10 +227,10 @@ entityPreviewRenderer.setRotationSpeedPercent(rotationSpeedPercent);
         for (String rawId : selectedIds) {
             if (knownEntityIds.contains(rawId)) continue;
 
-            ResourceLocation id = ResourceLocation.tryParse(rawId);
+            ResourceLocation id = KineticResourceIds.tryParse(rawId);
             if (id == null) continue;
 
-            EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(id);
+            EntityType<?> type = KineticRegistries.entityTypes().get(id);
 
             if (type != null) {
                 addEntityEntry(type);
@@ -256,18 +250,18 @@ entityPreviewRenderer.setRotationSpeedPercent(rotationSpeedPercent);
         int backW = 64;
 
         if (global) {
-            Button modeButton = addButton(8, topY, modeW, getGlobalModeText(), getGlobalModeTooltip(), b -> {
+            addButtonWithHandler(8, topY, modeW, getGlobalModeText(), getGlobalModeTooltip(), b -> {
                         globalMode = "WHITELIST".equalsIgnoreCase(globalMode)
                                 ? "BLACKLIST"
                                 : "WHITELIST";
 
-                        b.setMessage(getGlobalModeText());
+                        b.setText(getGlobalModeText());
                         registerWidgetTooltip(b, getGlobalModeTooltip());
                     });
 } else {
-            Button setToggleButton = addButton(8, topY, modeW, getSetFilterText(), getSetFilterTooltip(), b -> {
+            addButtonWithHandler(8, topY, modeW, getSetFilterText(), getSetFilterTooltip(), b -> {
                         setFilterEnabled = !setFilterEnabled;
-                        b.setMessage(getSetFilterText());
+                        b.setText(getSetFilterText());
                         registerWidgetTooltip(b, getSetFilterTooltip());
                     });
 }
@@ -280,44 +274,52 @@ entityPreviewRenderer.setRotationSpeedPercent(rotationSpeedPercent);
         registerWidgetTooltip(rotationSpeedBox, ColorText.translatable(
                 "gui.kineticarmory.armorsets.entity_filter.rotation_speed.tooltip"
         ));
-addButton(356, topY, speedButtonW, getRotationDirectionText(), ColorText.translatable(
+addButtonWithHandler(356, topY, speedButtonW, getRotationDirectionText(), ColorText.translatable(
                                 "gui.kineticarmory.common.rotation.direction.tooltip"
                         ), b -> {
                                     clockwiseRotation = !clockwiseRotation;
                                     entityPreviewRenderer.setClockwise(clockwiseRotation);
-                                    b.setMessage(getRotationDirectionText());
+                                    b.setText(getRotationDirectionText());
                                 });
 
-        addButton(500, topY, saveW, ColorText.translatable("gui.kineticarmory.armorsets.save"), ColorText.translatable(
+        addButtonWithHandler(500, topY, saveW, ColorText.translatable("gui.kineticarmory.armorsets.save"), ColorText.translatable(
                                 global
                                         ? "gui.kineticarmory.armorsets.entity_filter.save_global.tooltip"
                                         : "gui.kineticarmory.armorsets.entity_filter.save_set.tooltip"
                         ), b -> saveAndBack());
 
-        addButton(568, topY, backW, ColorText.translatable("gui.kineticarmory.common.back"), ColorText.translatable(
+        addButtonWithHandler(568, topY, backW, ColorText.translatable("gui.kineticarmory.common.back"), ColorText.translatable(
                                 "gui.kineticarmory.armorsets.entity_filter.back.tooltip"
                         ), b -> backWithoutSave());
 
-        addButton(LEFT_X + PANEL_W - 80, PANEL_Y + 4, 72, ColorText.translatable(
+        addButtonWithHandler(LEFT_X + PANEL_W - 80, PANEL_Y + 4, 72, ColorText.translatable(
                                         "gui.kineticarmory.armorsets.entity_filter.remove_filtered"
                                 ), ColorText.translatable(
                                 "gui.kineticarmory.armorsets.entity_filter.remove_filtered.tooltip"
                         ), b -> removeFiltered());
 
-        addButton(RIGHT_X + PANEL_W - 80, PANEL_Y + 4, 72, ColorText.translatable(
+        addButtonWithHandler(RIGHT_X + PANEL_W - 80, PANEL_Y + 4, 72, ColorText.translatable(
                                         "gui.kineticarmory.armorsets.entity_filter.add_filtered"
                                 ), ColorText.translatable(
                                 "gui.kineticarmory.armorsets.entity_filter.add_filtered.tooltip"
                         ), b -> addFiltered());
 
-        leftSearchBox = addTextField(LEFT_X + 8, SEARCH_Y, PANEL_W - 16, Component.empty());
+        leftSearchBox = addTextField(
+                LEFT_X + 8, SEARCH_Y, PANEL_W - 16, Component.empty(),
+                ColorText.translatable("gui.kineticarmory.armorsets.entity_filter.search_available"),
+                null, null
+        );
 
         leftSearchBox.setMaxLength(256);
         leftSearchBox.setResponder(value -> {
             leftScroll = 0;
             refreshLists();
         });
-rightSearchBox = addTextField(RIGHT_X + 8, SEARCH_Y, PANEL_W - 16, Component.empty());
+rightSearchBox = addTextField(
+                RIGHT_X + 8, SEARCH_Y, PANEL_W - 16, Component.empty(),
+                ColorText.translatable("gui.kineticarmory.armorsets.entity_filter.search_added"),
+                null, null
+        );
 
         rightSearchBox.setMaxLength(256);
         rightSearchBox.setResponder(value -> {
@@ -352,7 +354,7 @@ refreshLists();
         }
 
         if (notifyInvalid) {
-            GuiOverlay.toast(
+            KineticOverlays.toast(
                     "armorsets_rotation_speed_invalid",
                     ColorText.translatable("msg.kineticarmory.armorsets.rotation_speed.invalid")
             );
@@ -531,9 +533,7 @@ refreshLists();
         if (global) {
             ArmorClientSnapshot.replaceEntityFilter(globalMode, rules);
 
-            ArmorNetwork.CHANNEL.sendToServer(
-                    new ArmorNetwork.SaveEntityFilterPacket(globalMode, rules)
-            );
+            ArmorNetwork.saveEntityFilter(globalMode, rules);
         } else if (armorSet != null) {
             armorSet.entityWhitelistEnabled = setFilterEnabled;
             armorSet.allowedEntityTypes = rules;
@@ -544,14 +544,7 @@ refreshLists();
     }
 
     private void backWithoutSave() {
-        if (this.minecraft != null) {
-            this.navigateBack();
-        }
-    }
-
-    @Override
-    public void onClose() {
-        backWithoutSave();
+        navigateBack();
     }
 
     @Override
@@ -563,21 +556,7 @@ refreshLists();
     ) {
         deferredTooltip = null;
 
-        g.fill(
-                0,
-                0,
-                V_WIDTH,
-                V_HEIGHT,
-                0xFA1E1E1E
-        );
-
-        g.renderOutline(
-                0,
-                0,
-                V_WIDTH,
-                V_HEIGHT,
-                0xFF444444
-        );
+        GuiTheme.panel(g, 0, 0, V_WIDTH, V_HEIGHT);
 
         drawCenteredNoShadow(
                 g,
@@ -604,21 +583,7 @@ refreshLists();
             int x,
             Component title
     ) {
-        g.fill(
-                x,
-                PANEL_Y,
-                x + PANEL_W,
-                PANEL_Y + PANEL_H,
-                0xEE111111
-        );
-
-        g.renderOutline(
-                x,
-                PANEL_Y,
-                PANEL_W,
-                PANEL_H,
-                0xFF555555
-        );
+        GuiTheme.panelAlt(g, x, PANEL_Y, PANEL_W, PANEL_H);
 
         g.drawString(
                 this.font,
@@ -629,21 +594,7 @@ refreshLists();
                 false
         );
 
-        g.fill(
-                x + 8,
-                GRID_Y - 2,
-                x + 8 + GRID_W,
-                GRID_Y + GRID_H + 2,
-                0xFF090909
-        );
-
-        g.renderOutline(
-                x + 8,
-                GRID_Y - 2,
-                GRID_W,
-                GRID_H + 4,
-                0xFF444444
-        );
+        GuiTheme.panel(g, x + 8, GRID_Y - 2, GRID_W, GRID_H + 4);
     }
 
     @Override
@@ -653,18 +604,6 @@ refreshLists();
             int my,
             float pt
     ) {
-        renderTextFieldPlaceholder(
-                g,
-                leftSearchBox,
-                ColorText.translatable("gui.kineticarmory.armorsets.entity_filter.search_available")
-        );
-
-        renderTextFieldPlaceholder(
-                g,
-                rightSearchBox,
-                ColorText.translatable("gui.kineticarmory.armorsets.entity_filter.search_added")
-        );
-
         renderGrid(
                 g,
                 leftEntities,
@@ -725,7 +664,7 @@ refreshLists();
 
         if (deferredTooltip != null
                 && !deferredTooltip.isEmpty()) {
-            showTooltip(deferredTooltip);
+            showTooltip(deferredTooltip, null);
         }
     }
 
@@ -759,31 +698,26 @@ refreshLists();
                     && my >= y
                     && my < y + CELL_SIZE;
 
-            int bg = addedSide
-                    ? 0xFF17352D
-                    : 0xFF252525;
-
-            int outline = hovered
-                    ? 0xFFAAAAAA
-                    : addedSide
-                    ? 0xFF55DD88
-                    : 0xFF555555;
-
-            g.fill(
+            GuiTheme.surface(
+                    g,
                     x + 2,
                     y + 2,
-                    x + CELL_SIZE - 2,
-                    y + CELL_SIZE - 2,
-                    bg
+                    CELL_SIZE - 4,
+                    CELL_SIZE - 4,
+                    addedSide ? GuiTheme.Surface.PANEL : GuiTheme.Surface.PANEL_ALT
             );
-
-            g.renderOutline(
-                    x + 1,
-                    y + 1,
-                    CELL_SIZE - 2,
-                    CELL_SIZE - 2,
-                    outline
-            );
+            if (hovered) {
+                GuiTheme.stateOutline(g, x + 1, y + 1, CELL_SIZE - 2, CELL_SIZE - 2, false, true, false);
+            } else {
+                GuiTheme.indicatorOutline(
+                        g,
+                        x + 1,
+                        y + 1,
+                        CELL_SIZE - 2,
+                        CELL_SIZE - 2,
+                        addedSide ? GuiTheme.Indicator.SUCCESS : GuiTheme.Indicator.MUTED
+                );
+            }
 
             EntityPreviewRenderer.drawCheckerboard(
                     g,
@@ -852,7 +786,7 @@ refreshLists();
         );
 
         if (maxScroll > 0) {
-            int thumbH = Scroll.calculateThumbHeight(
+            int thumbH = KineticScroll.stateThumbHeight(
                     GRID_H,
                     VISIBLE_ROWS,
                     totalRows,
@@ -887,8 +821,7 @@ refreshLists();
 
         boolean rendered = entityPreviewRenderer.render(
                 g,
-                data.type(),
-                data.id(),
+                data.id().toString(),
                 data.id().toString(),
                 boxX,
                 boxY,
@@ -978,7 +911,7 @@ refreshLists();
         );
 
         if (handled) return true;
-        if (btn != 0) return false;
+        if (!KineticMouseButtons.isPrimary(btn)) return false;
 
         if (handleScrollbarClick(mx, my, true)) {
             return true;
@@ -998,7 +931,7 @@ refreshLists();
 
         if (left != null) {
             removeEntity(left);
-            this.setFocused(null);
+            clearControlFocus();
             return true;
         }
 
@@ -1012,7 +945,7 @@ refreshLists();
 
         if (right != null) {
             addEntity(right);
-            this.setFocused(null);
+            clearControlFocus();
             return true;
         }
 
@@ -1107,7 +1040,7 @@ refreshLists();
             double dx,
             double dy
     ) {
-        if (btn == 0 && draggingLeftScroll) {
+        if (KineticMouseButtons.isPrimary(btn) && draggingLeftScroll) {
             updateScrollFromMouse(
                     my,
                     true
@@ -1115,7 +1048,7 @@ refreshLists();
             return true;
         }
 
-        if (btn == 0 && draggingRightScroll) {
+        if (KineticMouseButtons.isPrimary(btn) && draggingRightScroll) {
             updateScrollFromMouse(
                     my,
                     false
@@ -1138,7 +1071,7 @@ refreshLists();
             double my,
             int btn
     ) {
-        if (btn == 0
+        if (KineticMouseButtons.isPrimary(btn)
                 && (draggingLeftScroll
                 || draggingRightScroll)) {
             draggingLeftScroll = false;
@@ -1159,7 +1092,7 @@ refreshLists();
             double my,
             double delta
     ) {
-        if (Screen.hasControlDown()) {
+        if (KineticClientRuntime.controlModifierDown()) {
             EntityEntryData hoveredLeft = getClickedEntity(
                     leftEntities,
                     LEFT_X + 8,
@@ -1235,14 +1168,14 @@ refreshLists();
         );
 
         if (maxScroll > 0) {
-            int thumbH = Scroll.calculateThumbHeight(
+            int thumbH = KineticScroll.stateThumbHeight(
                     GRID_H,
                     VISIBLE_ROWS,
                     totalRows,
                     20
             );
 
-            int value = Scroll.calculateScrollOffset(
+            int value = KineticScroll.stateOffsetFromPointer(
                     my,
                     GRID_Y,
                     GRID_H,
@@ -1278,9 +1211,8 @@ refreshLists();
     }
 
     @Override
-    public void removed() {
+    protected void screenRemoved() {
         entityPreviewRenderer.clear();
-        super.removed();
     }
 
     private record EntityEntryData(

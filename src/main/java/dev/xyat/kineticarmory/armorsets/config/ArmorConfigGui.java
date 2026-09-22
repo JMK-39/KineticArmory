@@ -1,16 +1,13 @@
 package dev.xyat.kineticarmory.armorsets.config;
 
 import dev.xyat.kineticarmory.armorsets.Network.ArmorNetworkClient;
-import dev.xyat.kineticcore.config.client.KTConfigApi;
-import dev.xyat.kineticcore.config.client.KTClientConfigAdapter;
-import dev.xyat.kineticcore.config.client.KTConfigPage;
-import dev.xyat.kineticcore.config.client.KTConfigScope;
+import dev.xyat.kineticcore.api.config.client.KTConfigApi;
+import dev.xyat.kineticcore.api.config.client.KTClientConfigAdapter;
+import dev.xyat.kineticcore.api.config.client.KTConfigPage;
+import dev.xyat.kineticcore.api.config.client.KTConfigScope;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
-@OnlyIn(Dist.CLIENT)
 public final class ArmorConfigGui {
     public static final String PAGE_ID = "kineticarmory:armorsets";
     public static final String CLIENT_PAGE_ID = "kineticarmory:client";
@@ -29,7 +26,7 @@ public final class ArmorConfigGui {
                 .serverManaged()
                 .applyTiming(KTConfigPage.ApplyTiming.MIXED)
                 .applyNotice(Component.translatable("cfg.kineticarmory.armorsets.apply_notice"))
-                .section(Component.translatable("cfg.kineticarmory.armorsets.general.section"))
+                .divider()
                 .description(Component.translatable("cfg.kineticarmory.armorsets.general.description"))
                 .booleanValue(
                         "enable_sets",

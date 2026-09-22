@@ -1,7 +1,5 @@
 package dev.xyat.kineticarmory.armorsets.client;
 
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -9,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-@OnlyIn(Dist.CLIENT)
 public class ArmorCache {
     private static final Set<String> ACTIVE_SET_IDS = new HashSet<>();
     private static final Map<String, Integer> ACTIVE_SET_PIECES = new HashMap<>();

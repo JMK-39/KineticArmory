@@ -3,8 +3,7 @@ package dev.xyat.kineticarmory.compat.kubejs;
 import dev.latvian.mods.kubejs.event.EventGroup;
 import dev.latvian.mods.kubejs.event.EventHandler;
 import dev.xyat.kineticarmory.armorsets.event.ArmorEvents;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+import dev.xyat.kineticcore.api.event.KineticExternalEvents;
 
 public final class KineticArmoryKubeJSPlugin extends dev.latvian.mods.kubejs.KubeJSPlugin {
     public static final EventGroup GROUP = EventGroup.of("kineticarmoryEvents");
@@ -12,7 +11,7 @@ public final class KineticArmoryKubeJSPlugin extends dev.latvian.mods.kubejs.Kub
 
     @Override
     public void init() {
-        MinecraftForge.EVENT_BUS.register(this);
+        KineticExternalEvents.subscribe(ArmorEvents.StatusChange.class, this::onArmorSetStatusChange);
     }
 
     @Override
@@ -21,7 +20,6 @@ public final class KineticArmoryKubeJSPlugin extends dev.latvian.mods.kubejs.Kub
         GROUP.register();
     }
 
-    @SubscribeEvent
     public void onArmorSetStatusChange(ArmorEvents.StatusChange event) {
         if (armorSetChange != null && armorSetChange.hasListeners()) {
             armorSetChange.post(new ArmorSetEventJS(event));

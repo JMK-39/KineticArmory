@@ -6,38 +6,32 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import dev.xyat.kineticarmory.KineticArmory;
 import dev.xyat.kineticarmory.armorsets.ArmorCommand;
-import dev.xyat.kineticarmory.armorsets.event.ArmorManager;
 import dev.xyat.kineticarmory.armorsets.config.ArmorConfig;
-import dev.xyat.kineticcore.api.KTNetworkProtocol;
-import dev.xyat.kineticcore.api.NetworkCompressUtil;
 import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
+import dev.xyat.kineticarmory.armorsets.event.ArmorManager;
 import dev.xyat.kineticarmory.armorsets.json.ArmorLoader;
-import net.minecraft.network.FriendlyByteBuf;
+import dev.xyat.kineticcore.api.network.KineticCompression;
+import dev.xyat.kineticcore.api.network.NetworkBuffer;
+import dev.xyat.kineticcore.api.network.NetworkCodec;
+import dev.xyat.kineticcore.api.network.NetworkVersionPolicy;
+import dev.xyat.kineticcore.api.network.PacketChannel;
+import dev.xyat.kineticcore.api.network.PacketRegistrations;
+import dev.xyat.kineticcore.api.network.ServerPacketContext;
+import dev.xyat.kineticcore.api.resource.KineticResourceIds;
+import io.netty.handler.codec.DecoderException;
+import io.netty.handler.codec.EncoderException;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.fml.LogicalSide;
-import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkRegistry;
-import net.minecraftforge.network.simple.SimpleChannel;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Supplier;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
-
-import io.netty.handler.codec.DecoderException;
-import io.netty.handler.codec.EncoderException;
+import java.util.List;
+import java.util.Map;
 
 public class ArmorNetwork {
     private static final String PROTOCOL_VERSION = "1";
@@ -54,68 +48,165 @@ public class ArmorNetwork {
     private static final int MAX_JSON_STRING_LENGTH = 32_767;
     private static final int MAX_JSON_NODES = 65_536;
     private static final int MAX_FILTER_MODE_LENGTH = 16;
-    public static SimpleChannel CHANNEL;
+    private static final PacketChannel CHANNEL = PacketChannel.create(
+            KineticResourceIds.of(KineticArmory.MODID, "armorsets"),
+            PROTOCOL_VERSION,
+            NetworkVersionPolicy.ANY
+    );
+    private static boolean syncActiveSetsRegistered;
+    private static boolean syncArmorConfigsRegistered;
+    private static boolean syncEntityFilterRegistered;
+    private static boolean requestEntityFilterRegistered;
+    private static boolean requestReloadRegistered;
+    private static boolean saveArmorSetRegistered;
+    private static boolean deleteArmorSetRegistered;
+    private static boolean saveEntityFilterRegistered;
+    private static boolean clientInputRegistered;
+    private static boolean requestOpenEditorRegistered;
+    private static boolean editorSaveResultRegistered;
     private static final Gson GSON = new Gson();
 
-    public static void register(IEventBus modEventBus) {
-        CHANNEL = NetworkRegistry.newSimpleChannel(
-                new ResourceLocation(KineticArmory.MODID, "armorsets"),
-                () -> PROTOCOL_VERSION,
-                KTNetworkProtocol::acceptsAnyVersion,
-                KTNetworkProtocol::acceptsAnyVersion
+
+
+    public static synchronized void register() {
+        PacketRegistrations.runIndependent(
+                () -> {
+                    if (!syncActiveSetsRegistered) {
+                        CHANNEL.registerClientbound(0, SyncActiveSetsPacket.class,
+                                NetworkCodec.of((buffer, message) -> message.encode(buffer), SyncActiveSetsPacket::new),
+                                message -> ArmorNetworkClient.handleSyncActiveSets(message));
+                        syncActiveSetsRegistered = true;
+                    }
+                },
+                () -> {
+                    if (!syncArmorConfigsRegistered) {
+                        CHANNEL.registerClientbound(1, SyncArmorConfigsPacket.class,
+                                NetworkCodec.of((buffer, message) -> message.encode(buffer), SyncArmorConfigsPacket::new),
+                                message -> ArmorNetworkClient.handleSyncConfigs(message));
+                        syncArmorConfigsRegistered = true;
+                    }
+                },
+                () -> {
+                    if (!syncEntityFilterRegistered) {
+                        CHANNEL.registerClientbound(2, SyncEntityFilterPacket.class,
+                                NetworkCodec.of((buffer, message) -> message.encode(buffer), SyncEntityFilterPacket::new),
+                                message -> ArmorNetworkClient.handleSyncEntityFilter(message));
+                        syncEntityFilterRegistered = true;
+                    }
+                },
+                () -> {
+                    if (!requestEntityFilterRegistered) {
+                        CHANNEL.registerServerbound(3, RequestEntityFilterPacket.class,
+                                NetworkCodec.of((buffer, message) -> message.encode(buffer), RequestEntityFilterPacket::new),
+                                ArmorNetwork::handleRequestEntityFilter);
+                        requestEntityFilterRegistered = true;
+                    }
+                },
+                () -> {
+                    if (!requestReloadRegistered) {
+                        CHANNEL.registerServerbound(4, RequestReloadArmorSetsPacket.class,
+                                NetworkCodec.of((buffer, message) -> message.encode(buffer), RequestReloadArmorSetsPacket::new),
+                                ArmorNetwork::handleRequestReload);
+                        requestReloadRegistered = true;
+                    }
+                },
+                () -> {
+                    if (!saveArmorSetRegistered) {
+                        CHANNEL.registerServerbound(5, SaveArmorSetPacket.class,
+                                NetworkCodec.of((buffer, message) -> message.encode(buffer), SaveArmorSetPacket::new),
+                                ArmorNetwork::handleSaveArmorSet);
+                        saveArmorSetRegistered = true;
+                    }
+                },
+                () -> {
+                    if (!deleteArmorSetRegistered) {
+                        CHANNEL.registerServerbound(6, DeleteArmorSetPacket.class,
+                                NetworkCodec.of((buffer, message) -> message.encode(buffer), DeleteArmorSetPacket::new),
+                                ArmorNetwork::handleDeleteArmorSet);
+                        deleteArmorSetRegistered = true;
+                    }
+                },
+                () -> {
+                    if (!saveEntityFilterRegistered) {
+                        CHANNEL.registerServerbound(7, SaveEntityFilterPacket.class,
+                                NetworkCodec.of((buffer, message) -> message.encode(buffer), SaveEntityFilterPacket::new),
+                                ArmorNetwork::handleSaveEntityFilter);
+                        saveEntityFilterRegistered = true;
+                    }
+                },
+                () -> {
+                    if (!clientInputRegistered) {
+                        CHANNEL.registerServerbound(8, ClientInputStatePacket.class,
+                                NetworkCodec.of((buffer, message) -> message.encode(buffer), ClientInputStatePacket::new),
+                                ArmorNetwork::handleClientInputState);
+                        clientInputRegistered = true;
+                    }
+                },
+                () -> {
+                    if (!requestOpenEditorRegistered) {
+                        CHANNEL.registerServerbound(9, RequestOpenEditorPacket.class,
+                                NetworkCodec.of((buffer, message) -> message.encode(buffer), RequestOpenEditorPacket::new),
+                                ArmorNetwork::handleRequestOpenEditor);
+                        requestOpenEditorRegistered = true;
+                    }
+                },
+                () -> {
+                    if (!editorSaveResultRegistered) {
+                        CHANNEL.registerClientbound(10, EditorSaveResultPacket.class,
+                                NetworkCodec.of((buffer, message) -> message.encode(buffer), EditorSaveResultPacket::new),
+                                message -> ArmorNetworkClient.handleEditorSaveResult(message.success()));
+                        editorSaveResultRegistered = true;
+                    }
+                }
         );
-
-        int id = 0;
-        CHANNEL.messageBuilder(SyncActiveSetsPacket.class, id++, NetworkDirection.PLAY_TO_CLIENT)
-                .decoder(SyncActiveSetsPacket::new).encoder(SyncActiveSetsPacket::toBytes)
-                .consumerNetworkThread(SyncActiveSetsPacket::handle).add();
-        CHANNEL.messageBuilder(SyncArmorConfigsPacket.class, id++, NetworkDirection.PLAY_TO_CLIENT)
-                .decoder(SyncArmorConfigsPacket::new).encoder(SyncArmorConfigsPacket::toBytes)
-                .consumerNetworkThread(SyncArmorConfigsPacket::handle).add();
-        CHANNEL.messageBuilder(SyncEntityFilterPacket.class, id++, NetworkDirection.PLAY_TO_CLIENT)
-                .decoder(SyncEntityFilterPacket::new).encoder(SyncEntityFilterPacket::toBytes)
-                .consumerNetworkThread(SyncEntityFilterPacket::handle).add();
-        CHANNEL.messageBuilder(RequestEntityFilterPacket.class, id++, NetworkDirection.PLAY_TO_SERVER)
-                .decoder(RequestEntityFilterPacket::new).encoder(RequestEntityFilterPacket::toBytes)
-                .consumerNetworkThread(RequestEntityFilterPacket::handle).add();
-        CHANNEL.messageBuilder(RequestReloadArmorSetsPacket.class, id++, NetworkDirection.PLAY_TO_SERVER)
-                .decoder(RequestReloadArmorSetsPacket::new).encoder(RequestReloadArmorSetsPacket::toBytes)
-                .consumerNetworkThread(RequestReloadArmorSetsPacket::handle).add();
-        CHANNEL.messageBuilder(SaveArmorSetPacket.class, id++, NetworkDirection.PLAY_TO_SERVER)
-                .decoder(SaveArmorSetPacket::new).encoder(SaveArmorSetPacket::toBytes)
-                .consumerNetworkThread(SaveArmorSetPacket::handle).add();
-        CHANNEL.messageBuilder(DeleteArmorSetPacket.class, id++, NetworkDirection.PLAY_TO_SERVER)
-                .decoder(DeleteArmorSetPacket::new).encoder(DeleteArmorSetPacket::toBytes)
-                .consumerNetworkThread(DeleteArmorSetPacket::handle).add();
-        CHANNEL.messageBuilder(SaveEntityFilterPacket.class, id++, NetworkDirection.PLAY_TO_SERVER)
-                .decoder(SaveEntityFilterPacket::new).encoder(SaveEntityFilterPacket::toBytes)
-                .consumerNetworkThread(SaveEntityFilterPacket::handle).add();
-        CHANNEL.messageBuilder(ClientInputStatePacket.class, id++, NetworkDirection.PLAY_TO_SERVER)
-                .decoder(ClientInputStatePacket::new).encoder(ClientInputStatePacket::toBytes)
-                .consumerNetworkThread(ClientInputStatePacket::handle).add();
-        CHANNEL.messageBuilder(RequestOpenEditorPacket.class, id++, NetworkDirection.PLAY_TO_SERVER)
-                .decoder(RequestOpenEditorPacket::new).encoder(RequestOpenEditorPacket::toBytes)
-                .consumerNetworkThread(RequestOpenEditorPacket::handle).add();
-        CHANNEL.messageBuilder(EditorSaveResultPacket.class, id, NetworkDirection.PLAY_TO_CLIENT)
-                .decoder(EditorSaveResultPacket::new).encoder(EditorSaveResultPacket::toBytes)
-                .consumerNetworkThread(EditorSaveResultPacket::handle).add();
-        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ArmorNetworkClient.registerClient(modEventBus));
     }
 
-    private static NetworkEvent.Context contextForSide(
-            Supplier<NetworkEvent.Context> supplier,
-            LogicalSide expectedSide
-    ) {
-        NetworkEvent.Context context = supplier.get();
-        NetworkDirection direction = context.getDirection();
-        if (direction == null || direction.getReceptionSide() != expectedSide) {
-            context.setPacketHandled(true);
-            return null;
-        }
-        return context;
+    public static void requestEntityFilter() {
+        CHANNEL.sendToServer(new RequestEntityFilterPacket());
     }
 
-    private static int readBoundedCount(FriendlyByteBuf buf, int maximum, String field) {
+    public static void requestOpenEditor() {
+        CHANNEL.sendToServer(new RequestOpenEditorPacket());
+    }
+
+    public static void sendClientInputState(int leftTicks, int rightTicks, boolean leftClick, boolean rightClick) {
+        CHANNEL.sendToServer(new ClientInputStatePacket(leftTicks, rightTicks, leftClick, rightClick));
+    }
+
+    public static void saveArmorSet(ArmorDataConfig config, String oldId) {
+        CHANNEL.sendToServer(new SaveArmorSetPacket(config, oldId));
+    }
+
+    public static void deleteArmorSet(String id) {
+        CHANNEL.sendToServer(new DeleteArmorSetPacket(id));
+    }
+
+    public static void saveEntityFilter(String mode, List<String> rules) {
+        CHANNEL.sendToServer(new SaveEntityFilterPacket(mode, rules));
+    }
+
+    public static void syncActiveSets(ServerPlayer player, List<String> activeSets, Map<String, Integer> pieceCounts) {
+        if (player != null) CHANNEL.sendToPlayer(player, new SyncActiveSetsPacket(activeSets, pieceCounts));
+    }
+
+    public static void syncEntityFilter(ServerPlayer player, boolean openGui) {
+        if (player != null) CHANNEL.sendToPlayer(player,
+                new SyncEntityFilterPacket(ArmorConfig.entityFilterMode, ArmorConfig.allowedEntities, openGui));
+    }
+
+    public static void syncArmorConfigs(ServerPlayer player, boolean openGui) {
+        if (player != null) CHANNEL.sendToPlayer(player, new SyncArmorConfigsPacket(ArmorLoader.LOADED_SETS, openGui));
+    }
+
+    public static void broadcastEntityFilter() {
+        CHANNEL.broadcast(new SyncEntityFilterPacket(ArmorConfig.entityFilterMode, ArmorConfig.allowedEntities, false));
+    }
+
+    public static void broadcastArmorConfigs() {
+        CHANNEL.broadcast(new SyncArmorConfigsPacket(ArmorLoader.LOADED_SETS, false));
+    }
+
+    private static int readBoundedCount(NetworkBuffer buf, int maximum, String field) {
         int count = buf.readVarInt();
         if (count < 0 || count > maximum) {
             throw new DecoderException(field + " exceeds limit: " + count);
@@ -135,14 +226,14 @@ public class ArmorNetwork {
         }
     }
 
-    private static DecodedJson readCompressedJson(FriendlyByteBuf buf) {
+    private static DecodedJson readCompressedJson(NetworkBuffer buf) {
         byte[] compressed = buf.readByteArray(MAX_COMPRESSED_CONFIG_BYTES);
         if (compressed.length == 0) {
             throw new DecoderException("Empty compressed armor config");
         }
 
         try {
-            byte[] raw = NetworkCompressUtil.decompressBytes(compressed, MAX_DECOMPRESSED_CONFIG_BYTES);
+            byte[] raw = KineticCompression.decompressBytes(compressed, MAX_DECOMPRESSED_CONFIG_BYTES);
             return new DecodedJson(new String(raw, StandardCharsets.UTF_8), compressed.length, raw.length);
         } catch (IllegalArgumentException exception) {
             throw new DecoderException("Invalid compressed armor config", exception);
@@ -163,7 +254,7 @@ public class ArmorNetwork {
         } catch (RuntimeException e) {
             throw new EncoderException("Armor config JSON exceeds structural limits", e);
         }
-        byte[] compressed = NetworkCompressUtil.compress(json);
+        byte[] compressed = KineticCompression.compressUtf8(json, MAX_COMPRESSED_CONFIG_BYTES, MAX_DECOMPRESSED_CONFIG_BYTES);
         if (compressed.length == 0 || compressed.length > MAX_COMPRESSED_CONFIG_BYTES) {
             throw new EncoderException("Compressed armor config exceeds limit");
         }
@@ -262,14 +353,155 @@ public class ArmorNetwork {
         }
     }
 
+    private static void handleRequestEntityFilter(RequestEntityFilterPacket message, ServerPacketContext context) {
+        ServerPlayer player = context.sender();
+        if (!player.hasPermissions(2)) return;
+        ArmorConfig.reloadFromDisk();
+        syncEntityFilter(player, true);
+    }
+
+    private static void handleRequestOpenEditor(RequestOpenEditorPacket message, ServerPacketContext context) {
+        ServerPlayer player = context.sender();
+        if (!player.hasPermissions(2)) {
+            player.sendSystemMessage(Component.translatable("commands.generic.permission"));
+            return;
+        }
+        ArmorConfig.reloadFromDisk();
+        ArmorLoader.load();
+        syncEntityFilter(player, false);
+        syncArmorConfigs(player, true);
+    }
+
+    private static void handleClientInputState(ClientInputStatePacket message, ServerPacketContext context) {
+        ServerPlayer player = context.sender();
+        ArmorManager.updateClientInputState(
+                player,
+                message.leftTicks(),
+                message.rightTicks(),
+                message.leftClick(),
+                message.rightClick()
+        );
+    }
+
+    private static void handleRequestReload(RequestReloadArmorSetsPacket message, ServerPacketContext context) {
+        ServerPlayer player = context.sender();
+        if (player.hasPermissions(2)) {
+            ArmorCommand.executeReload(player.createCommandSourceStack());
+        }
+    }
+
+    private static void handleSaveArmorSet(SaveArmorSetPacket message, ServerPacketContext context) {
+        ServerPlayer player = context.sender();
+        ArmorDataConfig config = message.config();
+        String oldId = message.oldId();
+        if (!player.hasPermissions(2)) {
+            player.sendSystemMessage(Component.translatable("commands.generic.permission"));
+            resyncArmorConfigs(player);
+            sendEditorSaveResult(player, false);
+            return;
+        }
+        if (config == null) {
+            player.sendSystemMessage(Component.translatable("msg.kineticarmory.armorsets.save_failed", ""));
+            resyncArmorConfigs(player);
+            sendEditorSaveResult(player, false);
+            return;
+        }
+        if (!ArmorLoader.isSafeSetId(config.id)
+                || (oldId != null && !ArmorLoader.isSafeSetId(oldId))) {
+            notifyInvalidSetId(player);
+            resyncArmorConfigs(player);
+            sendEditorSaveResult(player, false);
+            return;
+        }
+
+        ArmorLoader.cleanUpConfig(config);
+        config.prepareRuntimeCache();
+        if (!ArmorLoader.saveChecked(config.id, config)) {
+            player.sendSystemMessage(Component.translatable(
+                    "msg.kineticarmory.armorsets.save_failed",
+                    config.id
+            ));
+            resyncArmorConfigs(player);
+            sendEditorSaveResult(player, false);
+            return;
+        }
+
+        boolean renameCleanupFailed = false;
+        if (oldId != null && !oldId.equals(config.id)) {
+            try {
+                Path oldFile = ArmorLoader.resolveConfigPath(oldId);
+                Path newFile = ArmorLoader.resolveConfigPath(config.id);
+                boolean sameTarget = oldFile.equals(newFile)
+                        || (Files.exists(oldFile) && Files.exists(newFile) && Files.isSameFile(oldFile, newFile));
+                if (!sameTarget && !Files.deleteIfExists(oldFile)) {
+                    KineticArmory.LOGGER.warn("重命名时未找到旧套装文件: {}", oldFile.getFileName());
+                }
+            } catch (IOException | IllegalArgumentException e) {
+                renameCleanupFailed = true;
+                KineticArmory.LOGGER.error("无法删除重命名后的旧套装文件: {}", oldId, e);
+            }
+        }
+
+        ArmorCommand.executeReload(player.createCommandSourceStack());
+        if (!ArmorConfig.syncOnReload) resyncArmorConfigs(player);
+        if (renameCleanupFailed) {
+            player.sendSystemMessage(Component.translatable(
+                    "msg.kineticarmory.armorsets.rename_cleanup_failed",
+                    oldId
+            ));
+        }
+        sendEditorSaveResult(player, true);
+    }
+
+    private static void handleSaveEntityFilter(SaveEntityFilterPacket message, ServerPacketContext context) {
+        ServerPlayer player = context.sender();
+        if (!player.hasPermissions(2)) {
+            sendEditorSaveResult(player, false);
+            return;
+        }
+        ArmorConfig.entityFilterMode = "BLACKLIST".equalsIgnoreCase(message.mode()) ? "BLACKLIST" : "WHITELIST";
+        ArmorConfig.allowedEntities = message.rules() == null ? new ArrayList<>() : new ArrayList<>(message.rules());
+        ArmorConfig.save();
+        ArmorManager.forceRecalculateAll(player.getServer());
+        broadcastEntityFilter();
+        sendEditorSaveResult(player, true);
+    }
+
+    private static void handleDeleteArmorSet(DeleteArmorSetPacket message, ServerPacketContext context) {
+        ServerPlayer player = context.sender();
+        String id = message.id();
+        if (!player.hasPermissions(2)) {
+            player.sendSystemMessage(Component.translatable("commands.generic.permission"));
+            resyncArmorConfigs(player);
+            return;
+        }
+        if (!ArmorLoader.isSafeSetId(id)) {
+            notifyInvalidSetId(player);
+            resyncArmorConfigs(player);
+            return;
+        }
+        try {
+            Files.deleteIfExists(ArmorLoader.resolveConfigPath(id));
+            ArmorCommand.executeReload(player.createCommandSourceStack());
+            if (!ArmorConfig.syncOnReload) resyncArmorConfigs(player);
+            player.sendSystemMessage(Component.translatable("msg.kineticarmory.common.deleted"));
+        } catch (IOException | IllegalArgumentException e) {
+            KineticArmory.LOGGER.error("ArmorSet 删除失败: {}", id, e);
+            player.sendSystemMessage(Component.translatable(
+                    "msg.kineticarmory.armorsets.delete_failed",
+                    id
+            ));
+            resyncArmorConfigs(player);
+        }
+    }
+
     private static void notifyInvalidSetId(ServerPlayer player) {
         player.sendSystemMessage(Component.translatable("msg.kineticarmory.armorsets.invalid_id"));
     }
 
     private static void resyncArmorConfigs(ServerPlayer player) {
         if (player == null) return;
-        CHANNEL.send(net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
-                new SyncArmorConfigsPacket(ArmorLoader.LOADED_SETS, false));
+        CHANNEL.sendToPlayer(player, new SyncArmorConfigsPacket(ArmorLoader.LOADED_SETS, false));
     }
 
     private record DecodedJson(String json, int compressedBytes, int decompressedBytes) {}
@@ -279,18 +511,18 @@ public class ArmorNetwork {
     }
 
     public record SyncActiveSetsPacket(List<String> activeSets, Map<String, Integer> pieceCounts) {
-        public SyncActiveSetsPacket(FriendlyByteBuf buf) {
+        public SyncActiveSetsPacket(NetworkBuffer buf) {
             this(readList(buf), readPieceCounts(buf));
         }
 
-        private static List<String> readList(FriendlyByteBuf buf) {
+        private static List<String> readList(NetworkBuffer buf) {
             int size = readBoundedCount(buf, MAX_ACTIVE_SET_COUNT, "active armor set count");
             List<String> list = new ArrayList<>(size);
             for (int i = 0; i < size; i++) list.add(buf.readUtf(ArmorLoader.MAX_SET_ID_LENGTH));
             return list;
         }
 
-        private static Map<String, Integer> readPieceCounts(FriendlyByteBuf buf) {
+        private static Map<String, Integer> readPieceCounts(NetworkBuffer buf) {
             int size = readBoundedCount(buf, MAX_ACTIVE_SET_COUNT, "armor set piece-count entries");
             Map<String, Integer> map = new HashMap<>();
             for (int i = 0; i < size; i++) {
@@ -299,7 +531,7 @@ public class ArmorNetwork {
             return map;
         }
 
-        public void toBytes(FriendlyByteBuf buf) {
+        private void encode(NetworkBuffer buf) {
             requireCollectionSize(activeSets.size(), MAX_ACTIVE_SET_COUNT, "active armor set count");
             buf.writeVarInt(activeSets.size());
             for (String s : activeSets) {
@@ -315,17 +547,11 @@ public class ArmorNetwork {
             }
         }
 
-        public void handle(Supplier<NetworkEvent.Context> ctx) {
-            NetworkEvent.Context context = contextForSide(ctx, LogicalSide.CLIENT);
-            if (context == null) return;
-            context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ArmorNetworkClient.handleSyncActiveSets(this)));
-            context.setPacketHandled(true);
-        }
     }
 
     public record SyncArmorConfigsPacket(Map<String, ArmorDataConfig> configs, boolean openGui) {
-        public SyncArmorConfigsPacket(FriendlyByteBuf buf) { this(readConfigs(buf), buf.readBoolean()); }
-        private static Map<String, ArmorDataConfig> readConfigs(FriendlyByteBuf buf) {
+        public SyncArmorConfigsPacket(NetworkBuffer buf) { this(readConfigs(buf), buf.readBoolean()); }
+        private static Map<String, ArmorDataConfig> readConfigs(NetworkBuffer buf) {
             Map<String, ArmorDataConfig> map = new LinkedHashMap<>();
             int size = readBoundedCount(buf, MAX_CONFIG_COUNT, "armor config count");
             long totalCompressed = 0;
@@ -343,7 +569,7 @@ public class ArmorNetwork {
             }
             return map;
         }
-        public void toBytes(FriendlyByteBuf buf) {
+        private void encode(NetworkBuffer buf) {
             requireCollectionSize(configs.size(), MAX_CONFIG_COUNT, "armor config count");
             buf.writeVarInt(configs.size());
             long totalCompressed = 0;
@@ -362,27 +588,21 @@ public class ArmorNetwork {
             }
             buf.writeBoolean(openGui);
         }
-        public void handle(Supplier<NetworkEvent.Context> ctx) {
-            NetworkEvent.Context context = contextForSide(ctx, LogicalSide.CLIENT);
-            if (context == null) return;
-            context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ArmorNetworkClient.handleSyncConfigs(this)));
-            context.setPacketHandled(true);
-        }
     }
 
     public record SyncEntityFilterPacket(String mode, List<String> rules, boolean openGui) {
-        public SyncEntityFilterPacket(FriendlyByteBuf buf) {
+        public SyncEntityFilterPacket(NetworkBuffer buf) {
             this(buf.readUtf(MAX_FILTER_MODE_LENGTH), readRules(buf), buf.readBoolean());
         }
 
-        private static List<String> readRules(FriendlyByteBuf buf) {
+        private static List<String> readRules(NetworkBuffer buf) {
             int size = readBoundedCount(buf, MAX_ENTITY_RULE_COUNT, "entity filter rule count");
             List<String> rules = new ArrayList<>(size);
             for (int i = 0; i < size; i++) rules.add(buf.readUtf(MAX_ENTITY_RULE_LENGTH));
             return rules;
         }
 
-        public void toBytes(FriendlyByteBuf buf) {
+        private void encode(NetworkBuffer buf) {
             String safeMode = mode == null ? "BLACKLIST" : mode;
             requireUtf(safeMode, MAX_FILTER_MODE_LENGTH, "entity filter mode");
             buf.writeUtf(safeMode, MAX_FILTER_MODE_LENGTH);
@@ -396,116 +616,56 @@ public class ArmorNetwork {
             buf.writeBoolean(openGui);
         }
 
-        public void handle(Supplier<NetworkEvent.Context> ctx) {
-            NetworkEvent.Context context = contextForSide(ctx, LogicalSide.CLIENT);
-            if (context == null) return;
-            context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ArmorNetworkClient.handleSyncEntityFilter(this)));
-            context.setPacketHandled(true);
-        }
     }
 
     public record RequestEntityFilterPacket() {
-        public RequestEntityFilterPacket(FriendlyByteBuf buf) {
+        public RequestEntityFilterPacket(NetworkBuffer buf) {
             this();
         }
 
-        public void toBytes(FriendlyByteBuf buf) {
+        private void encode(NetworkBuffer buf) {
         }
 
-        public void handle(Supplier<NetworkEvent.Context> ctx) {
-            NetworkEvent.Context context = contextForSide(ctx, LogicalSide.SERVER);
-            if (context == null) return;
-            context.enqueueWork(() -> {
-                ServerPlayer player = context.getSender();
-                if (player == null || !player.hasPermissions(2)) return;
-                ArmorConfig.reloadFromDisk();
-                CHANNEL.send(net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
-                        new SyncEntityFilterPacket(ArmorConfig.entityFilterMode, ArmorConfig.allowedEntities, true));
-            });
-            context.setPacketHandled(true);
-        }
     }
 
     public record RequestOpenEditorPacket() {
-        public RequestOpenEditorPacket(FriendlyByteBuf buf) {
+        public RequestOpenEditorPacket(NetworkBuffer buf) {
             this();
         }
 
-        public void toBytes(FriendlyByteBuf buf) {
+        private void encode(NetworkBuffer buf) {
         }
 
-        public void handle(Supplier<NetworkEvent.Context> ctx) {
-            NetworkEvent.Context context = contextForSide(ctx, LogicalSide.SERVER);
-            if (context == null) return;
-            context.enqueueWork(() -> {
-                ServerPlayer player = context.getSender();
-                if (player == null) return;
-                if (!player.hasPermissions(2)) {
-                    player.sendSystemMessage(Component.translatable("commands.generic.permission"));
-                    return;
-                }
-
-                ArmorConfig.reloadFromDisk();
-                ArmorLoader.load();
-                CHANNEL.send(net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
-                        new SyncEntityFilterPacket(ArmorConfig.entityFilterMode, ArmorConfig.allowedEntities, false));
-                CHANNEL.send(net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
-                        new SyncArmorConfigsPacket(ArmorLoader.LOADED_SETS, true));
-            });
-            context.setPacketHandled(true);
-        }
     }
 
     public record ClientInputStatePacket(int leftTicks, int rightTicks, boolean leftClick, boolean rightClick) {
-        public ClientInputStatePacket(FriendlyByteBuf buf) {
+        public ClientInputStatePacket(NetworkBuffer buf) {
             this(buf.readVarInt(), buf.readVarInt(), buf.readBoolean(), buf.readBoolean());
         }
 
-        public void toBytes(FriendlyByteBuf buf) {
+        private void encode(NetworkBuffer buf) {
             buf.writeVarInt(Math.max(0, leftTicks));
             buf.writeVarInt(Math.max(0, rightTicks));
             buf.writeBoolean(leftClick);
             buf.writeBoolean(rightClick);
         }
 
-        public void handle(Supplier<NetworkEvent.Context> ctx) {
-            NetworkEvent.Context context = contextForSide(ctx, LogicalSide.SERVER);
-            if (context == null) return;
-            context.enqueueWork(() -> {
-                ServerPlayer player = context.getSender();
-                if (player != null) {
-                    ArmorManager.updateClientInputState(player, leftTicks, rightTicks, leftClick, rightClick);
-                }
-            });
-            context.setPacketHandled(true);
-        }
     }
 
     public record RequestReloadArmorSetsPacket() {
-        public RequestReloadArmorSetsPacket(FriendlyByteBuf buf) { this(); }
-        public void toBytes(FriendlyByteBuf buf) {}
-        public void handle(Supplier<NetworkEvent.Context> ctx) {
-            NetworkEvent.Context context = contextForSide(ctx, LogicalSide.SERVER);
-            if (context == null) return;
-            context.enqueueWork(() -> {
-                ServerPlayer player = context.getSender();
-                if (player != null && player.hasPermissions(2)) {
-                    ArmorCommand.executeReload(player.createCommandSourceStack());
-                }
-            });
-            context.setPacketHandled(true);
-        }
+        public RequestReloadArmorSetsPacket(NetworkBuffer buf) { this(); }
+        private void encode(NetworkBuffer buf) {}
     }
 
     public record SaveArmorSetPacket(ArmorDataConfig config, String oldId) {
-        public SaveArmorSetPacket(FriendlyByteBuf buf) {
+        public SaveArmorSetPacket(NetworkBuffer buf) {
             this(readConfig(buf), buf.readBoolean() ? buf.readUtf(ArmorLoader.MAX_SET_ID_LENGTH) : null);
         }
-        private static ArmorDataConfig readConfig(FriendlyByteBuf buf) {
+        private static ArmorDataConfig readConfig(NetworkBuffer buf) {
             String id = buf.readUtf(ArmorLoader.MAX_SET_ID_LENGTH);
             return decodeArmorConfig(id, readCompressedJson(buf));
         }
-        public void toBytes(FriendlyByteBuf buf) {
+        private void encode(NetworkBuffer buf) {
             if (config == null) throw new EncoderException("Missing armor config");
             requireUtf(config.id, ArmorLoader.MAX_SET_ID_LENGTH, "armor set id");
             EncodedJson encoded = encodeCompressedJson(config);
@@ -517,87 +677,21 @@ public class ArmorNetwork {
                 buf.writeUtf(oldId, ArmorLoader.MAX_SET_ID_LENGTH);
             }
         }
-        public void handle(Supplier<NetworkEvent.Context> ctx) {
-            NetworkEvent.Context context = contextForSide(ctx, LogicalSide.SERVER);
-            if (context == null) return;
-            context.enqueueWork(() -> {
-                ServerPlayer player = context.getSender();
-                if (player == null) return;
-                if (!player.hasPermissions(2)) {
-                    player.sendSystemMessage(Component.translatable("commands.generic.permission"));
-                    resyncArmorConfigs(player);
-                    sendEditorSaveResult(player, false);
-                    return;
-                }
-                if (config == null) {
-                    player.sendSystemMessage(Component.translatable("msg.kineticarmory.armorsets.save_failed", ""));
-                    resyncArmorConfigs(player);
-                    sendEditorSaveResult(player, false);
-                    return;
-                }
-                if (!ArmorLoader.isSafeSetId(config.id)
-                        || (oldId != null && !ArmorLoader.isSafeSetId(oldId))) {
-                    notifyInvalidSetId(player);
-                    resyncArmorConfigs(player);
-                    sendEditorSaveResult(player, false);
-                    return;
-                }
-
-                ArmorLoader.cleanUpConfig(config);
-                config.prepareRuntimeCache();
-                if (!ArmorLoader.saveChecked(config.id, config)) {
-                    player.sendSystemMessage(Component.translatable(
-                            "msg.kineticarmory.armorsets.save_failed",
-                            config.id
-                    ));
-                    resyncArmorConfigs(player);
-                    sendEditorSaveResult(player, false);
-                    return;
-                }
-
-                boolean renameCleanupFailed = false;
-                if (oldId != null && !oldId.equals(config.id)) {
-                    try {
-                        Path oldFile = ArmorLoader.resolveConfigPath(oldId);
-                        Path newFile = ArmorLoader.resolveConfigPath(config.id);
-                        boolean sameTarget = oldFile.equals(newFile)
-                                || (Files.exists(oldFile) && Files.exists(newFile) && Files.isSameFile(oldFile, newFile));
-                        if (!sameTarget && !Files.deleteIfExists(oldFile)) {
-                            KineticArmory.LOGGER.warn("重命名时未找到旧套装文件: {}", oldFile.getFileName());
-                        }
-                    } catch (IOException | IllegalArgumentException e) {
-                        renameCleanupFailed = true;
-                        KineticArmory.LOGGER.error("无法删除重命名后的旧套装文件: {}", oldId, e);
-                    }
-                }
-
-                ArmorCommand.executeReload(player.createCommandSourceStack());
-                if (!ArmorConfig.syncOnReload) resyncArmorConfigs(player);
-                if (renameCleanupFailed) {
-                    player.sendSystemMessage(Component.translatable(
-                            "msg.kineticarmory.armorsets.rename_cleanup_failed",
-                            oldId
-                    ));
-                }
-                sendEditorSaveResult(player, true);
-            });
-            context.setPacketHandled(true);
-        }
     }
 
     public record SaveEntityFilterPacket(String mode, List<String> rules) {
-        public SaveEntityFilterPacket(FriendlyByteBuf buf) {
+        public SaveEntityFilterPacket(NetworkBuffer buf) {
             this(buf.readUtf(MAX_FILTER_MODE_LENGTH), readRules(buf));
         }
 
-        private static List<String> readRules(FriendlyByteBuf buf) {
+        private static List<String> readRules(NetworkBuffer buf) {
             int size = readBoundedCount(buf, MAX_ENTITY_RULE_COUNT, "entity filter rule count");
             List<String> rules = new ArrayList<>(size);
             for (int i = 0; i < size; i++) rules.add(buf.readUtf(MAX_ENTITY_RULE_LENGTH));
             return rules;
         }
 
-        public void toBytes(FriendlyByteBuf buf) {
+        private void encode(NetworkBuffer buf) {
             String safeMode = mode == null ? "BLACKLIST" : mode;
             requireUtf(safeMode, MAX_FILTER_MODE_LENGTH, "entity filter mode");
             buf.writeUtf(safeMode, MAX_FILTER_MODE_LENGTH);
@@ -610,89 +704,29 @@ public class ArmorNetwork {
             }
         }
 
-        public void handle(Supplier<NetworkEvent.Context> ctx) {
-            NetworkEvent.Context context = contextForSide(ctx, LogicalSide.SERVER);
-            if (context == null) return;
-            context.enqueueWork(() -> {
-                ServerPlayer player = context.getSender();
-                if (player == null) return;
-                if (!player.hasPermissions(2)) {
-                    sendEditorSaveResult(player, false);
-                    return;
-                }
-                ArmorConfig.entityFilterMode = "BLACKLIST".equalsIgnoreCase(mode) ? "BLACKLIST" : "WHITELIST";
-                ArmorConfig.allowedEntities = rules == null ? new ArrayList<>() : new ArrayList<>(rules);
-                ArmorConfig.save();
-                ArmorManager.forceRecalculateAll(player.getServer());
-                CHANNEL.send(net.minecraftforge.network.PacketDistributor.ALL.noArg(), new SyncEntityFilterPacket(ArmorConfig.entityFilterMode, ArmorConfig.allowedEntities, false));
-                sendEditorSaveResult(player, true);
-            });
-            context.setPacketHandled(true);
-        }
     }
 
     private static void sendEditorSaveResult(ServerPlayer player, boolean success) {
         if (player == null) return;
-        CHANNEL.send(
-                net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
-                new EditorSaveResultPacket(success)
-        );
+        CHANNEL.sendToPlayer(player, new EditorSaveResultPacket(success));
     }
 
     public record EditorSaveResultPacket(boolean success) {
-        public EditorSaveResultPacket(FriendlyByteBuf buf) {
+        public EditorSaveResultPacket(NetworkBuffer buf) {
             this(buf.readBoolean());
         }
 
-        public void toBytes(FriendlyByteBuf buf) {
+        private void encode(NetworkBuffer buf) {
             buf.writeBoolean(success);
         }
 
-        public void handle(Supplier<NetworkEvent.Context> ctx) {
-            NetworkEvent.Context context = contextForSide(ctx, LogicalSide.CLIENT);
-            if (context == null) return;
-            context.enqueueWork(() -> ArmorNetworkClient.handleEditorSaveResult(success));
-            context.setPacketHandled(true);
-        }
     }
 
     public record DeleteArmorSetPacket(String id) {
-        public DeleteArmorSetPacket(FriendlyByteBuf buf) { this(buf.readUtf(ArmorLoader.MAX_SET_ID_LENGTH)); }
-        public void toBytes(FriendlyByteBuf buf) {
+        public DeleteArmorSetPacket(NetworkBuffer buf) { this(buf.readUtf(ArmorLoader.MAX_SET_ID_LENGTH)); }
+        private void encode(NetworkBuffer buf) {
             requireUtf(id, ArmorLoader.MAX_SET_ID_LENGTH, "armor set id");
             buf.writeUtf(id, ArmorLoader.MAX_SET_ID_LENGTH);
-        }
-        public void handle(Supplier<NetworkEvent.Context> ctx) {
-            NetworkEvent.Context context = contextForSide(ctx, LogicalSide.SERVER);
-            if (context == null) return;
-            context.enqueueWork(() -> {
-                ServerPlayer player = context.getSender();
-                if (player == null) return;
-                if (!player.hasPermissions(2)) {
-                    player.sendSystemMessage(Component.translatable("commands.generic.permission"));
-                    resyncArmorConfigs(player);
-                    return;
-                }
-                if (!ArmorLoader.isSafeSetId(id)) {
-                    notifyInvalidSetId(player);
-                    resyncArmorConfigs(player);
-                    return;
-                }
-                try {
-                    Files.deleteIfExists(ArmorLoader.resolveConfigPath(id));
-                    ArmorCommand.executeReload(player.createCommandSourceStack());
-                    if (!ArmorConfig.syncOnReload) resyncArmorConfigs(player);
-                    player.sendSystemMessage(Component.translatable("msg.kineticarmory.common.deleted"));
-                } catch (IOException | IllegalArgumentException e) {
-                    KineticArmory.LOGGER.error("ArmorSet 删除失败: {}", id, e);
-                    player.sendSystemMessage(Component.translatable(
-                            "msg.kineticarmory.armorsets.delete_failed",
-                            id
-                    ));
-                    resyncArmorConfigs(player);
-                }
-            });
-            context.setPacketHandled(true);
         }
     }
 }
