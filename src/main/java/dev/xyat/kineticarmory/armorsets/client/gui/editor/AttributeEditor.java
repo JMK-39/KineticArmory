@@ -19,7 +19,7 @@ import java.util.UUID;
 
 public class AttributeEditor extends KineticScreen {
     private final KineticScreen parent; private final ArmorDataConfig config;
-    private final ArmorDataConfig.AttributeModifierData data; private final boolean isNew;
+    private final ArmorDataConfig.AttributeModifierData data; private boolean isNew;
     private AutoCompleteBox idInput;
     private NumericAutoCompleteBox amountInput;
     private String currentOp;
@@ -65,10 +65,14 @@ public class AttributeEditor extends KineticScreen {
         addButtonWithHandler(cx - 60, cy + 45, 55, ColorText.translatable("gui.kineticarmory.armorsets.save"), null, b -> {
             if (syncToData()) return;
             if (data.attribute.isEmpty()) { KineticOverlays.toast(ColorText.translatable("msg.kineticarmory.armorsets.empty_field")); return; }
-            if (!isNew && oldTip != null) config.tips.remove(oldTip);
-            if (isNew) config.attributes.add(data);
-            config.tips.add(ArmorTipGenerator.genAttrTip(data));
-            navigateBack();
+            if (oldTip != null) config.tips.remove(oldTip);
+            if (isNew) {
+                config.attributes.add(data);
+                isNew = false;
+            }
+            String newTip = ArmorTipGenerator.genAttrTip(data);
+            config.tips.add(newTip);
+            oldTip = newTip;
         });
 
         addButtonWithHandler(cx + 5, cy + 45, 55, ColorText.translatable("gui.kineticarmory.armorsets.back"), null, b -> { navigateBack(); });

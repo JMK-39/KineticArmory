@@ -17,7 +17,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 
 public class DamageConversionEditor extends KineticScreen {
-    private final KineticScreen parent; private final ArmorDataConfig config; private final ArmorDataConfig.DamageConversionData data; private final boolean isNew;
+    private final KineticScreen parent; private final ArmorDataConfig config; private final ArmorDataConfig.DamageConversionData data; private boolean isNew;
     private AutoCompleteBox srcInput, tgtInput;
     private NumericAutoCompleteBox ratioInput, chanceInput;
     private String oldTip = null;
@@ -68,10 +68,14 @@ public class DamageConversionEditor extends KineticScreen {
                 KineticOverlays.toast(ColorText.translatable("msg.kineticarmory.armorsets.convert_target_error")); return;
             }
 
-            if (!isNew && oldTip != null) config.tips.remove(oldTip);
-            if (isNew) config.damageConversions.add(data);
-            config.tips.add(ArmorTipGenerator.genConvTip(data));
-            navigateBack();
+            if (oldTip != null) config.tips.remove(oldTip);
+            if (isNew) {
+                config.damageConversions.add(data);
+                isNew = false;
+            }
+            String newTip = ArmorTipGenerator.genConvTip(data);
+            config.tips.add(newTip);
+            oldTip = newTip;
         });
         addButtonWithHandler(cx + 5, cy + 50, 55, ColorText.translatable("gui.kineticarmory.armorsets.back"), null, b -> { navigateBack(); });
     }

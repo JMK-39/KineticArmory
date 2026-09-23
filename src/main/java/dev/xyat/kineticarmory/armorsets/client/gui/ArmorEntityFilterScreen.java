@@ -286,7 +286,7 @@ addButtonWithHandler(356, topY, speedButtonW, getRotationDirectionText(), ColorT
                                 global
                                         ? "gui.kineticarmory.armorsets.entity_filter.save_global.tooltip"
                                         : "gui.kineticarmory.armorsets.entity_filter.save_set.tooltip"
-                        ), b -> saveAndBack());
+                        ), b -> save());
 
         addButtonWithHandler(568, topY, backW, ColorText.translatable("gui.kineticarmory.common.back"), ColorText.translatable(
                                 "gui.kineticarmory.armorsets.entity_filter.back.tooltip"
@@ -525,7 +525,7 @@ refreshLists();
         return rules;
     }
 
-    private void saveAndBack() {
+    private void save() {
         if (!applyRotationSpeedInput(true)) return;
 
         List<String> rules = buildRules();
@@ -540,7 +540,9 @@ refreshLists();
             armorSet.prepareRuntimeCache();
         }
 
-        backWithoutSave();
+        originalRules.clear();
+        originalRules.addAll(rules);
+        rulesDirty = false;
     }
 
     private void backWithoutSave() {

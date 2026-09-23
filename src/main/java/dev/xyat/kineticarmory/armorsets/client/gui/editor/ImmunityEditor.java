@@ -18,7 +18,7 @@ import java.util.ArrayList;
 
 public class ImmunityEditor extends KineticScreen {
     private final KineticScreen parent; private final ArmorDataConfig config;
-    private final ArmorDataConfig.DamageImmunityData data; private final boolean isNew;
+    private final ArmorDataConfig.DamageImmunityData data; private boolean isNew;
     private AutoCompleteBox idInput;
     private NumericAutoCompleteBox valInput;
     private String oldTip = null;
@@ -54,10 +54,14 @@ public class ImmunityEditor extends KineticScreen {
         addButtonWithHandler(cx - 60, cy + 45, 55, ColorText.translatable("gui.kineticarmory.armorsets.save"), null, b -> {
             if (syncToData()) return;
             if (data.damageType.isEmpty()) { KineticOverlays.toast(ColorText.translatable("msg.kineticarmory.armorsets.empty_field")); return; }
-            if (!isNew && oldTip != null) config.tips.remove(oldTip);
-            if (isNew) config.damageImmunities.add(data);
-            config.tips.add(ArmorTipGenerator.genImmTip(data));
-            navigateBack();
+            if (oldTip != null) config.tips.remove(oldTip);
+            if (isNew) {
+                config.damageImmunities.add(data);
+                isNew = false;
+            }
+            String newTip = ArmorTipGenerator.genImmTip(data);
+            config.tips.add(newTip);
+            oldTip = newTip;
         });
         addButtonWithHandler(cx + 5, cy + 45, 55, ColorText.translatable("gui.kineticarmory.armorsets.back"), null, b -> { navigateBack(); });
     }

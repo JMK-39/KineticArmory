@@ -16,7 +16,7 @@ import java.util.ArrayList;
 
 public class AttackDamageEditor extends KineticScreen {
     private final KineticScreen parent; private final ArmorDataConfig config;
-    private final ArmorDataConfig.AttackDamageMultiplierData data; private final boolean isNew;
+    private final ArmorDataConfig.AttackDamageMultiplierData data; private boolean isNew;
     private NumericAutoCompleteBox valInput;
     private String oldTip = null;
     private String tempVal = null;
@@ -46,10 +46,14 @@ public class AttackDamageEditor extends KineticScreen {
         addButtonWithHandler(cx - 60, cy + 25, 55, ColorText.translatable("gui.kineticarmory.armorsets.save"), null, b -> {
             if (syncToData()) return;
             if (valInput.getValue().trim().isEmpty()) { KineticOverlays.toast(ColorText.translatable("msg.kineticarmory.armorsets.empty_field")); return; }
-            if (!isNew && oldTip != null) config.tips.remove(oldTip);
-            if (isNew) config.attackDamageMultipliers.add(data);
-            config.tips.add(ArmorTipGenerator.genAtkDmgTip(data));
-            navigateBack();
+            if (oldTip != null) config.tips.remove(oldTip);
+            if (isNew) {
+                config.attackDamageMultipliers.add(data);
+                isNew = false;
+            }
+            String newTip = ArmorTipGenerator.genAtkDmgTip(data);
+            config.tips.add(newTip);
+            oldTip = newTip;
         });
         addButtonWithHandler(cx + 5, cy + 25, 55, ColorText.translatable("gui.kineticarmory.armorsets.back"), null, b -> { navigateBack(); });
     }

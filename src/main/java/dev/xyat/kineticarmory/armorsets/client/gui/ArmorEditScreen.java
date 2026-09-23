@@ -33,7 +33,9 @@ public class ArmorEditScreen extends KineticScreen {
 
     private final KineticScreen parent;
     private final ArmorDataConfig config;
-    private final String originalId;
+    private String savedId;
+    private String pendingSavedId;
+    private boolean savePending;
 
     private AutoCompleteBox idBox, nameBox;
     private Component warningMessage;
@@ -49,7 +51,7 @@ public class ArmorEditScreen extends KineticScreen {
         setParentScreen(parent);
         this.parent = parent;
         this.config = config;
-        this.originalId = config.id;
+        this.savedId = config.id;
 
         if (this.config.equipment == null) this.config.equipment = new java.util.HashMap<>();
         if (this.config.equipmentVariants == null) this.config.equipmentVariants = new java.util.HashMap<>();
@@ -177,7 +179,7 @@ public class ArmorEditScreen extends KineticScreen {
         });
 
         int bottomBtnY = topY + 225; int actionBtnW = 80;
-        addButtonWithHandler(cx - actionBtnW - 5, bottomBtnY, actionBtnW, ColorText.translatable("gui.kineticarmory.armorsets.save"), null, b -> saveAndClose());
+        addButtonWithHandler(cx - actionBtnW - 5, bottomBtnY, actionBtnW, ColorText.translatable("gui.kineticarmory.armorsets.save"), null, b -> save());
         addButtonWithHandler(cx + 5, bottomBtnY, actionBtnW, ColorText.translatable("gui.kineticarmory.armorsets.back"), null, b -> {
             if (this.minecraft != null) this.navigateBack();
         });
@@ -215,7 +217,9 @@ public class ArmorEditScreen extends KineticScreen {
         return id == null ? "minecraft:air" : id.toString();
     }
 
-    private void saveAndClose() {
+    private void save() {
+        if (savePending) return;
+
         idInputError = false;
         nameInputError = false;
         idBox.setValidationError(false);
@@ -251,18 +255,28 @@ public class ArmorEditScreen extends KineticScreen {
 
         this.warningMessage = null;
         String oldIdForPacket = null;
-        if (!originalId.equals(newId)) {
-            oldIdForPacket = this.originalId;
-            ArmorClientSnapshot.remove(this.originalId);
+        if (!savedId.equals(newId)) {
+            oldIdForPacket = this.savedId;
+            ArmorClientSnapshot.remove(this.savedId);
         }
 
         config.id = newId; config.displayName = newDisplayName;
         config.preparePieceBonusData();
         ArmorClientSnapshot.put(config);
-        commitDraft();
+        pendingSavedId = newId;
+        savePending = true;
         ArmorNetwork.saveArmorSet(config, oldIdForPacket);
+    }
 
-        if (this.minecraft != null) this.navigateBack();
+    public void handleSaveResult(boolean success) {
+        if (!savePending) return;
+
+        savePending = false;
+        if (success && pendingSavedId != null) {
+            savedId = pendingSavedId;
+            commitDraft();
+        }
+        pendingSavedId = null;
     }
 
     @Override

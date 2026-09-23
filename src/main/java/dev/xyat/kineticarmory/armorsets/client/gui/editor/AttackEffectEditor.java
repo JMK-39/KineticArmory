@@ -17,7 +17,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 
 public class AttackEffectEditor extends KineticScreen {
-    private final KineticScreen parent; private final ArmorDataConfig config; private final ArmorDataConfig.AttackEffectData data; private final boolean isNew;
+    private final KineticScreen parent; private final ArmorDataConfig config; private final ArmorDataConfig.AttackEffectData data; private boolean isNew;
     private AutoCompleteBox idInput;
     private NumericAutoCompleteBox durInput, lvlInput, chanceInput;
     private String oldTip = null;
@@ -64,10 +64,14 @@ public class AttackEffectEditor extends KineticScreen {
         addButtonWithHandler(cx - 60, cy + 45, 55, ColorText.translatable("gui.kineticarmory.armorsets.save"), null, b -> {
             if (syncToData()) return;
             if (data.effectId.isEmpty()) { KineticOverlays.toast(ColorText.translatable("msg.kineticarmory.armorsets.empty_field")); return; }
-            if (!isNew && oldTip != null) config.tips.remove(oldTip);
-            if (isNew) config.attackEffects.add(data);
-            config.tips.add(ArmorTipGenerator.genAtkTip(data));
-            navigateBack();
+            if (oldTip != null) config.tips.remove(oldTip);
+            if (isNew) {
+                config.attackEffects.add(data);
+                isNew = false;
+            }
+            String newTip = ArmorTipGenerator.genAtkTip(data);
+            config.tips.add(newTip);
+            oldTip = newTip;
         });
         addButtonWithHandler(cx + 5, cy + 45, 55, ColorText.translatable("gui.kineticarmory.armorsets.back"), null, b -> { navigateBack(); });
     }

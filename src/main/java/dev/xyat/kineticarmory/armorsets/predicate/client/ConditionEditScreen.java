@@ -30,7 +30,7 @@ public class ConditionEditScreen extends KineticScreen {
     private final ConditionListScreen parent;
     private final List<ConditionData> parentList;
     private final ConditionData data;
-    private final boolean isNew;
+    private boolean isNew;
 
     private AutoCompleteBox typeInput;
     private String lastTickType = "";
@@ -61,7 +61,7 @@ public class ConditionEditScreen extends KineticScreen {
         typeInput = addAutoCompleteField(cx - 120, cy - 50, 240, Component.empty(), null, ConditionTypeUtil::getSuggestions, null);
         typeInput.setValue((data.type != null && !data.type.isEmpty()) ? data.type.toUpperCase() : "");
 
-        saveBtn = addButtonWithHandler(cx - 60, cy + 30, 55, ColorText.translatable("gui.kineticarmory.predicate.save"), null, b -> saveAndClose());
+        saveBtn = addButtonWithHandler(cx - 60, cy + 30, 55, ColorText.translatable("gui.kineticarmory.predicate.save"), null, b -> save());
         backBtn = addButtonWithHandler(cx + 5, cy + 30, 55, ColorText.translatable("gui.kineticarmory.predicate.back"), null, b -> {
             navigateBack();
         });
@@ -160,7 +160,7 @@ public class ConditionEditScreen extends KineticScreen {
         data.params.putAll(currentParamValues);
     }
 
-    private void saveAndClose() {
+    private void save() {
         String typeStr = ConditionTypeUtil.getRawType(typeInput.getValue());
         if (typeStr.isEmpty()) { KineticOverlays.toast(ColorText.translatable("msg.kineticarmory.predicate.empty_type")); return; }
 
@@ -178,9 +178,11 @@ public class ConditionEditScreen extends KineticScreen {
         }
 
         syncCurrentValues();
-        if (isNew) parentList.add(data);
+        if (isNew) {
+            parentList.add(data);
+            isNew = false;
+        }
         parent.listWidget.refresh();
-        navigateBack();
     }
 
     @Override protected void renderCanvasBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {

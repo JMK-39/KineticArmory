@@ -18,7 +18,7 @@ import java.util.ArrayList;
 
 public class PotionEditor extends KineticScreen {
     private final KineticScreen parent; private final ArmorDataConfig config;
-    private final ArmorDataConfig.PotionEffectData data; private final boolean isNew;
+    private final ArmorDataConfig.PotionEffectData data; private boolean isNew;
     private AutoCompleteBox idInput;
     private NumericAutoCompleteBox lvlInput, timeInput;
     private String oldTip = null;
@@ -59,10 +59,14 @@ public class PotionEditor extends KineticScreen {
         addButtonWithHandler(cx - 60, cy + 45, 55, ColorText.translatable("gui.kineticarmory.armorsets.save"), null, b -> {
             if (syncToData()) return;
             if (data.effectId.isEmpty()) { KineticOverlays.toast(ColorText.translatable("msg.kineticarmory.armorsets.empty_field")); return; }
-            if (!isNew && oldTip != null) config.tips.remove(oldTip);
-            if (isNew) config.potionEffects.add(data);
-            config.tips.add(ArmorTipGenerator.genPotTip(data));
-            navigateBack();
+            if (oldTip != null) config.tips.remove(oldTip);
+            if (isNew) {
+                config.potionEffects.add(data);
+                isNew = false;
+            }
+            String newTip = ArmorTipGenerator.genPotTip(data);
+            config.tips.add(newTip);
+            oldTip = newTip;
         });
 
         addButtonWithHandler(cx + 5, cy + 45, 55, ColorText.translatable("gui.kineticarmory.armorsets.back"), null, b -> { navigateBack(); });

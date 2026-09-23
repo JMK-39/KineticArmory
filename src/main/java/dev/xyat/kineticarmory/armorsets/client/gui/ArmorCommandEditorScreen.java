@@ -138,10 +138,7 @@ public class ArmorCommandEditorScreen extends KineticScreen {
                 actionBtnW,
                 Component.translatable("gui.kineticarmory.armorsets.save"),
                 null,
-                b -> {
-                    KineticOverlays.toast(Component.translatable("msg.kineticarmory.common.saved"));
-                    navigateBack();
-                }
+                b -> KineticOverlays.toast(Component.translatable("msg.kineticarmory.common.saved"))
         );
         addButtonWithHandler(
                 cx + 5,

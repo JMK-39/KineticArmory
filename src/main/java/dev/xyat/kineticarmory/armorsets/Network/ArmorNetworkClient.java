@@ -3,6 +3,7 @@ package dev.xyat.kineticarmory.armorsets.Network;
 import dev.xyat.kineticarmory.armorsets.client.ArmorCache;
 import dev.xyat.kineticarmory.armorsets.client.ArmorClientSnapshot;
 import dev.xyat.kineticarmory.armorsets.client.ArmorTooltip;
+import dev.xyat.kineticarmory.armorsets.client.gui.ArmorEditScreen;
 import dev.xyat.kineticarmory.armorsets.client.gui.ArmorEntityFilterScreen;
 import dev.xyat.kineticarmory.armorsets.client.gui.ArmorListScreen;
 import dev.xyat.kineticarmory.armorsets.config.ArmorConfigGui;
@@ -48,6 +49,10 @@ public final class ArmorNetworkClient {
     }
 
     public static void handleEditorSaveResult(boolean success) {
+        Screen current = KineticClientRuntime.currentScreen();
+        if (current instanceof ArmorEditScreen editScreen) {
+            editScreen.handleSaveResult(success);
+        }
         if (success) {
             KTConfigApi.notifySaved(ArmorConfigGui.EDITOR_PAGE_ID);
         } else {
