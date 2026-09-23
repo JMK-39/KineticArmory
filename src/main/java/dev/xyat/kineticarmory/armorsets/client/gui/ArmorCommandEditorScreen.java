@@ -28,10 +28,8 @@ public class ArmorCommandEditorScreen extends KineticScreen {
     private CommandListWidget activeList;
     private CommandListWidget deactiveList;
 
-    private StateButton btnAddActive;
-    private StateButton btnAddDeactive;
-    private StateButton btnSaveEdit;
-    private StateButton btnCancelEdit;
+    private StateButton btnPrimary;
+    private StateButton btnSecondary;
 
     private List<ArmorDataConfig.CommandData> editingTargetList;
     private int editingIndex = -1;
@@ -59,67 +57,28 @@ public class ArmorCommandEditorScreen extends KineticScreen {
 
         input = addTextField(x0 + 10, inputY, guiW - 160, Component.empty());
         input.setPlaceholder(Component.translatable("gui.kineticarmory.armorsets.commands.hint"));
+        input.setCanLoseFocus(false);
         input.setMaxLength(2048);
-        if (tempInput != null) input.setValue(tempInput);
-        input.setResponder(this::onEdited);
+        input.setValue(tempInput == null || tempInput.isBlank() ? "/" : tempInput);
+        focusControl(input);
 
-        btnAddActive = addButtonWithHandler(
+        btnPrimary = addButtonWithHandler(
                 x0 + guiW - 145,
                 inputY,
                 65,
                 Component.translatable("gui.kineticarmory.armorsets.commands.add_active"),
                 null,
-                b -> {
-                    if (!input.getValue().trim().isEmpty()) {
-                        ArmorDataConfig.CommandData data = new ArmorDataConfig.CommandData();
-                        data.command = input.getValue();
-                        config.activationCommands.add(data);
-                        input.setValue("");
-                        activeList.refresh();
-                    }
-                }
+                b -> handlePrimaryAction()
         );
-        btnAddDeactive = addButtonWithHandler(
+        btnSecondary = addButtonWithHandler(
                 x0 + guiW - 75,
                 inputY,
                 65,
                 Component.translatable("gui.kineticarmory.armorsets.commands.add_deactive"),
                 null,
-                b -> {
-                    if (!input.getValue().trim().isEmpty()) {
-                        ArmorDataConfig.CommandData data = new ArmorDataConfig.CommandData();
-                        data.command = input.getValue();
-                        config.deactivationCommands.add(data);
-                        input.setValue("");
-                        deactiveList.refresh();
-                    }
-                }
+                b -> handleSecondaryAction()
         );
-        btnSaveEdit = addButtonWithHandler(
-                x0 + guiW - 145,
-                inputY,
-                65,
-                Component.translatable("gui.kineticarmory.armorsets.commands.save_edit"),
-                null,
-                b -> {
-                    if (editingTargetList != null && editingIndex >= 0 && editingIndex < editingTargetList.size()) {
-                        editingTargetList.get(editingIndex).command = input.getValue();
-                        cancelEdit();
-                        activeList.refresh();
-                        deactiveList.refresh();
-                        KineticOverlays.toast(Component.translatable("msg.kineticarmory.common.saved"));
-                    }
-                }
-        );
-        btnCancelEdit = addButtonWithHandler(
-                x0 + guiW - 75,
-                inputY,
-                65,
-                Component.translatable("gui.kineticarmory.armorsets.commands.cancel_edit"),
-                null,
-                b -> cancelEdit()
-        );
-        updateButtonVisibility();
+        updateButtonMode();
 
         int listW = guiW / 2 - 15;
         activeList = new CommandListWidget(listW, guiH - 60, y0 + 25, y0 + guiH - 35, 20, config.activationCommands);
@@ -153,9 +112,10 @@ public class ArmorCommandEditorScreen extends KineticScreen {
                 input,
                 canvasWidth(),
                 canvasHeight(),
-                KineticCommandSuggestions.Options.fieldAligned(false, true, 7, Integer.MIN_VALUE)
+                KineticCommandSuggestions.Options.fieldAligned(false, false, 10, 0xD0000000)
         );
         commandSuggestions.setAllowSuggestions(true);
+        input.setResponder(value -> commandSuggestions.update());
         commandSuggestions.update();
     }
 
@@ -164,29 +124,61 @@ public class ArmorCommandEditorScreen extends KineticScreen {
         editingIndex = index;
         input.setValue(text);
         focusControl(input);
-        updateButtonVisibility();
+        updateButtonMode();
     }
 
     private void cancelEdit() {
         editingTargetList = null;
         editingIndex = -1;
-        input.setValue("");
-        updateButtonVisibility();
+        input.setValue("/");
+        focusControl(input);
+        updateButtonMode();
     }
 
-    private void updateButtonVisibility() {
+    private void updateButtonMode() {
         boolean editing = editingTargetList != null;
-        if (btnAddActive != null) btnAddActive.setVisible(!editing);
-        if (btnAddDeactive != null) btnAddDeactive.setVisible(!editing);
-        if (btnSaveEdit != null) btnSaveEdit.setVisible(editing);
-        if (btnCancelEdit != null) btnCancelEdit.setVisible(editing);
+        if (btnPrimary != null) {
+            btnPrimary.setText(Component.translatable(editing
+                    ? "gui.kineticarmory.armorsets.commands.save_edit"
+                    : "gui.kineticarmory.armorsets.commands.add_active"));
+        }
+        if (btnSecondary != null) {
+            btnSecondary.setText(Component.translatable(editing
+                    ? "gui.kineticarmory.armorsets.commands.cancel_edit"
+                    : "gui.kineticarmory.armorsets.commands.add_deactive"));
+        }
     }
 
-    private void onEdited(String text) {
-        if (commandSuggestions != null) {
-            commandSuggestions.setAllowSuggestions(true);
-            commandSuggestions.update();
+    private void handlePrimaryAction() {
+        if (editingTargetList != null) {
+            if (editingIndex >= 0 && editingIndex < editingTargetList.size()) {
+                editingTargetList.get(editingIndex).command = input.getValue();
+                cancelEdit();
+                activeList.refresh();
+                deactiveList.refresh();
+                KineticOverlays.toast(Component.translatable("msg.kineticarmory.common.saved"));
+            }
+            return;
         }
+        addCommand(config.activationCommands, activeList);
+    }
+
+    private void handleSecondaryAction() {
+        if (editingTargetList != null) {
+            cancelEdit();
+            return;
+        }
+        addCommand(config.deactivationCommands, deactiveList);
+    }
+
+    private void addCommand(List<ArmorDataConfig.CommandData> targetList, CommandListWidget targetWidget) {
+        if (input.getValue().trim().isEmpty()) return;
+        ArmorDataConfig.CommandData data = new ArmorDataConfig.CommandData();
+        data.command = input.getValue();
+        targetList.add(data);
+        input.setValue("/");
+        focusControl(input);
+        targetWidget.refresh();
     }
 
     @Override
@@ -226,13 +218,8 @@ public class ArmorCommandEditorScreen extends KineticScreen {
 
     @Override
     protected void renderCanvasForeground(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        if (commandSuggestions == null) return;
-        graphics.pose().pushPose();
-        graphics.pose().translate(0, 0, 400);
-        try {
+        if (commandSuggestions != null) {
             commandSuggestions.render(graphics, mouseX, mouseY);
-        } finally {
-            graphics.pose().popPose();
         }
     }
 
