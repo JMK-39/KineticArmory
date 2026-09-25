@@ -111,8 +111,6 @@ The event exposes `getEntity()`, `getSetId()`, `isActivated()`, coordinates, and
 - **Tooltip mismatch:** check reload synchronization and the local tooltip modifier.
 - **Command actions:** run from a permission-level-2 server command source; literal `@p` is replaced with the wearer's scoreboard name. These are administrator-authored actions.
 
-Source: [set data](src/main/java/dev/xyat/kineticarmory/armorsets/data/ArmorDataConfig.java), [conditions](src/main/java/dev/xyat/kineticarmory/armorsets/predicate/ConditionTypeUtil.java), [loader](src/main/java/dev/xyat/kineticarmory/armorsets/json/ArmorLoader.java), [KubeJS](src/main/java/dev/xyat/kineticarmory/compat/kubejs/KineticArmoryKubeJSPlugin.java). License: **LGPLv3**.
-
 <a id="chinese"></a>
 
 ## 简体中文
@@ -221,5 +219,3 @@ kineticarmoryEvents.armorSetChange(event => {
 - **部分加成不生效：** 检查各效果自己的条件与件数组。
 - **提示不一致：** 检查重载同步和本地提示修饰键。
 - **命令动作：** 以 2 级权限服务器命令源执行，文本中的 `@p` 替换为穿戴者的计分板名称；应由管理员编写配置。
-
-源码：[套装数据](src/main/java/dev/xyat/kineticarmory/armorsets/data/ArmorDataConfig.java)、[条件](src/main/java/dev/xyat/kineticarmory/armorsets/predicate/ConditionTypeUtil.java)、[加载器](src/main/java/dev/xyat/kineticarmory/armorsets/json/ArmorLoader.java)、[KubeJS](src/main/java/dev/xyat/kineticarmory/compat/kubejs/KineticArmoryKubeJSPlugin.java)。许可证：**LGPLv3**。
