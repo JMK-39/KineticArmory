@@ -1,6 +1,6 @@
 # KineticArmory
 
-[English](#english) | [简体中文](#chinese)
+[English](#english) | [简体中文](#chinese) | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/kineticarmory)
 
 <a id="english"></a>
 
