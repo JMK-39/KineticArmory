@@ -71,7 +71,12 @@ public class ArmorTipEditorScreen extends KineticScreen {
         int x0 = cx - guiW / 2;
         int y0 = 35;
 
-        int inputW = guiW - 120;
+        int inputW = guiW;
+        int actionY = 9;
+        int actionRight = x0 + guiW + 1;
+        int addButtonWidth = 115;
+        int editButtonWidth = 55;
+        int editButtonGap = 4;
 
         this.input = addTextField(
                 x0,
@@ -82,7 +87,7 @@ public class ArmorTipEditorScreen extends KineticScreen {
         this.input.setMaxLength(1024);
         this.input.setPlaceholder(Component.translatable("gui.kineticarmory.armorsets.tips.edit_hint"));
         if (tempInput != null) this.input.setValue(tempInput);
-this.btnAdd = addButtonWithHandler(x0 + guiW - 115, y0, 115, Component.translatable("gui.kineticarmory.armorsets.tips.add"), null, b -> {
+        this.btnAdd = addButtonWithHandler(actionRight - addButtonWidth, actionY, addButtonWidth, Component.translatable("gui.kineticarmory.armorsets.tips.add"), null, b -> {
             ensureManualTipLayout();
             if (!input.getValue().trim().isEmpty()) {
                 config.tipLayout.add(ArmorDataConfig.TipLineData.text(input.getValue()));
@@ -90,7 +95,7 @@ this.btnAdd = addButtonWithHandler(x0 + guiW - 115, y0, 115, Component.translata
                 listWidget.refresh();
             }
         });
-this.btnModify = addButtonWithHandler(x0 + guiW - 115, y0, 55, Component.translatable("gui.kineticarmory.armorsets.commands.save_edit"), null, b -> {
+        this.btnModify = addButtonWithHandler(actionRight - editButtonWidth * 2 - editButtonGap, actionY, editButtonWidth, Component.translatable("gui.kineticarmory.armorsets.commands.save_edit"), null, b -> {
             ensureManualTipLayout();
             String value = input.getValue().trim();
             if (value.isEmpty()) return;
@@ -103,7 +108,7 @@ this.btnModify = addButtonWithHandler(x0 + guiW - 115, y0, 55, Component.transla
             }
         });
         this.btnModify.setVisible(false);
-this.btnCancel = addButtonWithHandler(x0 + guiW - 55, y0, 55, Component.translatable("gui.kineticarmory.armorsets.commands.cancel_edit"), null, b -> cancelEdit());
+        this.btnCancel = addButtonWithHandler(actionRight - editButtonWidth, actionY, editButtonWidth, Component.translatable("gui.kineticarmory.armorsets.commands.cancel_edit"), null, b -> cancelEdit());
         this.btnCancel.setVisible(false);
         int swatchSize = KineticScreen.COMPACT_CONTROL_HEIGHT;
         int swatchGap = 2;
