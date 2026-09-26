@@ -47,6 +47,10 @@ public class ArmorTipEditorScreen extends KineticScreen {
     private StateButton btnModify;
     private StateButton btnCancel;
 
+    private static final int ADD_BUTTON_WIDTH = 115;
+    private static final int EDIT_BUTTON_WIDTH = 55;
+    private static final int CANCEL_BUTTON_WIDTH = 55;
+    private static final int ACTION_BUTTON_GAP = 4;
     private static final int[] COLORS = { 0x000000, 0x0000AA, 0x00AA00, 0x00AAAA, 0xAA0000, 0xAA00AA, 0xFFAA00, 0x5555FF, 0x55FF55, 0x55FFFF, 0xFF5555, 0xFF55FF, 0xFFFF55, 0xFFFFFF };
     private static final String[] CODES = {"0", "1", "2", "3", "4", "5", "6", "9", "a", "b", "c", "d", "e", "f"};
 
@@ -73,10 +77,6 @@ public class ArmorTipEditorScreen extends KineticScreen {
 
         int inputW = guiW;
         int actionY = 9;
-        int actionRight = x0 + guiW + 1;
-        int addButtonWidth = 115;
-        int editButtonWidth = 55;
-        int editButtonGap = 4;
 
         this.input = addTextField(
                 x0,
@@ -87,7 +87,8 @@ public class ArmorTipEditorScreen extends KineticScreen {
         this.input.setMaxLength(1024);
         this.input.setPlaceholder(Component.translatable("gui.kineticarmory.armorsets.tips.edit_hint"));
         if (tempInput != null) this.input.setValue(tempInput);
-        this.btnAdd = addButtonWithHandler(actionRight - addButtonWidth, actionY, addButtonWidth, Component.translatable("gui.kineticarmory.armorsets.tips.add"), null, b -> {
+        int actionRight = x0 + guiW + 1;
+        this.btnAdd = addButtonWithHandler(actionRight - ADD_BUTTON_WIDTH, actionY, ADD_BUTTON_WIDTH, Component.translatable("gui.kineticarmory.armorsets.tips.add"), null, b -> {
             ensureManualTipLayout();
             if (!input.getValue().trim().isEmpty()) {
                 config.tipLayout.add(ArmorDataConfig.TipLineData.text(input.getValue()));
@@ -95,7 +96,7 @@ public class ArmorTipEditorScreen extends KineticScreen {
                 listWidget.refresh();
             }
         });
-        this.btnModify = addButtonWithHandler(actionRight - editButtonWidth * 2 - editButtonGap, actionY, editButtonWidth, Component.translatable("gui.kineticarmory.armorsets.commands.save_edit"), null, b -> {
+        this.btnModify = addButtonWithHandler(actionRight - EDIT_BUTTON_WIDTH, actionY, EDIT_BUTTON_WIDTH, Component.translatable("gui.kineticarmory.armorsets.commands.save_edit"), null, b -> {
             ensureManualTipLayout();
             String value = input.getValue().trim();
             if (value.isEmpty()) return;
@@ -107,9 +108,8 @@ public class ArmorTipEditorScreen extends KineticScreen {
                 KineticOverlays.toast(Component.translatable("msg.kineticarmory.common.saved"));
             }
         });
-        this.btnModify.setVisible(false);
-        this.btnCancel = addButtonWithHandler(actionRight - editButtonWidth, actionY, editButtonWidth, Component.translatable("gui.kineticarmory.armorsets.commands.cancel_edit"), null, b -> cancelEdit());
-        this.btnCancel.setVisible(false);
+        this.btnCancel = addButtonWithHandler(actionRight - CANCEL_BUTTON_WIDTH, actionY, CANCEL_BUTTON_WIDTH, Component.translatable("gui.kineticarmory.armorsets.commands.cancel_edit"), null, b -> cancelEdit());
+        updateActionButtonLayout();
         int swatchSize = KineticScreen.COMPACT_CONTROL_HEIGHT;
         int swatchGap = 2;
         int paletteWidth = COLORS.length * swatchSize + (COLORS.length - 1) * swatchGap;
@@ -282,18 +282,39 @@ public class ArmorTipEditorScreen extends KineticScreen {
         this.input.setValue(data != null && data.text != null && !data.text.isBlank() ? data.text : row.text());
         focusControl(this.input);
 
-        this.btnAdd.setVisible(false);
-        this.btnModify.setVisible(true);
-        this.btnCancel.setVisible(true);
+        updateActionButtonLayout();
     }
 
     private void cancelEdit() {
         this.editingIndex = -1;
         this.input.setValue("");
 
-        this.btnAdd.setVisible(true);
-        this.btnModify.setVisible(false);
-        this.btnCancel.setVisible(false);
+        updateActionButtonLayout();
+    }
+
+    private void updateActionButtonLayout() {
+        if (btnAdd == null || btnModify == null || btnCancel == null) return;
+
+        int guiW = canvasWidth() - 20;
+        int x0 = canvasWidth() / 2 - guiW / 2;
+        int actionRight = x0 + guiW + 1;
+        boolean editing = editingIndex >= 0;
+
+        btnAdd.setX(editing
+                ? actionRight - ADD_BUTTON_WIDTH - 2 * EDIT_BUTTON_WIDTH - 2 * ACTION_BUTTON_GAP
+                : actionRight - ADD_BUTTON_WIDTH - EDIT_BUTTON_WIDTH - ACTION_BUTTON_GAP);
+        btnModify.setX(editing
+                ? actionRight - CANCEL_BUTTON_WIDTH - ACTION_BUTTON_GAP - EDIT_BUTTON_WIDTH
+                : actionRight - EDIT_BUTTON_WIDTH);
+        btnCancel.setX(editing
+                ? actionRight - CANCEL_BUTTON_WIDTH
+                : actionRight - ADD_BUTTON_WIDTH - EDIT_BUTTON_WIDTH - CANCEL_BUTTON_WIDTH - 2 * ACTION_BUTTON_GAP);
+
+        btnAdd.setVisible(true);
+        btnAdd.setEnabled(!editing);
+        btnModify.setVisible(true);
+        btnModify.setEnabled(editing);
+        btnCancel.setVisible(editing);
     }
 
     private void insert(String s) {
