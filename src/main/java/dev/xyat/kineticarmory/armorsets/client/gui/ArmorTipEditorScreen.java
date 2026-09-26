@@ -47,7 +47,7 @@ public class ArmorTipEditorScreen extends KineticScreen {
     private StateButton btnModify;
     private StateButton btnCancel;
 
-    private static final int ADD_BUTTON_WIDTH = 115;
+    private static final int ADD_BUTTON_WIDTH = 55;
     private static final int EDIT_BUTTON_WIDTH = 55;
     private static final int CANCEL_BUTTON_WIDTH = 55;
     private static final int ACTION_BUTTON_GAP = 4;
