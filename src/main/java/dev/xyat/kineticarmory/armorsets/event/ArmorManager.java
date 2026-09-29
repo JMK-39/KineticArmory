@@ -1,6 +1,5 @@
 package dev.xyat.kineticarmory.armorsets.event;
 
-import dev.xyat.kineticarmory.util.ColorText;
 import dev.xyat.kineticarmory.KineticArmory;
 import dev.xyat.kineticarmory.armorsets.Network.ArmorNetwork;
 import dev.xyat.kineticarmory.armorsets.config.ArmorConfig;
@@ -8,12 +7,14 @@ import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
 import dev.xyat.kineticarmory.armorsets.json.ArmorLoader;
 import dev.xyat.kineticarmory.armorsets.predicate.ConditionData;
 import dev.xyat.kineticarmory.armorsets.predicate.ConditionEvaluator;
-import dev.xyat.kineticcore.api.flight.KineticFlight;
-import dev.xyat.kineticcore.api.compat.curios.KineticCuriosEvents;
+import dev.xyat.kineticarmory.armorsets.compat.ArmorCuriosEvents;
+import dev.xyat.kineticcore.api.flight.KineticFlightSources;
+import dev.xyat.kineticcore.api.runtime.KineticPlatform;
 import dev.xyat.kineticcore.api.entity.event.KineticLivingEvents;
 import dev.xyat.kineticcore.api.event.KineticEventPriority;
 import dev.xyat.kineticcore.api.event.KineticExternalEvents;
 import dev.xyat.kineticcore.api.server.event.KineticServerEvents;
+import dev.xyat.kineticcore.api.text.KineticI18n;
 import dev.xyat.kineticcore.api.world.event.KineticWorldEvents;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.registries.Registries;
@@ -52,7 +53,7 @@ public class ArmorManager {
         if (eventsRegistered) return;
         eventsRegistered = true;
         KineticLivingEvents.onTick(KineticEventPriority.NORMAL, ArmorManager::onLivingTick);
-        KineticCuriosEvents.onChange(context -> onCurioChange(context.entity()));
+        if (KineticPlatform.isModLoaded("curios")) ArmorCuriosEvents.register();
         KineticLivingEvents.onEquipmentChange(KineticEventPriority.NORMAL, (entity, slot, from, to) -> onEquipmentChange(entity));
         KineticServerEvents.onPlayerLogin(KineticEventPriority.NORMAL, ArmorManager::handlePlayerLogin);
         KineticServerEvents.onPlayerLogout(KineticEventPriority.NORMAL, ArmorManager::clearRuntimeCache);
@@ -140,7 +141,7 @@ public class ArmorManager {
             removeAttributes(entity, runtime.config());
             executeCommands(entity, runtime.config(), runtime.config().deactivationCommands, runtime.pieceCount());
         }
-        if (entity instanceof ServerPlayer player) KineticFlight.removeSource(player, "armor_set");
+        if (entity instanceof ServerPlayer player) KineticFlightSources.removeSource(player, "armor_set");
         persistSets(entity, Set.of(), Map.of());
         DYNAMIC_ACTIVE_STATES.remove(entity.getUUID());
     }
@@ -542,8 +543,8 @@ public class ArmorManager {
     }
 
     private static void setFlightState(ServerPlayer player, boolean enabled) {
-        if (enabled) KineticFlight.addSource(player, "armor_set");
-        else KineticFlight.removeSource(player, "armor_set");
+        if (enabled) KineticFlightSources.addSource(player, "armor_set");
+        else KineticFlightSources.removeSource(player, "armor_set");
     }
 
     public static void onLivingHurt(KineticLivingEvents.HurtContext event) {
@@ -880,7 +881,7 @@ public class ArmorManager {
                 scratch.satisfiedIds.add(set.id);
                 scratch.pieceCounts.put(set.id, matchedPieces);
             } else if (entity instanceof ServerPlayer player) {
-                player.displayClientMessage(ColorText.translatable("msg.kineticarmory.armorsets.rejected", ColorText.translatable(conflictCurio.getDescriptionId())), true);
+                player.displayClientMessage(KineticI18n.translatable("msg.kineticarmory.armorsets.rejected", KineticI18n.translatable(conflictCurio.getDescriptionId())), true);
             }
         }
         return new CurrentSetResult(List.copyOf(scratch.satisfiedSets), Set.copyOf(scratch.satisfiedIds), Map.copyOf(scratch.pieceCounts));

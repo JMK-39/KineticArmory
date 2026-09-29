@@ -1,7 +1,8 @@
 package dev.xyat.kineticarmory.armorsets.predicate;
 
+import dev.xyat.kineticcore.api.text.KineticI18n;
 import dev.xyat.kineticcore.api.client.search.KineticSearch;
-import dev.xyat.kineticcore.api.client.widget.input.KineticAutoComplete.Suggestion;
+import dev.xyat.kineticcore.api.client.search.KineticSuggestion;
 import dev.xyat.kineticcore.api.registry.KineticRegistries;
 import dev.xyat.kineticcore.api.runtime.KineticClientRuntime;
 import dev.xyat.kineticcore.api.runtime.KineticPlatform;
@@ -45,24 +46,24 @@ public class ConditionTypeUtil {
         };
     }
 
-    public static List<Suggestion> getSuggestionsFor(ParamDataType type) {
+    public static List<KineticSuggestion> getSuggestionsFor(ParamDataType type) {
         if (KineticPlatform.isDedicatedServer()) return Collections.emptyList();
 
         return switch (type) {
             case BLOCK -> KineticRegistries.blocks().ids().stream()
-                    .map(id -> new Suggestion(id.toString(), Component.empty()))
+                    .map(id -> new KineticSuggestion(id.toString(), Component.empty()))
                     .toList();
             case DIMENSION -> {
                 var levels = KineticClientRuntime.knownLevels();
                 if (!levels.isEmpty()) {
                     yield levels.stream()
-                            .map(key -> new Suggestion(key.location().toString(), Component.empty()))
+                            .map(key -> new KineticSuggestion(key.location().toString(), Component.empty()))
                             .toList();
                 }
                 yield List.of(
-                        new Suggestion("minecraft:overworld", Component.empty()),
-                        new Suggestion("minecraft:the_nether", Component.empty()),
-                        new Suggestion("minecraft:the_end", Component.empty())
+                        new KineticSuggestion("minecraft:overworld", Component.empty()),
+                        new KineticSuggestion("minecraft:the_nether", Component.empty()),
+                        new KineticSuggestion("minecraft:the_end", Component.empty())
                 );
             }
             case ATTRIBUTE -> KineticSearch.attributeDictionary();
@@ -71,15 +72,15 @@ public class ConditionTypeUtil {
         };
     }
 
-    public static List<Suggestion> getSuggestions() {
+    public static List<KineticSuggestion> getSuggestions() {
         return ALL_TYPES.stream().map(type -> {
-            String translated = Component.translatable(
+            String translated = KineticI18n.translatable(
                     "gui.kineticarmory.predicate.type." + type.toLowerCase()
             ).getString();
             Component translation = translated.equalsIgnoreCase(type) || translated.startsWith("gui.")
                     ? Component.empty()
                     : Component.literal(translated);
-            return new Suggestion(type, translation);
+            return new KineticSuggestion(type, translation);
         }).toList();
     }
 
@@ -98,14 +99,14 @@ public class ConditionTypeUtil {
     }
 
     public static String getTranslatedName(String rawType) {
-        return Component.translatable("gui.kineticarmory.predicate.type." + rawType.toLowerCase()).getString();
+        return KineticI18n.translatable("gui.kineticarmory.predicate.type." + rawType.toLowerCase()).getString();
     }
 
     public static String getTranslatedParamName(String paramKey) {
-        return Component.translatable("gui.kineticarmory.predicate.param.name." + paramKey.toLowerCase()).getString();
+        return KineticI18n.translatable("gui.kineticarmory.predicate.param.name." + paramKey.toLowerCase()).getString();
     }
 
     public static String getTranslatedParamHint(String paramKey) {
-        return Component.translatable("gui.kineticarmory.predicate.param.desc." + paramKey.toLowerCase()).getString();
+        return KineticI18n.translatable("gui.kineticarmory.predicate.param.desc." + paramKey.toLowerCase()).getString();
     }
 }

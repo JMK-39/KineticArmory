@@ -11,7 +11,7 @@ KineticArmory turns existing equipment into configurable sets with bonuses that 
 ### Requirements
 
 - Minecraft **1.20.1**, Forge **47.4.2+**, Java **17**.
-- Required: **KineticCore 26.9.20+**, **Curios 5.10.0+**.
+- Required: **26.9.28+**, **Curios 5.10.0+**.
 - Optional: **KubeJS 2001.6.5+** for set activation/deactivation scripts.
 - Install the mod and required dependencies on the server and connecting clients.
 
@@ -120,7 +120,7 @@ KineticArmory 将已有装备组织成可配置套装，让加成随穿戴件数
 ### 环境要求
 
 - Minecraft **1.20.1**、Forge **47.4.2+**、Java **17**。
-- 必需：**KineticCore 26.9.20+**、**Curios 5.10.0+**。
+- 必需：**26.9.28+**、**Curios 5.10.0+**。
 - 可选：**KubeJS 2001.6.5+**，用于套装激活与失效脚本。
 - 服务端和连接的客户端均安装本模组及必需依赖。
 

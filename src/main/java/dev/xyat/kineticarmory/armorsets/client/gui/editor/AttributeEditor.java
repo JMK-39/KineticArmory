@@ -1,35 +1,36 @@
 package dev.xyat.kineticarmory.armorsets.client.gui.editor;
 
-import dev.xyat.kineticarmory.util.ColorText;
+import dev.xyat.kineticcore.api.client.gui.overlay.KineticOverlays;
+import dev.xyat.kineticcore.api.client.gui.page.KineticPage;
+import dev.xyat.kineticcore.api.client.gui.render.KineticGraphics;
+import dev.xyat.kineticcore.api.client.gui.theme.KineticTheme;
+import dev.xyat.kineticcore.api.client.gui.ui.KineticUi;
+import dev.xyat.kineticcore.api.client.gui.ui.NumberType;
+import dev.xyat.kineticcore.api.client.gui.widget.*;
+import dev.xyat.kineticcore.api.client.gui.widget.list.*;
+
 import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
 import dev.xyat.kineticarmory.armorsets.data.ArmorTipGenerator;
-import dev.xyat.kineticarmory.armorsets.predicate.client.ConditionListScreen;
-import dev.xyat.kineticcore.api.client.theme.GuiTheme;
-import dev.xyat.kineticcore.api.client.overlay.KineticOverlays;
+import dev.xyat.kineticarmory.armorsets.predicate.client.ConditionListPage;
 import dev.xyat.kineticcore.api.client.search.KineticSearch;
-import dev.xyat.kineticcore.api.client.screen.KineticScreen;
 import dev.xyat.kineticcore.api.runtime.KineticClientRuntime;
-import dev.xyat.kineticcore.api.client.widget.input.KineticAutoComplete.AutoCompleteBox;
-import dev.xyat.kineticcore.api.client.widget.input.KineticAutoComplete.NumericAutoCompleteBox;
-import net.minecraft.client.gui.GuiGraphics;
+import dev.xyat.kineticcore.api.text.KineticI18n;
 import net.minecraft.network.chat.Component;
-import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.UUID;
 
-public class AttributeEditor extends KineticScreen {
-    private final KineticScreen parent; private final ArmorDataConfig config;
+public class AttributeEditor extends KineticPage {
+    private final ArmorDataConfig config;
     private final ArmorDataConfig.AttributeModifierData data; private boolean isNew;
-    private AutoCompleteBox idInput;
-    private NumericAutoCompleteBox amountInput;
+    private KineticAutoCompleteField idInput;
+    private KineticNumberAutoCompleteField amountInput;
     private String currentOp;
     private String oldTip = null;
     private String tempId = null, tempAmount = null;
 
-    public AttributeEditor(KineticScreen p, ArmorDataConfig c, ArmorDataConfig.AttributeModifierData d) {
-        super(ColorText.translatable("gui.kineticarmory.armorsets.editor.attr.title"));
-        setParentScreen(p);
-        parent = p; config = c; isNew = (d == null); data = isNew ? new ArmorDataConfig.AttributeModifierData() : d;
+    public AttributeEditor(ArmorDataConfig c, ArmorDataConfig.AttributeModifierData d) {
+        super(KineticI18n.translatable("gui.kineticarmory.armorsets.editor.attr.title"));
+        config = c; isNew = (d == null); data = isNew ? new ArmorDataConfig.AttributeModifierData() : d;
         if (isNew && data.uuid == null) { data.uuid = UUID.randomUUID().toString(); data.operation = "ADDITION"; }
         if (!isNew) { oldTip = ArmorTipGenerator.genAttrTip(data); }
         currentOp = data.operation;
@@ -37,34 +38,34 @@ public class AttributeEditor extends KineticScreen {
     }
 
     @Override
-    protected void canvasTick() {
-        if (idInput != null) tempId = idInput.getValue();
-        if (amountInput != null) tempAmount = amountInput.getValue();
+    protected void onTick() {
+        if (idInput != null) tempId = idInput.textValue();
+        if (amountInput != null) tempAmount = amountInput.textValue();
     }
 
-    @Override protected void buildUi() {
-        int cx = canvasWidth() / 2; int cy = canvasHeight() / 2 - 50;
-        idInput = addAutoCompleteField(cx - 100, cy - 35, 200, Component.empty(), ColorText.translatable("gui.kineticarmory.armorsets.input.id"), KineticSearch::attributeDictionary, null);
-        idInput.setValue(tempId != null ? tempId : (isNew ? "" : (data.attribute != null ? data.attribute : "")));
+    @Override protected void build(KineticUi ui) {
+        int cx = width() / 2; int cy = height() / 2 - 50;
+        idInput = ui().autoComplete(cx - 100, cy - 35, 200, KineticSearch::attributeDictionary).placeholder(KineticI18n.translatable("gui.kineticarmory.armorsets.input.id")).firstShownTextAsDefault().build();
+        idInput.setTextValue(tempId != null ? tempId : (isNew ? "" : (data.attribute != null ? data.attribute : "")));
 
-        amountInput = addDecimalAutoCompleteField(cx - 100, cy - 10, 95, Component.empty(), ArrayList::new, true, null, null, null, null);
-        amountInput.setPlaceholder(ColorText.translatable("gui.kineticarmory.armorsets.input.amount"));
-        amountInput.setValue(tempAmount != null ? tempAmount : (isNew ? "" : String.valueOf(data.amount)));
+        amountInput = ui().numberAutoComplete(cx - 100, cy - 10, 95, NumberType.DECIMAL, ArrayList::new).allowNegative(true).firstShownTextAsDefault().build();
+        amountInput.setPlaceholder(KineticI18n.translatable("gui.kineticarmory.armorsets.input.amount"));
+        amountInput.setTextValue(tempAmount != null ? tempAmount : (isNew ? "" : String.valueOf(data.amount)));
 
-        addButtonWithHandler(cx + 5, cy - 10, 95, ColorText.translatable("gui.kineticarmory.armorsets.op." + currentOp.toLowerCase()), null, b -> {
+        ui().button(cx + 5, cy - 10, 95).text(KineticI18n.translatable("gui.kineticarmory.armorsets.op." + currentOp.toLowerCase())).onClick(b -> {
             currentOp = currentOp.equals("ADDITION") ? "MULTIPLY_TOTAL" : (currentOp.equals("MULTIPLY_TOTAL") ? "SET" : "ADDITION");
-            b.setText(ColorText.translatable("gui.kineticarmory.armorsets.op." + currentOp.toLowerCase()));
+            b.setText(KineticI18n.translatable("gui.kineticarmory.armorsets.op." + currentOp.toLowerCase()));
             data.operation = currentOp;
-        });
+        }).build();
 
-        addButtonWithHandler(cx - 100, cy + 15, 200, ColorText.translatable("gui.kineticarmory.armorsets.editor.conditions", data.conditions.size()), null, b -> {
+        ui().button(cx - 100, cy + 15, 200).text(KineticI18n.translatable("gui.kineticarmory.armorsets.editor.conditions", data.conditions.size())).onClick(b -> {
             if (syncToData()) return;
-            KineticClientRuntime.openScreen(new ConditionListScreen(this, data));
-        });
+            openChild(new ConditionListPage(data));
+        }).build();
 
-        addButtonWithHandler(cx - 60, cy + 45, 55, ColorText.translatable("gui.kineticarmory.armorsets.save"), null, b -> {
+        ui().button(cx - 60, cy + 45, 55).text(KineticI18n.translatable("gui.kineticarmory.armorsets.save")).onClick(b -> {
             if (syncToData()) return;
-            if (data.attribute.isEmpty()) { KineticOverlays.toast(ColorText.translatable("msg.kineticarmory.armorsets.empty_field")); return; }
+            if (data.attribute.isEmpty()) { KineticOverlays.toast(KineticI18n.translatable("msg.kineticarmory.armorsets.empty_field")); return; }
             if (oldTip != null) config.tips.remove(oldTip);
             if (isNew) {
                 config.attributes.add(data);
@@ -73,14 +74,14 @@ public class AttributeEditor extends KineticScreen {
             String newTip = ArmorTipGenerator.genAttrTip(data);
             config.tips.add(newTip);
             oldTip = newTip;
-        });
+        }).build();
 
-        addButtonWithHandler(cx + 5, cy + 45, 55, ColorText.translatable("gui.kineticarmory.armorsets.back"), null, b -> { navigateBack(); });
+        ui().button(cx + 5, cy + 45, 55).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> { navigateBack(); }).build();
     }
 
     private boolean syncToData() {
-        if (idInput != null) tempId = idInput.getValue();
-        if (amountInput != null) tempAmount = amountInput.getValue();
+        if (idInput != null) tempId = idInput.textValue();
+        if (amountInput != null) tempAmount = amountInput.textValue();
 
         data.attribute =
                 (tempId == null ? "" : tempId.trim());
@@ -90,7 +91,7 @@ public class AttributeEditor extends KineticScreen {
 
         if (amount == null) {
             KineticOverlays.toast(
-                    ColorText.translatable("msg.kineticarmory.common.invalid_number")
+                    KineticI18n.translatable("msg.kineticarmory.common.invalid_number")
             );
             return true;
         }
@@ -99,9 +100,9 @@ public class AttributeEditor extends KineticScreen {
         return false;
     }
 
-    @Override protected void renderCanvasBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        int cx = canvasWidth() / 2; int cy = canvasHeight() / 2 - 50; GuiTheme.panel(g, cx - 120, cy - 70, 240, 150);
-        g.drawCenteredString(font, title, cx, cy - 60, 0xFFFFFF);
+    @Override protected void renderBackground(KineticGraphics g, int mx, int my, float pt) {
+        int cx = width() / 2; int cy = height() / 2 - 50; KineticTheme.panel(g, cx - 120, cy - 70, 240, 150);
+        g.centeredText(title(), cx, cy - 60, 0xFFFFFF, true);
     }
 
 }

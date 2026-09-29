@@ -5,7 +5,7 @@ import dev.xyat.kineticarmory.KineticArmory;
 import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
 import dev.xyat.kineticcore.api.registry.KineticRegistries;
 import dev.xyat.kineticcore.api.resource.KineticResourceIds;
-import dev.xyat.kineticcore.api.runtime.KineticPaths;
+import dev.xyat.kineticcore.api.runtime.KineticPlatform;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -34,7 +34,7 @@ public class ArmorLoader {
     private static int cacheVersion = 0;
     private static volatile boolean loadedOnce = false;
     public static final List<String> FAILED_SETS = new ArrayList<>();
-    public static final Path CONFIG_DIR = KineticPaths.configDirectory().resolve("kineticcore").resolve("armorsets");
+    public static final Path CONFIG_DIR = KineticPlatform.configDirectory().resolve("kineticcore").resolve("armorsets");
 
     public static void cleanUpConfig(ArmorDataConfig config) {
         config.normalizeEquipmentVariants();

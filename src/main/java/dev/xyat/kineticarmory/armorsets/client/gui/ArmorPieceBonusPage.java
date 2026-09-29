@@ -1,20 +1,26 @@
 package dev.xyat.kineticarmory.armorsets.client.gui;
 
+import dev.xyat.kineticcore.api.client.gui.input.KeyInput;
+import dev.xyat.kineticcore.api.client.gui.input.ScrollInput;
+import dev.xyat.kineticcore.api.client.gui.input.MouseDragInput;
+import dev.xyat.kineticcore.api.client.gui.input.MouseInput;
+import dev.xyat.kineticcore.api.client.gui.overlay.KineticOverlays;
+import dev.xyat.kineticcore.api.client.gui.page.KineticPage;
+import dev.xyat.kineticcore.api.client.gui.render.KineticGraphics;
+import dev.xyat.kineticcore.api.client.gui.scroll.KineticScrollController;
+import dev.xyat.kineticcore.api.client.gui.theme.KineticTheme;
+import dev.xyat.kineticcore.api.client.gui.ui.KineticUi;
+import dev.xyat.kineticcore.api.client.gui.ui.NumberType;
+import dev.xyat.kineticcore.api.client.gui.widget.*;
+import dev.xyat.kineticcore.api.client.gui.widget.list.*;
+
 import dev.xyat.kineticcore.api.client.input.KineticMouseButtons;
-import dev.xyat.kineticcore.api.client.text.KineticText;
-import dev.xyat.kineticarmory.util.ColorText;
+import dev.xyat.kineticcore.api.client.gui.input.MouseButton;
 import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
 import dev.xyat.kineticarmory.armorsets.data.ArmorTipGenerator;
-import dev.xyat.kineticcore.api.client.theme.GuiTheme;
-import dev.xyat.kineticcore.api.client.overlay.KineticOverlays;
-import dev.xyat.kineticcore.api.client.screen.KineticScreen;
-import dev.xyat.kineticcore.api.client.widget.input.KineticNumericFields;
-import dev.xyat.kineticcore.api.client.widget.input.KineticNumericFields.NumericEditBox;
-import dev.xyat.kineticcore.api.client.widget.scroll.KineticScroll.GridScrollController;
 import dev.xyat.kineticcore.api.client.input.KineticKeyBindings;
-import net.minecraft.client.gui.GuiGraphics;
+import dev.xyat.kineticcore.api.text.KineticI18n;
 import net.minecraft.network.chat.Component;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -23,7 +29,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
-public class ArmorPieceBonusScreen extends KineticScreen {
+public class ArmorPieceBonusPage extends KineticPage {
     private static final Pattern ICON_PATTERN = Pattern.compile("\\[(item|effect):([^]]+)]");
     private static final Pattern COLOR_PATTERN = Pattern.compile("§[0-9a-fk-or]", Pattern.CASE_INSENSITIVE);
     private static final int PANEL_PADDING = 14;
@@ -31,16 +37,16 @@ public class ArmorPieceBonusScreen extends KineticScreen {
     private static final int VISIBLE_ROWS = 10;
     private static final int SCROLL_W = 4;
 
-    private final KineticScreen parent;
+    
     private final ArmorDataConfig config;
     private final List<PieceEffectEntry> effects = new ArrayList<>();
 
-    private NumericEditBox pieceInput;
-    private NumericEditBox valueInput;
+    private KineticNumberField pieceInput;
+    private KineticNumberField valueInput;
     private PieceEffectEntry selectedEffect;
     private int selectedPieces = -1;
-    private final GridScrollController effectScroll = new GridScrollController();
-    private final GridScrollController tierScroll = new GridScrollController();
+    private final KineticScrollController effectScroll = new KineticScrollController();
+    private final KineticScrollController tierScroll = new KineticScrollController();
     private Component warningMessage;
     private String tempPieceInput;
     private String tempValueInput;
@@ -54,29 +60,27 @@ public class ArmorPieceBonusScreen extends KineticScreen {
     private int rightW;
     private int rightH;
 
-    public ArmorPieceBonusScreen(KineticScreen parent, ArmorDataConfig config) {
-        super(ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.title"));
-        setParentScreen(parent);
-        this.parent = parent;
+    public ArmorPieceBonusPage(ArmorDataConfig config) {
+        super(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.title"));
         this.config = config;
         this.config.initNullFields();
         this.config.preparePieceBonusData();
     }
 
     @Override
-    protected void canvasTick() {
-        if (pieceInput != null) tempPieceInput = pieceInput.getValue();
-        if (valueInput != null) tempValueInput = valueInput.getValue();
+    protected void onTick() {
+        if (pieceInput != null) tempPieceInput = pieceInput.textValue();
+        if (valueInput != null) tempValueInput = valueInput.textValue();
     }
 
     @Override
-    protected void buildUi() {
+    protected void build(KineticUi ui) {
         config.initNullFields();
         config.preparePieceBonusData();
         rebuildEffects();
 
-        int panelW = canvasWidth() - PANEL_PADDING * 2;
-        int panelH = canvasHeight() - PANEL_PADDING * 2;
+        int panelW = width() - PANEL_PADDING * 2;
+        int panelH = height() - PANEL_PADDING * 2;
         int controlY = PANEL_PADDING + 36;
         int inputX = PANEL_PADDING + 12;
         int doneX = PANEL_PADDING + panelW - 92;
@@ -86,23 +90,23 @@ public class ArmorPieceBonusScreen extends KineticScreen {
         if (selectedPieces < 2) selectedPieces = 2;
         if (tempPieceInput == null) tempPieceInput = String.valueOf(selectedPieces);
 
-        pieceInput = addIntegerField(inputX, controlY, 54, Component.empty(), false, null, null, null);
-        pieceInput.setMaxLength(3);
-        pieceInput.setPlaceholder(ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.input_hint"));
-        pieceInput.setValue(tempPieceInput);
-        registerWidgetTooltip(pieceInput, ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.tooltip.piece_input"));
+        pieceInput = ui().numberField(inputX, controlY, 54, NumberType.INT).firstShownTextAsDefault().build();
+        pieceInput.limitTextLength(3);
+        pieceInput.setPlaceholder(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.input_hint"));
+        pieceInput.setTextValue(tempPieceInput);
+        pieceInput.setTooltip(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.tooltip.piece_input"));
 int saveTierX = inputX + 62;
-        addHighZButton(saveTierX, controlY, 82, ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.save_tier"), ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.tooltip.save_tier"), 200, this::saveTierForSelectedEffect);
+        ui().button(saveTierX, controlY, 82).text(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.save_tier")).tooltip(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.tooltip.save_tier")).layer(1).onClick(this::saveTierForSelectedEffect).build();
 
         int valueX = saveTierX + 98;
-        valueInput = addDecimalField(valueX, controlY, 90, Component.empty(), true, null, null, null);
-        valueInput.setMaxLength(32);
-        valueInput.setPlaceholder(ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.value_hint"));
-        registerWidgetTooltip(valueInput, ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.tooltip.value_input"));
-        if (tempValueInput != null) valueInput.setValue(tempValueInput);
-addHighZButton(valueX + 98, controlY, 74, ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.value_save"), ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.tooltip.value_save"), 200, this::saveSelectedValue);
-        addHighZButton(valueX + 178, controlY, 74, ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.value_clear"), ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.tooltip.value_clear"), 200, this::clearSelectedValue);
-        addHighZButton(doneX, controlY, 80, ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.confirm"), ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.tooltip.confirm"), 200, this::closeToParent);
+        valueInput = ui().numberField(valueX, controlY, 90, NumberType.DECIMAL).allowNegative(true).firstShownTextAsDefault().build();
+        valueInput.limitTextLength(32);
+        valueInput.setPlaceholder(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.value_hint"));
+        valueInput.setTooltip(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.tooltip.value_input"));
+        if (tempValueInput != null) valueInput.setTextValue(tempValueInput);
+ui().button(valueX + 98, controlY, 74).text(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.value_save")).tooltip(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.tooltip.value_save")).layer(1).onClick(this::saveSelectedValue).build();
+        ui().button(valueX + 178, controlY, 74).text(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.value_clear")).tooltip(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.tooltip.value_clear")).layer(1).onClick(this::clearSelectedValue).build();
+        ui().button(doneX, controlY, 80).text(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.confirm")).tooltip(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.tooltip.confirm")).layer(1).onClick(this::closeToParent).build();
 
         leftX = PANEL_PADDING + 12;
         leftY = controlY + 36;
@@ -183,7 +187,7 @@ addHighZButton(valueX + 98, controlY, 74, ColorText.translatable("gui.kineticarm
 
     private void saveSelectedValue() {
         if (selectedEffect == null) {
-            warningMessage = ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.warn_select_effect");
+            warningMessage = KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.warn_select_effect");
             return;
         }
         int pieces = parsePiecesFromInput();
@@ -199,17 +203,17 @@ addHighZButton(valueX + 98, controlY, 74, ColorText.translatable("gui.kineticarm
         loadSelectedValue();
         clampScrolls();
         warningMessage = null;
-        KineticOverlays.toast(ColorText.translatable("msg.kineticarmory.common.saved"));
+        KineticOverlays.toast(KineticI18n.translatable("msg.kineticarmory.common.saved"));
     }
 
     private boolean putSelectedValue(ArmorDataConfig.PieceBonusGroup group) {
-        if (valueInput == null || valueInput.getValue().trim().isEmpty()) {
-            warningMessage = ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.warn_value_number");
+        if (valueInput == null || valueInput.textValue().trim().isEmpty()) {
+            warningMessage = KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.warn_value_number");
             return false;
         }
         Double value = valueInput.getDoubleValue();
         if (value == null) {
-            warningMessage = ColorText.translatable(
+            warningMessage = KineticI18n.translatable(
                     "gui.kineticarmory.armorsets.piece.bonus.warn_value_number"
             );
             return false;
@@ -217,18 +221,18 @@ addHighZButton(valueX + 98, controlY, 74, ColorText.translatable("gui.kineticarm
 
         if (group.effectValues == null) group.effectValues = new HashMap<>();
         group.effectValues.put(selectedEffect.key(), value);
-        tempValueInput = KineticNumericFields.formatDecimal(value);
+        tempValueInput = NumberType.DECIMAL.format(value);
         return true;
     }
 
     private void clearSelectedValue() {
         if (selectedEffect == null) {
-            warningMessage = ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.warn_select_effect");
+            warningMessage = KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.warn_select_effect");
             return;
         }
         ArmorDataConfig.PieceBonusGroup group = findSelectedGroup();
         if (group == null) {
-            warningMessage = ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.warn_select_tier");
+            warningMessage = KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.warn_select_tier");
             return;
         }
         removeSelectedEffect(group);
@@ -237,18 +241,18 @@ addHighZButton(valueX + 98, controlY, 74, ColorText.translatable("gui.kineticarm
         loadSelectedValue();
         clampScrolls();
         warningMessage = null;
-        KineticOverlays.toast(ColorText.translatable("msg.kineticarmory.common.saved"));
+        KineticOverlays.toast(KineticI18n.translatable("msg.kineticarmory.common.saved"));
     }
 
     private int parsePiecesFromInput() {
-        String text = pieceInput == null ? "" : pieceInput.getValue().trim();
+        String text = pieceInput == null ? "" : pieceInput.textValue().trim();
         if (text.isEmpty()) {
-            warningMessage = ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.warn_number");
+            warningMessage = KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.warn_number");
             return -1;
         }
         Integer parsedPieces = pieceInput.getIntValue();
         if (parsedPieces == null) {
-            warningMessage = ColorText.translatable(
+            warningMessage = KineticI18n.translatable(
                     "gui.kineticarmory.armorsets.piece.bonus.warn_number"
             );
             return -1;
@@ -257,11 +261,11 @@ addHighZButton(valueX + 98, controlY, 74, ColorText.translatable("gui.kineticarm
         int pieces = parsedPieces;
         int total = Math.max(1, config.getTotalPieceCount());
         if (pieces < 2) {
-            warningMessage = ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.warn_min");
+            warningMessage = KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.warn_min");
             return -1;
         }
         if (pieces > total) {
-            warningMessage = ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.warn_full", total);
+            warningMessage = KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.warn_full", total);
             return -1;
         }
         return pieces;
@@ -339,23 +343,23 @@ addHighZButton(valueX + 98, controlY, 74, ColorText.translatable("gui.kineticarm
 
     private String getTierValueText(ArmorDataConfig.PieceBonusGroup group, PieceEffectEntry effect) {
         if (effect == null) return "";
-        if (!containsEffect(group, effect)) return ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.tier_unset").getString();
-        if (!effect.valueEditable()) return ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.tier_enabled").getString();
-        return ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.tier_value", fmt(getGroupValue(group, effect))).getString();
+        if (!containsEffect(group, effect)) return KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.tier_unset").getString();
+        if (!effect.valueEditable()) return KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.tier_enabled").getString();
+        return KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.tier_value", fmt(getGroupValue(group, effect))).getString();
     }
 
     private void selectEffect(PieceEffectEntry effect) {
         selectedEffect = effect;
         int first = findFirstConfiguredPiecesForSelectedEffect();
         selectedPieces = Math.max(first, 2);
-        if (pieceInput != null) pieceInput.setValue(String.valueOf(selectedPieces));
+        if (pieceInput != null) pieceInput.setTextValue(String.valueOf(selectedPieces));
         loadSelectedValue();
     }
 
     private void selectTier(TierOption option) {
         if (option == null) return;
         selectedPieces = option.pieces();
-        if (pieceInput != null) pieceInput.setValue(String.valueOf(selectedPieces));
+        if (pieceInput != null) pieceInput.setTextValue(String.valueOf(selectedPieces));
         loadSelectedValue();
     }
 
@@ -367,15 +371,15 @@ addHighZButton(valueX + 98, controlY, 74, ColorText.translatable("gui.kineticarm
             pruneEmptyGroups();
             config.preparePieceBonusData();
             selectedPieces = option.pieces();
-            if (pieceInput != null) pieceInput.setValue(String.valueOf(selectedPieces));
+            if (pieceInput != null) pieceInput.setTextValue(String.valueOf(selectedPieces));
             loadSelectedValue();
             clampScrolls();
             warningMessage = null;
-            KineticOverlays.toast(ColorText.translatable("msg.kineticarmory.common.saved"));
+            KineticOverlays.toast(KineticI18n.translatable("msg.kineticarmory.common.saved"));
             return;
         }
         selectedPieces = option.pieces();
-        if (pieceInput != null) pieceInput.setValue(String.valueOf(selectedPieces));
+        if (pieceInput != null) pieceInput.setTextValue(String.valueOf(selectedPieces));
         saveSelectedValue();
     }
 
@@ -383,7 +387,7 @@ addHighZButton(valueX + 98, controlY, 74, ColorText.translatable("gui.kineticarm
         if (valueInput == null || selectedEffect == null) return;
         valueInput.setEnabled(selectedEffect.valueEditable());
         if (!selectedEffect.valueEditable()) {
-            valueInput.setValue("");
+            valueInput.setTextValue("");
             tempValueInput = "";
             return;
         }
@@ -391,7 +395,7 @@ addHighZButton(valueX + 98, controlY, 74, ColorText.translatable("gui.kineticarm
         double value = selectedEffect.baseValue();
         if (group != null) value = getGroupValue(group, selectedEffect);
         String text = fmt(value);
-        valueInput.setValue(text);
+        valueInput.setTextValue(text);
         tempValueInput = text;
     }
 
@@ -406,52 +410,52 @@ addHighZButton(valueX + 98, controlY, 74, ColorText.translatable("gui.kineticarm
     }
 
     @Override
-    protected void renderCanvasBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        GuiTheme.panel(g, PANEL_PADDING, PANEL_PADDING, canvasWidth() - PANEL_PADDING * 2, canvasHeight() - PANEL_PADDING * 2);
-        g.drawCenteredString(font, title, canvasWidth() / 2, PANEL_PADDING + 10, 0xFFFFFF);
-        GuiTheme.panelAlt(g, leftX, leftY, leftW, leftH);
-        GuiTheme.panelAlt(g, rightX, rightY, rightW, rightH);
+    protected void renderBackground(KineticGraphics g, int mx, int my, float pt) {
+        KineticTheme.panel(g, PANEL_PADDING, PANEL_PADDING, width() - PANEL_PADDING * 2, height() - PANEL_PADDING * 2);
+        g.centeredText(title(), width() / 2, PANEL_PADDING + 10, 0xFFFFFF, true);
+        KineticTheme.panelAlt(g, leftX, leftY, leftW, leftH);
+        KineticTheme.panelAlt(g, rightX, rightY, rightW, rightH);
         renderEffectRows(g, mx, my);
         renderTierRows(g, mx, my);
     }
 
     @Override
-    protected void renderCanvasForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {
+    protected void renderForeground(KineticGraphics g, int mx, int my, float pt) {
         if (pieceInput != null) {
-            g.drawString(font, ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.piece_input_label"), pieceInput.getX(), pieceInput.getY() - 11, 0xFFFFAA00, false);
+            g.text(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.piece_input_label"), pieceInput.controlX(), pieceInput.controlY() - 11, 0xFFFFAA00, false);
         }
         if (valueInput != null) {
-            g.drawString(font, ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.value_input_label"), valueInput.getX(), valueInput.getY() - 11, 0xFFFFAA00, false);
+            g.text(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.value_input_label"), valueInput.controlX(), valueInput.controlY() - 11, 0xFFFFAA00, false);
         }
-        g.drawString(font, ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.effect_list_title"), leftX, leftY - 13, 0xFFFFAA00, false);
-        g.drawString(font, ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.tier_list_title"), rightX, rightY - 13, 0xFFFFAA00, false);
-        if (warningMessage != null) g.drawCenteredString(font, warningMessage, canvasWidth() / 2, PANEL_PADDING + 24, 0xFFFF5555);
+        g.text(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.effect_list_title"), leftX, leftY - 13, 0xFFFFAA00, false);
+        g.text(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.tier_list_title"), rightX, rightY - 13, 0xFFFFAA00, false);
+        if (warningMessage != null) g.centeredText(warningMessage, width() / 2, PANEL_PADDING + 24, 0xFFFF5555, true);
     }
 
-    private void renderEffectRows(GuiGraphics g, int mx, int my) {
+    private void renderEffectRows(KineticGraphics g, int mx, int my) {
         int visible = Math.max(1, leftH / ROW_H);
         effectScroll.update(effects.size(), visible);
         if (effects.isEmpty()) {
-            g.drawCenteredString(font, ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.empty_effects"), leftX + leftW / 2, leftY + 16, 0xFFAAAAAA);
+            g.centeredText(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.empty_effects"), leftX + leftW / 2, leftY + 16, 0xFFAAAAAA, true);
             return;
         }
         int first = effectScroll.smoothIndexOffset();
         int shift = effectScroll.visualShift(ROW_H);
         int count = Math.min(visible + 1, effects.size() - first);
-        enableUiScissor(g, leftX, leftY, leftX + leftW - 10, leftY + leftH);
+        g.scissor(leftX, leftY, leftX + leftW - 10, leftY + leftH);
         for (int i = 0; i < count; i++) {
             int index = first + i;
             PieceEffectEntry effect = effects.get(index);
             int y = leftY + i * ROW_H - shift;
             boolean hover = isInside(mx, my, leftX, y, leftW - 10, ROW_H);
             boolean selected = effect == selectedEffect;
-            GuiTheme.stateSurface(
+            KineticTheme.stateSurface(
                     g,
                     leftX + 1,
                     y + 1,
                     leftW - 11,
                     ROW_H - 2,
-                    GuiTheme.Surface.PANEL_ALT,
+                    KineticTheme.Surface.PANEL_ALT,
                     selected,
                     hover,
                     false
@@ -461,7 +465,7 @@ addHighZButton(valueX + 98, controlY, 74, ColorText.translatable("gui.kineticarm
             String summary = buildEffectSummary(effect);
             if (!summary.isEmpty()) drawTrimmedText(g, summary, leftX + 6, y + 16, leftW - 22, 0xFF55FF55);
         }
-        disableUiScissor(g);
+        g.endScissor();
         effectScroll.render(
                 g, mx, my,
                 leftX + leftW - SCROLL_W - 2,
@@ -472,18 +476,18 @@ addHighZButton(valueX + 98, controlY, 74, ColorText.translatable("gui.kineticarm
         );
     }
 
-    private void renderTierRows(GuiGraphics g, int mx, int my) {
+    private void renderTierRows(KineticGraphics g, int mx, int my) {
         List<TierOption> tiers = buildTierOptions();
         int visible = Math.max(1, rightH / ROW_H);
         tierScroll.update(tiers.size(), visible);
         if (tiers.isEmpty()) {
-            g.drawCenteredString(font, ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.empty_tiers"), rightX + rightW / 2, rightY + 16, 0xFFAAAAAA);
+            g.centeredText(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.empty_tiers"), rightX + rightW / 2, rightY + 16, 0xFFAAAAAA, true);
             return;
         }
         int first = tierScroll.smoothIndexOffset();
         int shift = tierScroll.visualShift(ROW_H);
         int count = Math.min(visible + 1, tiers.size() - first);
-        enableUiScissor(g, rightX, rightY, rightX + rightW - 10, rightY + rightH);
+        g.scissor(rightX, rightY, rightX + rightW - 10, rightY + rightH);
         for (int i = 0; i < count; i++) {
             int index = first + i;
             TierOption option = tiers.get(index);
@@ -492,36 +496,36 @@ addHighZButton(valueX + 98, controlY, 74, ColorText.translatable("gui.kineticarm
             boolean hover = isInside(mx, my, rightX, y, rightW - 10, ROW_H);
             boolean rowSelected = option.pieces() == selectedPieces;
             boolean enabled = selectedEffect != null && containsEffect(group, selectedEffect);
-            GuiTheme.stateSurface(
+            KineticTheme.stateSurface(
                     g,
                     rightX + 1,
                     y + 1,
                     rightW - 11,
                     ROW_H - 2,
-                    GuiTheme.Surface.PANEL_ALT,
+                    KineticTheme.Surface.PANEL_ALT,
                     rowSelected,
                     hover,
                     false
             );
             if (enabled) {
-                GuiTheme.indicatorOutline(
+                KineticTheme.indicatorOutline(
                         g,
                         rightX + 1,
                         y + 1,
                         rightW - 11,
                         ROW_H - 2,
-                        GuiTheme.Indicator.SUCCESS
+                        KineticTheme.Indicator.SUCCESS
                 );
             }
-            g.drawString(font, enabled ? "[x]" : "[ ]", rightX + 6, y + 9, enabled ? 0xFF55FF55 : 0xFFAAAAAA, false);
-            Component label = ColorText.translatable("gui.kineticarmory.armorsets.piece.bonus.tier_row", option.pieces());
-            g.drawString(font, label, rightX + 36, y + 9, rowSelected ? 0xFFFFFFFF : 0xFFDDDDDD, false);
+            g.text(enabled ? "[x]" : "[ ]", rightX + 6, y + 9, enabled ? 0xFF55FF55 : 0xFFAAAAAA, false);
+            Component label = KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.tier_row", option.pieces());
+            g.text(label, rightX + 36, y + 9, rowSelected ? 0xFFFFFFFF : 0xFFDDDDDD, false);
             if (selectedEffect != null) {
                 String valueText = getTierValueText(group, selectedEffect);
-                KineticText.drawScrollingRight(g, font, Component.literal(valueText), rightX + rightW - 18, y + 9, 132, enabled ? 0xFFFFFF55 : 0xFFAAAAAA, false);
+                g.scrollingTextRight(Component.literal(valueText), rightX + rightW - 18, y + 9, 132, enabled ? 0xFFFFFF55 : 0xFFAAAAAA, false);
             }
         }
-        disableUiScissor(g);
+        g.endScissor();
         tierScroll.render(
                 g, mx, my,
                 rightX + rightW - SCROLL_W - 2,
@@ -555,12 +559,12 @@ addHighZButton(valueX + 98, controlY, 74, ColorText.translatable("gui.kineticarm
         return COLOR_PATTERN.matcher(ICON_PATTERN.matcher(text).replaceAll("")).replaceAll("").replace('\n', ' ').trim();
     }
 
-    private void drawTrimmedText(GuiGraphics g, String text, int x, int y, int maxWidth, int color) {
-        KineticText.drawScrollingLeft(g, font, Component.literal(text == null ? "" : text), x, y, Math.max(0, maxWidth), color, false);
+    private void drawTrimmedText(KineticGraphics g, String text, int x, int y, int maxWidth, int color) {
+        g.scrollingText(Component.literal(text == null ? "" : text), x, y, Math.max(0, maxWidth), color, false);
     }
 
     private boolean isInside(double mx, double my, int x, int y, int w, int h) {
-        return GuiTheme.hovering(mx, my, x, y, w, h);
+        return KineticTheme.hovering(mx, my, x, y, w, h);
     }
 
     private void clampScrolls() {
@@ -575,14 +579,15 @@ addHighZButton(valueX + 98, controlY, 74, ColorText.translatable("gui.kineticarm
     }
 
     @Override
-    protected boolean canvasKeyPressed(int keyCode, int scanCode, int modifiers) {
+    protected boolean onKeyPress(KeyInput input) {
+        int keyCode = input.keyCode(), scanCode = input.scanCode(), modifiers = input.modifiers();
         if (KineticKeyBindings.matchesKeyCode(KineticKeyBindings.Key.ENTER, keyCode)
                 || KineticKeyBindings.matchesKeyCode(KineticKeyBindings.Key.KP_ENTER, keyCode)) {
-            if (pieceInput != null && isControlFocused(pieceInput)) {
+            if (pieceInput != null && isFocused(pieceInput)) {
                 saveTierForSelectedEffect();
                 return true;
             }
-            if (valueInput != null && isControlFocused(valueInput)) {
+            if (valueInput != null && isFocused(valueInput)) {
                 saveSelectedValue();
                 return true;
             }
@@ -591,9 +596,10 @@ addHighZButton(valueX + 98, controlY, 74, ColorText.translatable("gui.kineticarm
     }
 
     @Override
-    protected boolean canvasMouseClicked(double mx, double my, int btn) {
-        if (tryStartScrollDrag(mx, my, leftX + leftW - SCROLL_W - 2, leftY + 2, leftH - 4, true)) return true;
-        if (tryStartScrollDrag(mx, my, rightX + rightW - SCROLL_W - 2, rightY + 2, rightH - 4, false)) return true;
+    protected boolean onMouseClick(MouseInput input) {
+        double mx = input.x(), my = input.y(); int btn = input.rawButton();
+        if (tryStartScrollDrag(mx, my, input.button(), leftX + leftW - SCROLL_W - 2, leftY + 2, leftH - 4, true)) return true;
+        if (tryStartScrollDrag(mx, my, input.button(), rightX + rightW - SCROLL_W - 2, rightY + 2, rightH - 4, false)) return true;
 
         if (isInside(mx, my, leftX, leftY, leftW - 10, leftH)) {
             int row = effectScroll.smoothIndexOffset()
@@ -616,16 +622,16 @@ addHighZButton(valueX + 98, controlY, 74, ColorText.translatable("gui.kineticarm
             }
         }
 
-        return super.canvasMouseClicked(mx, my, btn);
+        return false;
     }
 
-    private boolean tryStartScrollDrag(double mx, double my, int x, int y, int h, boolean effectList) {
+    private boolean tryStartScrollDrag(double mx, double my, MouseButton button, int x, int y, int h, boolean effectList) {
         int visible = Math.max(1, (effectList ? leftH : rightH) / ROW_H);
         int total = effectList ? effects.size() : buildTierOptions().size();
-        GridScrollController controller = effectList ? effectScroll : tierScroll;
+        KineticScrollController controller = effectList ? effectScroll : tierScroll;
         controller.update(total, visible);
         return controller.beginDrag(
-                mx, my,
+                mx, my, button,
                 x, y,
                 SCROLL_W, h,
                 18, 4
@@ -633,21 +639,24 @@ addHighZButton(valueX + 98, controlY, 74, ColorText.translatable("gui.kineticarm
     }
 
     @Override
-    protected boolean canvasMouseDragged(double mx, double my, int btn, double dx, double dy) {
+    protected boolean onMouseDrag(MouseDragInput input) {
+        double mx = input.x(), my = input.y(); int btn = input.rawButton(); double dx = input.deltaX(), dy = input.deltaY();
         if (effectScroll.drag(my, leftY + 2, leftH - 4, 18)) return true;
         if (tierScroll.drag(my, rightY + 2, rightH - 4, 18)) return true;
-        return super.canvasMouseDragged(mx, my, btn, dx, dy);
+        return false;
     }
 
     @Override
-    protected boolean canvasMouseReleased(double mx, double my, int btn) {
-        boolean handled = effectScroll.release(btn);
-        handled = tierScroll.release(btn) || handled;
-        return handled || super.canvasMouseReleased(mx, my, btn);
+    protected boolean onMouseRelease(MouseInput input) {
+        double mx = input.x(), my = input.y(); int btn = input.rawButton();
+        boolean handled = effectScroll.release(input.button());
+        handled = tierScroll.release(input.button()) || handled;
+        return handled || false;
     }
 
     @Override
-    protected boolean canvasMouseScrolled(double mx, double my, double delta) {
+    protected boolean onMouseScroll(ScrollInput input) {
+        double mx = input.x(), my = input.y(), delta = input.deltaY();
         if (isInside(mx, my, leftX, leftY, leftW, leftH)) {
             effectScroll.update(
                     effects.size(),
@@ -664,7 +673,7 @@ addHighZButton(valueX + 98, controlY, 74, ColorText.translatable("gui.kineticarm
             if (tierScroll.scroll(delta)) return true;
         }
 
-        return super.canvasMouseScrolled(mx, my, delta);
+        return false;
     }
 
     private record PieceEffectEntry(String key, String text, double baseValue, boolean valueEditable) {}

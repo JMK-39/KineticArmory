@@ -1,27 +1,23 @@
 package dev.xyat.kineticarmory.armorsets.client;
 
-import javax.annotation.Nonnull;
-
-import dev.xyat.kineticarmory.util.ColorText;
 import dev.xyat.kineticarmory.armorsets.config.ArmorConfig;
 import dev.xyat.kineticarmory.armorsets.config.ArmorClientConfig;
 import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
 import dev.xyat.kineticarmory.armorsets.data.ArmorTipGenerator;
+import dev.xyat.kineticcore.api.client.gui.render.KineticGraphics;
+import dev.xyat.kineticcore.api.client.gui.text.KineticText;
 import dev.xyat.kineticcore.api.client.tooltip.KineticItemTooltips;
+import dev.xyat.kineticcore.api.client.tooltip.KineticTooltipComponent;
 import dev.xyat.kineticcore.api.registry.KineticRegistries;
 import dev.xyat.kineticcore.api.resource.KineticResourceIds;
 import dev.xyat.kineticcore.api.runtime.KineticClientRuntime;
-import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
+import dev.xyat.kineticcore.api.text.KineticI18n;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.ItemStack;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -63,18 +59,18 @@ public class ArmorTooltip {
         if (!rejectedBySets.isEmpty()) {
             tooltip.add(Component.empty());
             if (KineticClientRuntime.altModifierDown()) {
-                tooltip.add(ColorText.translatable("gui.kineticarmory.armorsets.tooltip.conflict_header"));
+                tooltip.add(KineticI18n.translatable("gui.kineticarmory.armorsets.tooltip.conflict_header"));
                 int count = 0;
                 for (ArmorDataConfig config : rejectedBySets) {
                     if (count >= MAX_DISPLAY_COUNT) break;
-                    tooltip.add(ColorText.translatable("gui.kineticarmory.armorsets.tooltip.conflict_row", stripColor(config.displayName)));
+                    tooltip.add(KineticI18n.translatable("gui.kineticarmory.armorsets.tooltip.conflict_row", stripColor(config.displayName)));
                     count++;
                 }
                 if (rejectedBySets.size() > MAX_DISPLAY_COUNT) {
-                    tooltip.add(ColorText.translatable("gui.kineticarmory.armorsets.tooltip.conflict_more", rejectedBySets.size() - MAX_DISPLAY_COUNT));
+                    tooltip.add(KineticI18n.translatable("gui.kineticarmory.armorsets.tooltip.conflict_more", rejectedBySets.size() - MAX_DISPLAY_COUNT));
                 }
             } else {
-                tooltip.add(ColorText.translatable("gui.kineticarmory.armorsets.tooltip.hold_alt_conflict"));
+                tooltip.add(KineticI18n.translatable("gui.kineticarmory.armorsets.tooltip.hold_alt_conflict"));
             }
         }
     }
@@ -141,11 +137,11 @@ public class ArmorTooltip {
             int pieceCount = tooltipState.pieceCount();
             int total = Math.max(1, config.getTotalPieceCount());
             int shownPieceCount = Math.max(0, Math.min(pieceCount, total));
-            addText(context, ColorText.translatable("gui.kineticarmory.armorsets.tooltip.name_with_pieces", stripColor(config.displayName), shownPieceCount, total));
+            addText(context, KineticI18n.translatable("gui.kineticarmory.armorsets.tooltip.name_with_pieces", stripColor(config.displayName), shownPieceCount, total));
             if (isDetailKeyDown(config)) {
                 addSetDetails(context, config, ArmorCache.isSetActive(config.id), anyActive, tooltipState);
             } else if (!"none".equalsIgnoreCase(getTipKey(config))) {
-                addText(context, ColorText.translatable("gui.kineticarmory.armorsets.tooltip.hold_key_details", getTipKeyDisplayName(config)));
+                addText(context, KineticI18n.translatable("gui.kineticarmory.armorsets.tooltip.hold_key_details", getTipKeyDisplayName(config)));
             }
         }
     }
@@ -261,10 +257,10 @@ public class ArmorTooltip {
     private static Component getTipKeyDisplayName(ArmorDataConfig config) {
         String key = getTipKey(config);
         return switch (key) {
-            case "ctrl", "control" -> ColorText.translatable("gui.kineticarmory.armorsets.key.ctrl");
-            case "alt" -> ColorText.translatable("gui.kineticarmory.armorsets.key.alt");
-            case "none" -> ColorText.translatable("gui.kineticarmory.armorsets.key.none");
-            default -> ColorText.translatable("gui.kineticarmory.armorsets.key.shift");
+            case "ctrl", "control" -> KineticI18n.translatable("gui.kineticarmory.armorsets.key.ctrl");
+            case "alt" -> KineticI18n.translatable("gui.kineticarmory.armorsets.key.alt");
+            case "none" -> KineticI18n.translatable("gui.kineticarmory.armorsets.key.none");
+            default -> KineticI18n.translatable("gui.kineticarmory.armorsets.key.shift");
         };
     }
 
@@ -276,7 +272,7 @@ public class ArmorTooltip {
 
     public record IconTipTooltipData(String rawText, boolean isActive, boolean anyActive) implements TooltipComponent {}
 
-    public static class ClientIconTipComponent implements ClientTooltipComponent {
+    public static class ClientIconTipComponent implements KineticTooltipComponent {
         private final String rawText;
         private final String cleanText;
         private final boolean isActive;
@@ -290,41 +286,37 @@ public class ArmorTooltip {
         }
 
         @Override
-        public int getHeight() {
+        public int height() {
             return 10;
         }
 
         @Override
-        public int getWidth(@NotNull Font font) {
-            return font.width(stripColor(cleanText)) + 14;
+        public int width() {
+            return KineticText.width(stripColor(cleanText)) + 14;
         }
 
         @Override
-        public void renderText(@NotNull Font font, int x, int y, @NotNull org.joml.Matrix4f matrix, @Nonnull net.minecraft.client.renderer.MultiBufferSource.@NotNull BufferSource bufferSource) {
+        public void render(KineticGraphics g, int x, int y) {
             String dispText = this.isActive ? this.cleanText : stripColor(this.cleanText);
             String prefix = this.isActive ? "§f" : (this.anyActive ? "§m" : "§f");
-            MutableComponent comp = Component.literal(prefix + dispText);
             int color = this.isActive ? -1 : (this.anyActive ? 0xFFBBBBBB : -1);
-            font.drawInBatch(comp, x, y, color, true, matrix, bufferSource, Font.DisplayMode.NORMAL, 0, 15728880);
-        }
+            g.text(Component.literal(prefix + dispText), x, y, color, true);
 
-        @Override
-        public void renderImage(@NotNull Font font, int x, int y, @NotNull GuiGraphics g) {
             Matcher matcher = ICON_PATTERN.matcher(this.rawText);
             while (matcher.find()) {
                 String type = matcher.group(1);
                 String id = matcher.group(2);
-                int iconX = x + font.width(stripColor(this.rawText.substring(0, matcher.start()).replaceAll(ICON_REGEX, "")));
+                int iconX = x + KineticText.width(stripColor(this.rawText.substring(0, matcher.start()).replaceAll(ICON_REGEX, "")));
                 if (type.equals("item")) {
                     ResourceLocation rl = KineticResourceIds.tryParse(id);
                     if (rl != null) {
                         var item = KineticRegistries.items().get(rl);
                         if (item != null && item != net.minecraft.world.item.Items.AIR) {
-                            g.pose().pushPose();
-                            g.pose().translate(iconX, y, 0);
-                            g.pose().scale(0.7f, 0.7f, 1.0f);
-                            g.renderItem(new ItemStack(item), 0, 0);
-                            g.pose().popPose();
+                            g.push();
+                            g.translate(iconX, y);
+                            g.scale(0.7f, 0.7f);
+                            g.item(new ItemStack(item), 0, 0);
+                            g.pop();
                         }
                     }
                 }
@@ -334,7 +326,7 @@ public class ArmorTooltip {
 
     public record RejectedTooltipData(List<String> itemIds) implements TooltipComponent {}
 
-    public static class ClientRejectedTooltipComponent implements ClientTooltipComponent {
+    public static class ClientRejectedTooltipComponent implements KineticTooltipComponent {
         private final List<ItemStack> stacks;
 
         public ClientRejectedTooltipComponent(RejectedTooltipData data) {
@@ -344,19 +336,19 @@ public class ArmorTooltip {
         }
 
         @Override
-        public int getHeight() {
+        public int height() {
             return ((stacks.size() - 1) / 9 + 1) * 18 + 2;
         }
 
         @Override
-        public int getWidth(@NotNull Font font) {
+        public int width() {
             return Math.min(stacks.size(), 9) * 18;
         }
 
         @Override
-        public void renderImage(@NotNull Font font, int x, int y, @NotNull GuiGraphics guiGraphics) {
+        public void render(KineticGraphics g, int x, int y) {
             for (int i = 0; i < stacks.size(); i++) {
-                guiGraphics.renderItem(stacks.get(i), x + (i % 9) * 18, y + (i / 9) * 18 + 1);
+                g.item(stacks.get(i), x + (i % 9) * 18, y + (i / 9) * 18 + 1);
             }
         }
     }

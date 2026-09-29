@@ -1,12 +1,11 @@
 package dev.xyat.kineticarmory.armorsets.config;
 
+import dev.xyat.kineticcore.api.text.KineticI18n;
 import dev.xyat.kineticarmory.armorsets.Network.ArmorNetworkClient;
 import dev.xyat.kineticcore.api.config.client.KTConfigApi;
 import dev.xyat.kineticcore.api.config.client.KTClientConfigAdapter;
 import dev.xyat.kineticcore.api.config.client.KTConfigPage;
 import dev.xyat.kineticcore.api.config.client.KTConfigScope;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.Component;
 
 public final class ArmorConfigGui {
     public static final String PAGE_ID = "kineticarmory:armorsets";
@@ -19,70 +18,66 @@ public final class ArmorConfigGui {
     public static void load() {
         KTConfigApi.register(KTConfigPage.builder(
                         PAGE_ID,
-                        Component.translatable("cfg.kineticarmory.armorsets.title")
+                        KineticI18n.translatable("cfg.kineticarmory.armorsets.title")
                 )
-                .pageDescription(Component.translatable("cfg.kineticarmory.armorsets.description"))
+                .pageDescription(KineticI18n.translatable("cfg.kineticarmory.armorsets.description"))
                 .scope(KTConfigScope.SERVER_AUTHORITATIVE)
                 .serverManaged()
                 .applyTiming(KTConfigPage.ApplyTiming.MIXED)
-                .applyNotice(Component.translatable("cfg.kineticarmory.armorsets.apply_notice"))
+                .applyNotice(KineticI18n.translatable("cfg.kineticarmory.armorsets.apply_notice"))
                 .divider()
-                .description(Component.translatable("cfg.kineticarmory.armorsets.general.description"))
+                .description(KineticI18n.translatable("cfg.kineticarmory.armorsets.general.description"))
                 .booleanValue(
                         "enable_sets",
-                        Component.translatable("cfg.kineticarmory.armorsets.enable"),
+                        KineticI18n.translatable("cfg.kineticarmory.armorsets.enable"),
                         () -> ArmorConfig.enableSets,
                         value -> ArmorConfig.enableSets = value,
                         true,
-                        Component.translatable("cfg.kineticarmory.armorsets.enable.tooltip")
+                        KineticI18n.translatable("cfg.kineticarmory.armorsets.enable.tooltip")
                 )
                 .tickSecondsValue(
                         "potion_refresh_interval",
-                        Component.translatable("cfg.kineticarmory.armorsets.interval"),
+                        KineticI18n.translatable("cfg.kineticarmory.armorsets.interval"),
                         () -> ArmorConfig.potionRefreshInterval,
                         value -> ArmorConfig.potionRefreshInterval = value,
                         20,
                         1,
                         200,
-                        Component.translatable("cfg.kineticarmory.armorsets.interval.tooltip")
+                        KineticI18n.translatable("cfg.kineticarmory.armorsets.interval.tooltip")
                 )
                 .booleanValue(
                         "sync_on_reload",
-                        Component.translatable("cfg.kineticarmory.armorsets.sync"),
+                        KineticI18n.translatable("cfg.kineticarmory.armorsets.sync"),
                         () -> ArmorConfig.syncOnReload,
                         value -> ArmorConfig.syncOnReload = value,
                         true,
-                        Component.translatable("cfg.kineticarmory.armorsets.sync.tooltip")
+                        KineticI18n.translatable("cfg.kineticarmory.armorsets.sync.tooltip")
                 )
                 .build());
 
         KTConfigApi.register(KTClientConfigAdapter.pageBuilder(
                         CLIENT_PAGE_ID,
-                        Component.translatable("cfg.kineticarmory.armorsets.client.title"),
+                        KineticI18n.translatable("cfg.kineticarmory.armorsets.client.title"),
                         ArmorClientConfig.spec()
                 )
-                .pageDescription(Component.translatable("cfg.kineticarmory.armorsets.client.description"))
+                .pageDescription(KineticI18n.translatable("cfg.kineticarmory.armorsets.client.description"))
                 .build());
 
         KTConfigApi.register(KTConfigPage.builder(
                         EDITOR_PAGE_ID,
-                        Component.translatable("cfg.kineticarmory.armorsets.editor.title")
+                        KineticI18n.translatable("cfg.kineticarmory.armorsets.editor.title")
                 )
-                .pageDescription(Component.translatable("cfg.kineticarmory.armorsets.editor.description"))
+                .pageDescription(KineticI18n.translatable("cfg.kineticarmory.armorsets.editor.description"))
                 .scope(KTConfigScope.SERVER_AUTHORITATIVE)
                 .serverManaged()
                 .applyTiming(KTConfigPage.ApplyTiming.IMMEDIATE)
                 .action(
                         "open_editor",
-                        Component.translatable("cfg.kineticarmory.armorsets.editor.action"),
+                        KineticI18n.translatable("cfg.kineticarmory.armorsets.editor.action"),
                         ArmorNetworkClient::requestOpenEditor,
-                        Component.translatable("cfg.kineticarmory.armorsets.editor.action.tooltip")
+                        KineticI18n.translatable("cfg.kineticarmory.armorsets.editor.action.tooltip")
                 )
                 .build());
     }
 
-
-    public static Screen create(Screen parent) {
-        return KTConfigApi.createScreen(parent, PAGE_ID);
-    }
 }

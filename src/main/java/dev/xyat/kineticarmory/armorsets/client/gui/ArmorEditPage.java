@@ -1,43 +1,45 @@
 package dev.xyat.kineticarmory.armorsets.client.gui;
 
-import dev.xyat.kineticcore.api.client.input.KineticMouseButtons;
-import dev.xyat.kineticcore.api.client.screen.KineticScreen;
-import dev.xyat.kineticcore.api.client.theme.GuiTheme;
-import dev.xyat.kineticcore.api.client.overlay.KineticOverlays;
-import dev.xyat.kineticcore.api.client.selector.KineticSelectors;
+import dev.xyat.kineticcore.api.client.gui.input.MouseInput;
+import dev.xyat.kineticcore.api.client.gui.overlay.KineticOverlays;
+import dev.xyat.kineticcore.api.client.gui.page.KineticPage;
+import dev.xyat.kineticcore.api.client.gui.render.KineticGraphics;
+import dev.xyat.kineticcore.api.client.gui.selector.KineticSelectors;
+import dev.xyat.kineticcore.api.client.gui.theme.KineticTheme;
+import dev.xyat.kineticcore.api.client.gui.ui.KineticUi;
+import dev.xyat.kineticcore.api.client.gui.widget.*;
+import dev.xyat.kineticcore.api.client.gui.widget.list.*;
 
-import dev.xyat.kineticarmory.util.ColorText;
+import dev.xyat.kineticcore.api.client.input.KineticMouseButtons;
+
 import dev.xyat.kineticarmory.armorsets.Network.ArmorNetwork;
 import dev.xyat.kineticarmory.armorsets.client.ArmorClientSnapshot;
 import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
 import dev.xyat.kineticarmory.armorsets.json.ArmorLoader;
 
-import dev.xyat.kineticcore.api.client.widget.input.KineticAutoComplete.AutoCompleteBox;
 import dev.xyat.kineticcore.api.runtime.KineticClientRuntime;
 import dev.xyat.kineticcore.api.registry.KineticRegistries;
-import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphics;
+import dev.xyat.kineticcore.api.text.KineticI18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import org.jetbrains.annotations.NotNull;
 import top.theillusivec4.curios.api.CuriosApi;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class ArmorEditScreen extends KineticScreen {
+public class ArmorEditPage extends KineticPage {
 
     private static final int SLOT_SIZE = 18;
 
-    private final KineticScreen parent;
+    
     private final ArmorDataConfig config;
     private String savedId;
     private String pendingSavedId;
     private boolean savePending;
 
-    private AutoCompleteBox idBox, nameBox;
+    private KineticAutoCompleteField idBox, nameBox;
     private Component warningMessage;
     private boolean idInputError;
     private boolean nameInputError;
@@ -46,10 +48,8 @@ public class ArmorEditScreen extends KineticScreen {
 
     private final String[] vanillaSlots = {"head", "chest", "legs", "feet", "mainhand", "offhand"};
 
-    public ArmorEditScreen(KineticScreen parent, ArmorDataConfig config) {
-        super(ColorText.translatable("gui.kineticarmory.armorsets.edit.title"));
-        setParentScreen(parent);
-        this.parent = parent;
+    public ArmorEditPage(ArmorDataConfig config) {
+        super(KineticI18n.translatable("gui.kineticarmory.armorsets.edit.title"));
         this.config = config;
         this.savedId = config.id;
 
@@ -83,11 +83,11 @@ public class ArmorEditScreen extends KineticScreen {
                     tempId = config.id;
                     tempName = config.displayName;
                     if (idBox != null) {
-                        idBox.setValue(tempId == null ? "" : tempId);
+                        idBox.setTextValue(tempId == null ? "" : tempId);
                         idBox.setValidationError(false);
                     }
                     if (nameBox != null) {
-                        nameBox.setValue(tempName == null ? "" : tempName);
+                        nameBox.setTextValue(tempName == null ? "" : tempName);
                         nameBox.setValidationError(false);
                     }
                     idInputError = false;
@@ -97,27 +97,23 @@ public class ArmorEditScreen extends KineticScreen {
     }
 
     @Override
-    protected void canvasTick() {
-        if (idBox != null) tempId = idBox.getValue();
-        if (nameBox != null) tempName = nameBox.getValue();
+    protected void onTick() {
+        if (idBox != null) tempId = idBox.textValue();
+        if (nameBox != null) tempName = nameBox.textValue();
     }
 
     @Override
-    protected void buildUi() {
-        int cx = this.canvasWidth() / 2; int cy = this.canvasHeight() / 2;
-        int panelWidth = Math.min(this.canvasWidth() - 40, 360);
+    protected void build(KineticUi ui) {
+        int cx = this.width() / 2; int cy = this.height() / 2;
+        int panelWidth = Math.min(this.width() - 40, 360);
         int leftX = cx - panelWidth / 2;
         int topY = cy - 110; int inputW = (panelWidth - 10) / 2;
 
-        this.idBox = addAutoCompleteField(
-                leftX, topY, inputW, Component.empty(),
-                ColorText.translatable("gui.kineticarmory.armorsets.label.id"),
-                ArrayList::new, null
-        );
-        this.idBox.setMaxLength(ArmorLoader.MAX_SET_ID_LENGTH);
-        this.idBox.setFilter(value -> value.matches("[\\p{L}\\p{N}_.-]*"));
-        this.idBox.setValue(tempId != null ? tempId : (config.id != null ? config.id : ""));
-        this.idBox.setResponder(value -> {
+        this.idBox = ui().autoComplete(leftX, topY, inputW, ArrayList::new).placeholder(KineticI18n.translatable("gui.kineticarmory.armorsets.label.id")).firstShownTextAsDefault().build();
+        this.idBox.limitTextLength(ArmorLoader.MAX_SET_ID_LENGTH);
+        this.idBox.filterText(value -> value.matches("[\\p{L}\\p{N}_.-]*"));
+        this.idBox.setTextValue(tempId != null ? tempId : (config.id != null ? config.id : ""));
+        this.idBox.onTextChange(value -> {
             tempId = value;
             if (idInputError) {
                 idInputError = false;
@@ -125,13 +121,9 @@ public class ArmorEditScreen extends KineticScreen {
             }
         });
 
-        this.nameBox = addAutoCompleteField(
-                leftX + inputW + 10, topY, inputW, Component.empty(),
-                ColorText.translatable("gui.kineticarmory.armorsets.label.name"),
-                ArrayList::new, null
-        );
-        this.nameBox.setValue(tempName != null ? tempName : (config.displayName != null ? config.displayName : ""));
-        this.nameBox.setResponder(value -> {
+        this.nameBox = ui().autoComplete(leftX + inputW + 10, topY, inputW, ArrayList::new).placeholder(KineticI18n.translatable("gui.kineticarmory.armorsets.label.name")).firstShownTextAsDefault().build();
+        this.nameBox.setTextValue(tempName != null ? tempName : (config.displayName != null ? config.displayName : ""));
+        this.nameBox.onTextChange(value -> {
             tempName = value;
             if (nameInputError) {
                 nameInputError = false;
@@ -146,43 +138,43 @@ public class ArmorEditScreen extends KineticScreen {
         int row2Y = row1Y + 25;
         int row3Y = row2Y + 25;
 
-        addButtonWithHandler(startX, row1Y, btnW, ColorText.translatable(config.playerOnly ? "gui.kineticarmory.armorsets.player_only.true" : "gui.kineticarmory.armorsets.player_only.false"), ColorText.translatable("gui.kineticarmory.armorsets.tooltip.player_only"), b -> {
+        ui().button(startX, row1Y, btnW).text(KineticI18n.translatable(config.playerOnly ? "gui.kineticarmory.armorsets.player_only.true" : "gui.kineticarmory.armorsets.player_only.false")).tooltip(KineticI18n.translatable("gui.kineticarmory.armorsets.tooltip.player_only")).onClick(b -> {
             config.playerOnly = !config.playerOnly;
-            b.setText(ColorText.translatable(config.playerOnly ? "gui.kineticarmory.armorsets.player_only.true" : "gui.kineticarmory.armorsets.player_only.false"));
-        });
+            b.setText(KineticI18n.translatable(config.playerOnly ? "gui.kineticarmory.armorsets.player_only.true" : "gui.kineticarmory.armorsets.player_only.false"));
+        }).build();
 
-        addButtonWithHandler(startX + btnW + gap, row1Y, btnW, ColorText.translatable("gui.kineticarmory.armorsets.tipkey", config.tipKey.toUpperCase()), ColorText.translatable("gui.kineticarmory.armorsets.tooltip.tipkey"), b -> {
+        ui().button(startX + btnW + gap, row1Y, btnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.tipkey", config.tipKey.toUpperCase())).tooltip(KineticI18n.translatable("gui.kineticarmory.armorsets.tooltip.tipkey")).onClick(b -> {
             config.tipKey = config.tipKey.equals("shift") ? "ctrl" : (config.tipKey.equals("ctrl") ? "alt" : (config.tipKey.equals("alt") ? "none" : "shift"));
-            b.setText(ColorText.translatable("gui.kineticarmory.armorsets.tipkey", config.tipKey.toUpperCase()));
-        });
+            b.setText(KineticI18n.translatable("gui.kineticarmory.armorsets.tipkey", config.tipKey.toUpperCase()));
+        }).build();
 
-        addButtonWithHandler(startX + (btnW + gap) * 2, row1Y, btnW, ColorText.translatable("gui.kineticarmory.armorsets.btn_edit_tips"), ColorText.translatable("gui.kineticarmory.armorsets.tooltip.tips"), b -> {
-            KineticClientRuntime.openScreen(new ArmorTipEditorScreen(this, config));
-        });
+        ui().button(startX + (btnW + gap) * 2, row1Y, btnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.btn_edit_tips")).tooltip(KineticI18n.translatable("gui.kineticarmory.armorsets.tooltip.tips")).onClick(b -> {
+            openChild(new ArmorTipEditorPage(config));
+        }).build();
 
-        addButtonWithHandler(startX, row2Y, btnW, ColorText.translatable("gui.kineticarmory.armorsets.btn_import_equipped"), ColorText.translatable("gui.kineticarmory.armorsets.tooltip.import"), b -> importEquipped());
+        ui().button(startX, row2Y, btnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.btn_import_equipped")).tooltip(KineticI18n.translatable("gui.kineticarmory.armorsets.tooltip.import")).onClick(b -> importEquipped()).build();
 
-        addButtonWithHandler(startX + btnW + gap, row2Y, btnW, ColorText.translatable("gui.kineticarmory.armorsets.btn_edit_effects"), ColorText.translatable("gui.kineticarmory.armorsets.tooltip.effects"), b -> {
-            KineticClientRuntime.openScreen(new ArmorDetailScreen(this, config));
-        });
+        ui().button(startX + btnW + gap, row2Y, btnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.btn_edit_effects")).tooltip(KineticI18n.translatable("gui.kineticarmory.armorsets.tooltip.effects")).onClick(b -> {
+            openChild(new ArmorDetailPage(config));
+        }).build();
 
-        addButtonWithHandler(startX + (btnW + gap) * 2, row2Y, btnW, ColorText.translatable("gui.kineticarmory.armorsets.btn_edit_commands"), ColorText.translatable("gui.kineticarmory.armorsets.tooltip.commands"), b -> {
-            KineticClientRuntime.openScreen(new ArmorCommandEditorScreen(this, config));
-        });
+        ui().button(startX + (btnW + gap) * 2, row2Y, btnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.btn_edit_commands")).tooltip(KineticI18n.translatable("gui.kineticarmory.armorsets.tooltip.commands")).onClick(b -> {
+            openChild(new ArmorCommandEditorPage(config));
+        }).build();
 
-        addButtonWithHandler(startX, row3Y, btnW, ColorText.translatable("gui.kineticarmory.armorsets.btn_piece_bonuses", config.getPieceBonusGroupCount()), ColorText.translatable("gui.kineticarmory.armorsets.tooltip.piece_bonuses"), b -> {
-            KineticClientRuntime.openScreen(new ArmorPieceBonusScreen(this, config));
-        });
+        ui().button(startX, row3Y, btnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.btn_piece_bonuses", config.getPieceBonusGroupCount())).tooltip(KineticI18n.translatable("gui.kineticarmory.armorsets.tooltip.piece_bonuses")).onClick(b -> {
+            openChild(new ArmorPieceBonusPage(config));
+        }).build();
 
-        addButtonWithHandler(startX + btnW + gap, row3Y, btnW, ColorText.translatable("gui.kineticarmory.armorsets.entity_filter.set_button"), ColorText.translatable("gui.kineticarmory.armorsets.entity_filter.set_button.tooltip"), b -> {
-            KineticClientRuntime.openScreen(new ArmorEntityFilterScreen(this, config));
-        });
+        ui().button(startX + btnW + gap, row3Y, btnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.entity_filter.set_button")).tooltip(KineticI18n.translatable("gui.kineticarmory.armorsets.entity_filter.set_button.tooltip")).onClick(b -> {
+            openChild(new ArmorEntityFilterPage(config));
+        }).build();
 
         int bottomBtnY = topY + 225; int actionBtnW = 80;
-        addButtonWithHandler(cx - actionBtnW - 5, bottomBtnY, actionBtnW, ColorText.translatable("gui.kineticarmory.armorsets.save"), null, b -> save());
-        addButtonWithHandler(cx + 5, bottomBtnY, actionBtnW, ColorText.translatable("gui.kineticarmory.armorsets.back"), null, b -> {
-            if (this.minecraft != null) this.navigateBack();
-        });
+        ui().button(cx - actionBtnW - 5, bottomBtnY, actionBtnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.save")).onClick(b -> save()).build();
+        ui().button(cx + 5, bottomBtnY, actionBtnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> {
+            this.navigateBack();
+        }).build();
     }
 
 
@@ -225,31 +217,31 @@ public class ArmorEditScreen extends KineticScreen {
         idBox.setValidationError(false);
         nameBox.setValidationError(false);
 
-        String newDisplayName = nameBox.getValue().trim();
+        String newDisplayName = nameBox.textValue().trim();
         if (newDisplayName.isEmpty()) {
-            this.warningMessage = ColorText.translatable("gui.kineticarmory.armorsets.edit.warn_no_name");
+            this.warningMessage = KineticI18n.translatable("gui.kineticarmory.armorsets.edit.warn_no_name");
             nameInputError = true;
             nameBox.setValidationError(true);
-            focusControl(this.nameBox); return;
+            focus(this.nameBox); return;
         }
-        String newId = idBox.getValue().trim();
+        String newId = idBox.textValue().trim();
         if (newId.isEmpty()) {
-            this.warningMessage = ColorText.translatable("gui.kineticarmory.armorsets.edit.warn_no_id");
+            this.warningMessage = KineticI18n.translatable("gui.kineticarmory.armorsets.edit.warn_no_id");
             idInputError = true;
             idBox.setValidationError(true);
-            focusControl(this.idBox); return;
+            focus(this.idBox); return;
         }
         if (!ArmorLoader.isSafeSetId(newId)) {
-            this.warningMessage = ColorText.translatable("gui.kineticarmory.armorsets.edit.warn_invalid_id");
+            this.warningMessage = KineticI18n.translatable("gui.kineticarmory.armorsets.edit.warn_invalid_id");
             idInputError = true;
             idBox.setValidationError(true);
-            focusControl(this.idBox); return;
+            focus(this.idBox); return;
         }
 
         long equipmentCount = config.countEquipmentRequirements();
         long curioCount = config.curios.stream().filter(req -> req != null && !req.id.equals("minecraft:air")).count();
         if (equipmentCount + curioCount == 0) {
-            this.warningMessage = ColorText.translatable("gui.kineticarmory.armorsets.edit.warn_no_items");
+            this.warningMessage = KineticI18n.translatable("gui.kineticarmory.armorsets.edit.warn_no_items");
             return;
         }
 
@@ -280,48 +272,45 @@ public class ArmorEditScreen extends KineticScreen {
     }
 
     @Override
-    protected void renderCanvasBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        int cx = this.canvasWidth() / 2; int topY = this.canvasHeight() / 2 - 110;
-        int panelWidth = Math.min(this.canvasWidth() - 40, 360);
+    protected void renderBackground(KineticGraphics g, int mx, int my, float pt) {
+        int cx = this.width() / 2; int topY = this.height() / 2 - 110;
+        int panelWidth = Math.min(this.width() - 40, 360);
         int panelX = cx - panelWidth / 2 - 15; int panelY = topY - 30;
         if (this.warningMessage != null) panelY -= 15;
-        GuiTheme.panel(g, panelX, panelY, panelWidth + 30, (topY + 225 + 30) - panelY);
+        KineticTheme.panel(g, panelX, panelY, panelWidth + 30, (topY + 225 + 30) - panelY);
     }
 
     @Override
-    protected void renderCanvasForeground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        int cx = this.canvasWidth() / 2; int topY = this.canvasHeight() / 2 - 110;
+    protected void renderForeground(KineticGraphics g, int mx, int my, float pt) {
+        int cx = this.width() / 2; int topY = this.height() / 2 - 110;
 
         int titleY = topY - 23;
         if (this.warningMessage != null) {
-            g.drawCenteredString(this.font, this.warningMessage, cx, titleY - 12, 0xFFFFFF);
+            g.centeredText(this.warningMessage, cx, titleY - 12, 0xFFFFFF, true);
         }
 
-        g.drawCenteredString(this.font, this.title, cx, titleY, 0xFFFFFF);
+        g.centeredText(title(), cx, titleY, 0xFFFFFF, true);
 
         int vanillaStartX = cx - ((18 + 2) * 6 - 2) / 2;
         int extStartX = cx - ((18 + 2) * 18 - 2) / 2;
         int vanillaY = topY + 95; int curioY = vanillaY + 34; int rejectedY = curioY + 54;
 
         for (int i = 0; i < 6; i++) renderSlot(g, vanillaStartX + i * 20, vanillaY, mx, my, vanillaSlots[i], i, 0);
-        g.drawCenteredString(this.font, ColorText.translatable("gui.kineticarmory.armorsets.section.curio"), cx, curioY - 12, 0xFFAA00);
+        g.centeredText(KineticI18n.translatable("gui.kineticarmory.armorsets.section.curio"), cx, curioY - 12, 0xFFAA00, true);
         for (int i = 0; i < 36; i++) renderSlot(g, extStartX + (i % 18) * 20, curioY + (i / 18) * 20, mx, my, "curio", i, 1);
-        g.drawCenteredString(this.font, ColorText.translatable("gui.kineticarmory.armorsets.section.rejected"), cx, rejectedY - 12, 0xFF5555);
+        g.centeredText(KineticI18n.translatable("gui.kineticarmory.armorsets.section.rejected"), cx, rejectedY - 12, 0xFF5555, true);
         for (int i = 0; i < 36; i++) renderSlot(g, extStartX + (i % 18) * 20, rejectedY + (i / 18) * 20, mx, my, "rejected", i, 2);
-
-        idBox.renderSuggestions(g, mx, my);
-        nameBox.renderSuggestions(g, mx, my);
     }
 
-    private void renderSlot(GuiGraphics g, int x, int y, int mx, int my, String slotKey, int index, int type) {
-        GuiTheme.itemSlot(g, x, y, SLOT_SIZE, 4, false);
-        GuiTheme.indicatorOutline(
+    private void renderSlot(KineticGraphics g, int x, int y, int mx, int my, String slotKey, int index, int type) {
+        KineticTheme.itemSlot(g, x, y, SLOT_SIZE, 4, false);
+        KineticTheme.indicatorOutline(
                 g,
                 x,
                 y,
                 SLOT_SIZE,
                 SLOT_SIZE,
-                type == 2 ? GuiTheme.Indicator.DANGER : type == 1 ? GuiTheme.Indicator.WARNING : GuiTheme.Indicator.INFO
+                type == 2 ? KineticTheme.Indicator.DANGER : type == 1 ? KineticTheme.Indicator.WARNING : KineticTheme.Indicator.INFO
         );
 
         ArmorDataConfig.ItemReq req = type == 1 ? (index < config.curios.size() ? config.curios.get(index) : ArmorDataConfig.ItemReq.create("minecraft:air")) :
@@ -336,61 +325,61 @@ public class ArmorEditScreen extends KineticScreen {
         boolean isAir = reqId.equals("minecraft:air");
 
         if (isEmptyState) {
-            g.drawCenteredString(this.font, "X", x + 9, y + 5, 0xFF5555);
+            g.centeredText("X", x + 9, y + 5, 0xFF5555, true);
             if (hover) {
                 List<Component> t = new ArrayList<>();
-                t.add(ColorText.translatable("gui.kineticarmory.armorsets.slot_state.empty").withStyle(ChatFormatting.RED));
-                if (type == 0) t.add(ColorText.translatable("gui.kineticarmory.armorsets.variant.tooltip.open_list", variantCount));
-                else t.add(ColorText.translatable("gui.kineticarmory.armorsets.tooltip.midclick_clear"));
-                showTooltip(t, null);
+                t.add(KineticI18n.translatable("gui.kineticarmory.armorsets.slot_state.empty"));
+                if (type == 0) t.add(KineticI18n.translatable("gui.kineticarmory.armorsets.variant.tooltip.open_list", variantCount));
+                else t.add(KineticI18n.translatable("gui.kineticarmory.armorsets.tooltip.midclick_clear"));
+                showTooltip(t);
             }
         } else if (isAnyState) {
-            g.drawCenteredString(this.font, "?", x + 9, y + 5, 0x55FF55);
+            g.centeredText("?", x + 9, y + 5, 0x55FF55, true);
             if (hover) {
                 List<Component> t = new ArrayList<>();
-                t.add(ColorText.translatable("gui.kineticarmory.armorsets.slot_state.any").withStyle(ChatFormatting.GREEN));
-                if (type == 0) t.add(ColorText.translatable("gui.kineticarmory.armorsets.variant.tooltip.open_list", variantCount));
-                else t.add(ColorText.translatable("gui.kineticarmory.armorsets.tooltip.midclick_clear"));
-                showTooltip(t, null);
+                t.add(KineticI18n.translatable("gui.kineticarmory.armorsets.slot_state.any"));
+                if (type == 0) t.add(KineticI18n.translatable("gui.kineticarmory.armorsets.variant.tooltip.open_list", variantCount));
+                else t.add(KineticI18n.translatable("gui.kineticarmory.armorsets.tooltip.midclick_clear"));
+                showTooltip(t);
             }
         } else if (!isAir) {
             ItemStack stack = req.createDisplayStack();
             if (!stack.isEmpty()) {
-                g.renderItem(stack, x + 1, y + 1);
+                g.item(stack, x + 1, y + 1);
                 String nbtStr = "WEAK".equals(req.nbtMode) ? "W" : ("STRONG".equals(req.nbtMode) ? "S" : "");
-                if (!nbtStr.isEmpty()) g.renderItemDecorations(this.font, stack, x + 1, y + 1, nbtStr);
+                if (!nbtStr.isEmpty()) g.itemDecorations(stack, x + 1, y + 1, nbtStr);
                 if (variantCount > 1) {
-                    GuiTheme.indicatorFill(g, x + 10, y + 10, 8, 8, GuiTheme.Indicator.SUCCESS, 0.80F);
-                    g.drawString(this.font, "+", x + 12, y + 9, 0xFF55FF55, false);
+                    KineticTheme.indicatorFill(g, x + 10, y + 10, 8, 8, KineticTheme.Indicator.SUCCESS, 0.80F);
+                    g.text("+", x + 12, y + 9, 0xFF55FF55, false);
                 }
                 if (hover) {
                     List<Component> t = new ArrayList<>();
                     t.add(stack.getHoverName());
-                    t.add(ColorText.translatable("gui.kineticarmory.armorsets.nbt_prefix", ColorText.translatable("gui.kineticarmory.armorsets.nbt." + (req.nbtMode == null ? "none" : req.nbtMode.toLowerCase()))));
+                    t.add(KineticI18n.translatable("gui.kineticarmory.armorsets.nbt_prefix", KineticI18n.translatable("gui.kineticarmory.armorsets.nbt." + (req.nbtMode == null ? "none" : req.nbtMode.toLowerCase()))));
                     if (type == 0) {
-                        t.add(ColorText.translatable("gui.kineticarmory.armorsets.variant.tooltip.open_list", variantCount));
+                        t.add(KineticI18n.translatable("gui.kineticarmory.armorsets.variant.tooltip.open_list", variantCount));
                     } else {
-                        t.add(ColorText.translatable("gui.kineticarmory.armorsets.tooltip.lclick"));
-                        t.add(ColorText.translatable("gui.kineticarmory.armorsets.tooltip.rclick"));
-                        t.add(ColorText.translatable("gui.kineticarmory.armorsets.tooltip.shift_edit_nbt"));
+                        t.add(KineticI18n.translatable("gui.kineticarmory.armorsets.tooltip.lclick"));
+                        t.add(KineticI18n.translatable("gui.kineticarmory.armorsets.tooltip.rclick"));
+                        t.add(KineticI18n.translatable("gui.kineticarmory.armorsets.tooltip.shift_edit_nbt"));
                     }
-                    if (type != 0) t.add(ColorText.translatable("gui.kineticarmory.armorsets.tooltip.midclick_clear"));
-                    showTooltip(t, null);
+                    if (type != 0) t.add(KineticI18n.translatable("gui.kineticarmory.armorsets.tooltip.midclick_clear"));
+                    showTooltip(t);
                 }
             }
         } else if (hover) {
             List<Component> t = new ArrayList<>();
-            Component slotNameComp = type == 2 ? ColorText.translatable("gui.kineticarmory.armorsets.slot.rejected") : (type == 1 ? ColorText.translatable("gui.kineticarmory.armorsets.slot.curio") : ColorText.translatable("gui.kineticarmory.armorsets.slot." + slotKey));
-            t.add(ColorText.translatable("gui.kineticarmory.armorsets.tooltip.empty_slot", slotNameComp));
-            showTooltip(t, null);
+            Component slotNameComp = type == 2 ? KineticI18n.translatable("gui.kineticarmory.armorsets.slot.rejected") : (type == 1 ? KineticI18n.translatable("gui.kineticarmory.armorsets.slot.curio") : KineticI18n.translatable("gui.kineticarmory.armorsets.slot." + slotKey));
+            t.add(KineticI18n.translatable("gui.kineticarmory.armorsets.tooltip.empty_slot", slotNameComp));
+            showTooltip(t);
         }
     }
 
     @Override
-    protected boolean canvasMouseClicked(double mx, double my, int btn) {
-        if (super.canvasMouseClicked(mx, my, btn)) return true;
+    protected boolean onMouseClick(MouseInput input) {
+        double mx = input.x(), my = input.y(); int btn = input.rawButton();
 
-        int cx = this.canvasWidth() / 2; int topY = this.canvasHeight() / 2 - 110;
+        int cx = this.width() / 2; int topY = this.height() / 2 - 110;
         int vanillaStartX = cx - ((18 + 2) * 6 - 2) / 2;
         int extStartX = cx - ((18 + 2) * 18 - 2) / 2;
         int vanillaY = topY + 95; int curioY = vanillaY + 34; int rejectedY = curioY + 54;
@@ -410,8 +399,8 @@ public class ArmorEditScreen extends KineticScreen {
 
             if (type == 0) {
                 if (KineticMouseButtons.isPrimary(btn)) {
-                    Component slotNameComp = ColorText.translatable("gui.kineticarmory.armorsets.slot." + slotKey);
-                    KineticClientRuntime.openScreen(new ArmorEquipmentVariantScreen(this, config, slotKey, slotNameComp));
+                    Component slotNameComp = KineticI18n.translatable("gui.kineticarmory.armorsets.slot." + slotKey);
+                    openChild(new ArmorEquipmentVariantPage(config, slotKey, slotNameComp));
                 }
                 return true;
             }
@@ -419,17 +408,17 @@ public class ArmorEditScreen extends KineticScreen {
             if (KineticMouseButtons.isPrimary(btn)) {
                 if (req.id.equals("EMPTY") || req.id.equals("ANY")) return true;
 
-                if (hasShiftDown()) {
+                if (KineticClientRuntime.shiftModifierDown()) {
                     if (!req.id.equals("minecraft:air")) {
                         String initNbt = (req.nbtTag != null && !req.nbtTag.trim().isEmpty()) ? req.nbtTag : "";
-                        KineticSelectors.openNbtEditor(this, initNbt, savedNbt -> {
+                        KineticSelectors.openNbtEditor(initNbt, savedNbt -> {
                             req.nbtTag = savedNbt;
                             if (req.nbtMode == null || req.nbtMode.equals("NONE")) req.nbtMode = "WEAK";
-                            KineticOverlays.toast(ColorText.translatable("msg.kineticarmory.common.saved"));
+                            KineticOverlays.toast(KineticI18n.translatable("msg.kineticarmory.common.saved"));
                         });
                     }
                 } else {
-                    KineticSelectors.openItemSelector(this, selection -> {
+                    KineticSelectors.openItemSelector(selection -> {
                         if (!selection.isItem()) return;
                         ItemStack stack = selection.stack();
                         req.id = getId(stack);
@@ -437,7 +426,7 @@ public class ArmorEditScreen extends KineticScreen {
                         if (req.nbtMode == null) req.nbtMode = "NONE";
                         cleanCurios();
                         cleanRejectedCurios();
-                        rebuildUi();
+                        rebuild();
                     });
                 }
                 return true;

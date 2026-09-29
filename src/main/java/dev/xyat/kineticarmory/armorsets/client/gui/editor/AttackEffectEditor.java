@@ -1,69 +1,70 @@
 package dev.xyat.kineticarmory.armorsets.client.gui.editor;
 
-import dev.xyat.kineticarmory.util.ColorText;
+import dev.xyat.kineticcore.api.client.gui.overlay.KineticOverlays;
+import dev.xyat.kineticcore.api.client.gui.page.KineticPage;
+import dev.xyat.kineticcore.api.client.gui.render.KineticGraphics;
+import dev.xyat.kineticcore.api.client.gui.theme.KineticTheme;
+import dev.xyat.kineticcore.api.client.gui.ui.KineticUi;
+import dev.xyat.kineticcore.api.client.gui.ui.NumberType;
+import dev.xyat.kineticcore.api.client.gui.widget.*;
+import dev.xyat.kineticcore.api.client.gui.widget.list.*;
+
 import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
 import dev.xyat.kineticarmory.armorsets.data.ArmorTipGenerator;
-import dev.xyat.kineticarmory.armorsets.predicate.client.ConditionListScreen;
-import dev.xyat.kineticcore.api.client.theme.GuiTheme;
-import dev.xyat.kineticcore.api.client.overlay.KineticOverlays;
+import dev.xyat.kineticarmory.armorsets.predicate.client.ConditionListPage;
 import dev.xyat.kineticcore.api.client.search.KineticSearch;
-import dev.xyat.kineticcore.api.client.screen.KineticScreen;
 import dev.xyat.kineticcore.api.runtime.KineticClientRuntime;
-import dev.xyat.kineticcore.api.client.widget.input.KineticAutoComplete.AutoCompleteBox;
-import dev.xyat.kineticcore.api.client.widget.input.KineticAutoComplete.NumericAutoCompleteBox;
-import net.minecraft.client.gui.GuiGraphics;
+import dev.xyat.kineticcore.api.text.KineticI18n;
 import net.minecraft.network.chat.Component;
-import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 
-public class AttackEffectEditor extends KineticScreen {
-    private final KineticScreen parent; private final ArmorDataConfig config; private final ArmorDataConfig.AttackEffectData data; private boolean isNew;
-    private AutoCompleteBox idInput;
-    private NumericAutoCompleteBox durInput, lvlInput, chanceInput;
+public class AttackEffectEditor extends KineticPage {
+    private final ArmorDataConfig config; private final ArmorDataConfig.AttackEffectData data; private boolean isNew;
+    private KineticAutoCompleteField idInput;
+    private KineticNumberAutoCompleteField durInput, lvlInput, chanceInput;
     private String oldTip = null;
     private String tempId = null, tempDur = null, tempLvl = null, tempChance = null;
 
-    public AttackEffectEditor(KineticScreen p, ArmorDataConfig c, ArmorDataConfig.AttackEffectData d) {
-        super(ColorText.translatable("gui.kineticarmory.armorsets.editor.attack.title"));
-        setParentScreen(p);
-        parent = p; config = c; isNew = (d == null); data = isNew ? new ArmorDataConfig.AttackEffectData() : d;
+    public AttackEffectEditor(ArmorDataConfig c, ArmorDataConfig.AttackEffectData d) {
+        super(KineticI18n.translatable("gui.kineticarmory.armorsets.editor.attack.title"));
+        config = c; isNew = (d == null); data = isNew ? new ArmorDataConfig.AttackEffectData() : d;
         if (!isNew) oldTip = ArmorTipGenerator.genAtkTip(data);
     }
 
     @Override
-    protected void canvasTick() {
-        if (idInput != null) tempId = idInput.getValue();
-        if (durInput != null) tempDur = durInput.getValue();
-        if (lvlInput != null) tempLvl = lvlInput.getValue();
-        if (chanceInput != null) tempChance = chanceInput.getValue();
+    protected void onTick() {
+        if (idInput != null) tempId = idInput.textValue();
+        if (durInput != null) tempDur = durInput.textValue();
+        if (lvlInput != null) tempLvl = lvlInput.textValue();
+        if (chanceInput != null) tempChance = chanceInput.textValue();
     }
 
-    @Override protected void buildUi() {
-        int cx = canvasWidth() / 2; int cy = canvasHeight() / 2 - 50;
-        idInput = addAutoCompleteField(cx - 100, cy - 35, 200, Component.empty(), ColorText.translatable("gui.kineticarmory.armorsets.input.id"), KineticSearch::potionDictionary, null);
-        idInput.setValue(tempId != null ? tempId : (isNew ? "" : (data.effectId != null ? data.effectId : "")));
+    @Override protected void build(KineticUi ui) {
+        int cx = width() / 2; int cy = height() / 2 - 50;
+        idInput = ui().autoComplete(cx - 100, cy - 35, 200, KineticSearch::potionDictionary).placeholder(KineticI18n.translatable("gui.kineticarmory.armorsets.input.id")).firstShownTextAsDefault().build();
+        idInput.setTextValue(tempId != null ? tempId : (isNew ? "" : (data.effectId != null ? data.effectId : "")));
 
         int w = 60; int gap = 10; int startX = cx - 100;
-        durInput = addDecimalAutoCompleteField(startX, cy - 10, w, Component.empty(), ArrayList::new, true, null, null, null, null);
-        durInput.setPlaceholder(ColorText.translatable("gui.kineticarmory.armorsets.input.duration"));
-        durInput.setValue(tempDur != null ? tempDur : (isNew ? "" : String.valueOf(data.duration)));
+        durInput = ui().numberAutoComplete(startX, cy - 10, w, NumberType.DECIMAL, ArrayList::new).allowNegative(true).firstShownTextAsDefault().build();
+        durInput.setPlaceholder(KineticI18n.translatable("gui.kineticarmory.armorsets.input.duration"));
+        durInput.setTextValue(tempDur != null ? tempDur : (isNew ? "" : String.valueOf(data.duration)));
 
-        lvlInput = addIntegerAutoCompleteField(startX + w + gap, cy - 10, w, Component.empty(), ArrayList::new, true, null, null, null, null);
-        lvlInput.setPlaceholder(ColorText.translatable("gui.kineticarmory.armorsets.input.level"));
-        lvlInput.setValue(tempLvl != null ? tempLvl : (isNew ? "" : String.valueOf(data.amplifier)));
+        lvlInput = ui().numberAutoComplete(startX + w + gap, cy - 10, w, NumberType.INT, ArrayList::new).allowNegative(true).firstShownTextAsDefault().build();
+        lvlInput.setPlaceholder(KineticI18n.translatable("gui.kineticarmory.armorsets.input.level"));
+        lvlInput.setTextValue(tempLvl != null ? tempLvl : (isNew ? "" : String.valueOf(data.amplifier)));
 
-        chanceInput = addDecimalAutoCompleteField(startX + (w + gap) * 2, cy - 10, w, Component.empty(), ArrayList::new, true, null, null, null, null);
-        chanceInput.setPlaceholder(ColorText.translatable("gui.kineticarmory.armorsets.input.chance"));
-        chanceInput.setValue(tempChance != null ? tempChance : (isNew ? "" : String.valueOf(data.chance)));
+        chanceInput = ui().numberAutoComplete(startX + (w + gap) * 2, cy - 10, w, NumberType.DECIMAL, ArrayList::new).allowNegative(true).firstShownTextAsDefault().build();
+        chanceInput.setPlaceholder(KineticI18n.translatable("gui.kineticarmory.armorsets.input.chance"));
+        chanceInput.setTextValue(tempChance != null ? tempChance : (isNew ? "" : String.valueOf(data.chance)));
 
-        addButtonWithHandler(cx - 100, cy + 15, 200, ColorText.translatable("gui.kineticarmory.armorsets.editor.conditions", data.conditions.size()), null, b -> {
+        ui().button(cx - 100, cy + 15, 200).text(KineticI18n.translatable("gui.kineticarmory.armorsets.editor.conditions", data.conditions.size())).onClick(b -> {
             if (syncToData()) return;
-            KineticClientRuntime.openScreen(new ConditionListScreen(this, data));
-        });
+            openChild(new ConditionListPage(data));
+        }).build();
 
-        addButtonWithHandler(cx - 60, cy + 45, 55, ColorText.translatable("gui.kineticarmory.armorsets.save"), null, b -> {
+        ui().button(cx - 60, cy + 45, 55).text(KineticI18n.translatable("gui.kineticarmory.armorsets.save")).onClick(b -> {
             if (syncToData()) return;
-            if (data.effectId.isEmpty()) { KineticOverlays.toast(ColorText.translatable("msg.kineticarmory.armorsets.empty_field")); return; }
+            if (data.effectId.isEmpty()) { KineticOverlays.toast(KineticI18n.translatable("msg.kineticarmory.armorsets.empty_field")); return; }
             if (oldTip != null) config.tips.remove(oldTip);
             if (isNew) {
                 config.attackEffects.add(data);
@@ -72,15 +73,15 @@ public class AttackEffectEditor extends KineticScreen {
             String newTip = ArmorTipGenerator.genAtkTip(data);
             config.tips.add(newTip);
             oldTip = newTip;
-        });
-        addButtonWithHandler(cx + 5, cy + 45, 55, ColorText.translatable("gui.kineticarmory.armorsets.back"), null, b -> { navigateBack(); });
+        }).build();
+        ui().button(cx + 5, cy + 45, 55).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> { navigateBack(); }).build();
     }
 
     private boolean syncToData() {
-        if (idInput != null) tempId = idInput.getValue();
-        if (durInput != null) tempDur = durInput.getValue();
-        if (lvlInput != null) tempLvl = lvlInput.getValue();
-        if (chanceInput != null) tempChance = chanceInput.getValue();
+        if (idInput != null) tempId = idInput.textValue();
+        if (durInput != null) tempDur = durInput.textValue();
+        if (lvlInput != null) tempLvl = lvlInput.textValue();
+        if (chanceInput != null) tempChance = chanceInput.textValue();
 
         data.effectId =
                 (tempId == null ? "" : tempId.trim());
@@ -91,7 +92,7 @@ public class AttackEffectEditor extends KineticScreen {
 
         if (duration == null || amplifier == null || chance == null) {
             KineticOverlays.toast(
-                    ColorText.translatable("msg.kineticarmory.common.invalid_number")
+                    KineticI18n.translatable("msg.kineticarmory.common.invalid_number")
             );
             return true;
         }
@@ -102,10 +103,10 @@ public class AttackEffectEditor extends KineticScreen {
         return false;
     }
 
-    @Override protected void renderCanvasBackground(@NotNull GuiGraphics g, int mx, int my, float pt) {
-        int cx = canvasWidth() / 2; int cy = canvasHeight() / 2 - 50;
-        GuiTheme.panel(g, cx - 120, cy - 70, 240, 150);
-        g.drawCenteredString(font, title, cx, cy - 60, 0xFFFFFF);
+    @Override protected void renderBackground(KineticGraphics g, int mx, int my, float pt) {
+        int cx = width() / 2; int cy = height() / 2 - 50;
+        KineticTheme.panel(g, cx - 120, cy - 70, 240, 150);
+        g.centeredText(title(), cx, cy - 60, 0xFFFFFF, true);
     }
 
 }

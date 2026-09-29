@@ -1,29 +1,34 @@
 package dev.xyat.kineticarmory.armorsets.client.gui;
 
-import dev.xyat.kineticarmory.util.ColorText;
+import dev.xyat.kineticcore.api.client.gui.input.ScrollInput;
+import dev.xyat.kineticcore.api.client.gui.input.MouseDragInput;
+import dev.xyat.kineticcore.api.client.gui.input.MouseButton;
+import dev.xyat.kineticcore.api.client.gui.input.MouseInput;
+import dev.xyat.kineticcore.api.client.gui.scroll.KineticScrollController;
+import dev.xyat.kineticcore.api.client.gui.text.KineticText;
+import dev.xyat.kineticcore.api.client.gui.overlay.KineticOverlays;
+import dev.xyat.kineticcore.api.client.gui.page.KineticPage;
+import dev.xyat.kineticcore.api.client.gui.render.KineticGraphics;
+import dev.xyat.kineticcore.api.client.gui.theme.KineticTheme;
+import dev.xyat.kineticcore.api.client.gui.ui.KineticUi;
+import dev.xyat.kineticcore.api.client.gui.widget.*;
+import dev.xyat.kineticcore.api.client.gui.widget.list.*;
+
 import dev.xyat.kineticarmory.armorsets.Network.ArmorNetwork;
 import dev.xyat.kineticarmory.armorsets.client.ArmorClientSnapshot;
 import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
 import dev.xyat.kineticcore.api.client.input.KineticMouseButtons;
 import dev.xyat.kineticcore.api.client.search.KineticSearch;
-import dev.xyat.kineticcore.api.client.overlay.KineticOverlays;
-import dev.xyat.kineticcore.api.client.screen.KineticScreen;
-import dev.xyat.kineticcore.api.client.widget.scroll.KineticScroll;
-import dev.xyat.kineticcore.api.client.widget.KineticWidgets;
 import dev.xyat.kineticcore.api.registry.KineticRegistries;
 import dev.xyat.kineticcore.api.resource.KineticResourceIds;
-import dev.xyat.kineticcore.api.client.widget.render.KineticEntityPreview.EntityPreviewRenderer;
-import dev.xyat.kineticcore.api.client.theme.GuiTheme;
-import net.minecraft.client.gui.GuiGraphics;
-import dev.xyat.kineticcore.api.client.widget.input.KineticTextFields.KineticEditBox;
 import dev.xyat.kineticcore.api.runtime.KineticClientRuntime;
+import dev.xyat.kineticcore.api.text.KineticI18n;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -33,7 +38,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-public class ArmorEntityFilterScreen extends KineticScreen {
+public class ArmorEntityFilterPage extends KineticPage {
     private static final int V_WIDTH = 640;
     private static final int V_HEIGHT = 360;
     private static final int LEFT_X = 8;
@@ -51,7 +56,7 @@ public class ArmorEntityFilterScreen extends KineticScreen {
     private static int rotationSpeedPercent = 100;
     private static boolean clockwiseRotation = true;
 
-    private final KineticScreen parent;
+    
     private final ArmorDataConfig armorSet;
     private final boolean global;
     private final Set<String> selectedIds = new HashSet<>();
@@ -60,12 +65,13 @@ public class ArmorEntityFilterScreen extends KineticScreen {
     private final Set<String> knownEntityIds = new HashSet<>();
     private final List<EntityEntryData> leftEntities = new ArrayList<>();
     private final List<EntityEntryData> rightEntities = new ArrayList<>();
-    private final EntityPreviewRenderer entityPreviewRenderer =
-            KineticWidgets.createEntityPreviewRenderer();
+    private final KineticEntityPreview entityPreviewRenderer = KineticEntityPreview.create();
+    private final KineticScrollController leftBar = new KineticScrollController();
+    private final KineticScrollController rightBar = new KineticScrollController();
 
-    private KineticEditBox leftSearchBox;
-    private KineticEditBox rotationSpeedBox;
-    private KineticEditBox rightSearchBox;
+    private KineticTextField leftSearchBox;
+    private KineticTextField rotationSpeedBox;
+    private KineticTextField rightSearchBox;
     private String globalMode;
     private boolean setFilterEnabled;
     private boolean rulesDirty;
@@ -75,10 +81,8 @@ public class ArmorEntityFilterScreen extends KineticScreen {
     private boolean draggingRightScroll;
     private List<Component> deferredTooltip;
 
-    public ArmorEntityFilterScreen(KineticScreen parent) {
-        super(ColorText.translatable("gui.kineticarmory.armorsets.entity_filter.global_title"));
-        setParentScreen(parent);
-        this.parent = parent;
+    public ArmorEntityFilterPage() {
+        super(KineticI18n.translatable("gui.kineticarmory.armorsets.entity_filter.global_title"));
         this.armorSet = null;
         this.global = true;
         this.globalMode = ArmorClientSnapshot.entityFilterMode();
@@ -89,10 +93,8 @@ public class ArmorEntityFilterScreen extends KineticScreen {
         setupScale();
     }
 
-    public ArmorEntityFilterScreen(KineticScreen parent, ArmorDataConfig armorSet) {
-        super(ColorText.translatable("gui.kineticarmory.armorsets.entity_filter.set_title"));
-        setParentScreen(parent);
-        this.parent = parent;
+    public ArmorEntityFilterPage(ArmorDataConfig armorSet) {
+        super(KineticI18n.translatable("gui.kineticarmory.armorsets.entity_filter.set_title"));
         this.armorSet = armorSet;
         this.global = false;
         this.globalMode = "WHITELIST";
@@ -120,7 +122,7 @@ entityPreviewRenderer.setRotationSpeedPercent(rotationSpeedPercent);
         ResourceLocation id = KineticRegistries.entityTypes().id(type);
         if (id == null || !knownEntityIds.add(id.toString())) return;
 
-        Component name = ColorText.translatable(type.getDescriptionId());
+        Component name = KineticI18n.translatable(type.getDescriptionId());
         String displayName = name.getString();
         String searchData = id + " " + displayName + " " + KineticSearch.pinyin(displayName);
 
@@ -241,7 +243,7 @@ entityPreviewRenderer.setRotationSpeedPercent(rotationSpeedPercent);
     }
 
     @Override
-    protected void buildUi() {
+    protected void build(KineticUi ui) {
         int topY = 18;
         int modeW = 142;
         int speedButtonW = 72;
@@ -250,79 +252,71 @@ entityPreviewRenderer.setRotationSpeedPercent(rotationSpeedPercent);
         int backW = 64;
 
         if (global) {
-            addButtonWithHandler(8, topY, modeW, getGlobalModeText(), getGlobalModeTooltip(), b -> {
+            ui().button(8, topY, modeW).text(getGlobalModeText()).tooltip(getGlobalModeTooltip()).onClick(b -> {
                         globalMode = "WHITELIST".equalsIgnoreCase(globalMode)
                                 ? "BLACKLIST"
                                 : "WHITELIST";
 
                         b.setText(getGlobalModeText());
-                        registerWidgetTooltip(b, getGlobalModeTooltip());
-                    });
+                        b.setTooltip(getGlobalModeTooltip());
+                    }).build();
 } else {
-            addButtonWithHandler(8, topY, modeW, getSetFilterText(), getSetFilterTooltip(), b -> {
+            ui().button(8, topY, modeW).text(getSetFilterText()).tooltip(getSetFilterTooltip()).onClick(b -> {
                         setFilterEnabled = !setFilterEnabled;
                         b.setText(getSetFilterText());
-                        registerWidgetTooltip(b, getSetFilterTooltip());
-                    });
+                        b.setTooltip(getSetFilterTooltip());
+                    }).build();
 }
 
-        rotationSpeedBox = addTextField(432, topY, speedInputW, ColorText.translatable("gui.kineticarmory.armorsets.entity_filter.rotation_speed"));
-        rotationSpeedBox.setMaxLength(3);
-        rotationSpeedBox.setFilter(value -> value.isEmpty() || value.chars().allMatch(Character::isDigit));
-        rotationSpeedBox.setValue(Integer.toString(rotationSpeedPercent));
-        rotationSpeedBox.setResponder(value -> applyRotationSpeedInput(false));
-        registerWidgetTooltip(rotationSpeedBox, ColorText.translatable(
+        rotationSpeedBox = ui().textField(432, topY, speedInputW).label(KineticI18n.translatable("gui.kineticarmory.armorsets.entity_filter.rotation_speed")).firstShownTextAsDefault().build();
+        rotationSpeedBox.limitTextLength(3);
+        rotationSpeedBox.filterText(value -> value.isEmpty() || value.chars().allMatch(Character::isDigit));
+        rotationSpeedBox.setTextValue(Integer.toString(rotationSpeedPercent));
+        rotationSpeedBox.onTextChange(value -> applyRotationSpeedInput(false));
+        rotationSpeedBox.setTooltip(KineticI18n.translatable(
                 "gui.kineticarmory.armorsets.entity_filter.rotation_speed.tooltip"
         ));
-addButtonWithHandler(356, topY, speedButtonW, getRotationDirectionText(), ColorText.translatable(
+ui().button(356, topY, speedButtonW).text(getRotationDirectionText()).tooltip(KineticI18n.translatable(
                                 "gui.kineticarmory.common.rotation.direction.tooltip"
-                        ), b -> {
+                        )).onClick(b -> {
                                     clockwiseRotation = !clockwiseRotation;
                                     entityPreviewRenderer.setClockwise(clockwiseRotation);
                                     b.setText(getRotationDirectionText());
-                                });
+                                }).build();
 
-        addButtonWithHandler(500, topY, saveW, ColorText.translatable("gui.kineticarmory.armorsets.save"), ColorText.translatable(
+        ui().button(500, topY, saveW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.save")).tooltip(KineticI18n.translatable(
                                 global
                                         ? "gui.kineticarmory.armorsets.entity_filter.save_global.tooltip"
                                         : "gui.kineticarmory.armorsets.entity_filter.save_set.tooltip"
-                        ), b -> save());
+                        )).onClick(b -> save()).build();
 
-        addButtonWithHandler(568, topY, backW, ColorText.translatable("gui.kineticarmory.common.back"), ColorText.translatable(
+        ui().button(568, topY, backW).text(KineticI18n.translatable("gui.kineticarmory.common.back")).tooltip(KineticI18n.translatable(
                                 "gui.kineticarmory.armorsets.entity_filter.back.tooltip"
-                        ), b -> backWithoutSave());
+                        )).onClick(b -> backWithoutSave()).build();
 
-        addButtonWithHandler(LEFT_X + PANEL_W - 80, PANEL_Y + 4, 72, ColorText.translatable(
+        ui().button(LEFT_X + PANEL_W - 80, PANEL_Y + 4, 72).text(KineticI18n.translatable(
                                         "gui.kineticarmory.armorsets.entity_filter.remove_filtered"
-                                ), ColorText.translatable(
+                                )).tooltip(KineticI18n.translatable(
                                 "gui.kineticarmory.armorsets.entity_filter.remove_filtered.tooltip"
-                        ), b -> removeFiltered());
+                        )).onClick(b -> removeFiltered()).build();
 
-        addButtonWithHandler(RIGHT_X + PANEL_W - 80, PANEL_Y + 4, 72, ColorText.translatable(
+        ui().button(RIGHT_X + PANEL_W - 80, PANEL_Y + 4, 72).text(KineticI18n.translatable(
                                         "gui.kineticarmory.armorsets.entity_filter.add_filtered"
-                                ), ColorText.translatable(
+                                )).tooltip(KineticI18n.translatable(
                                 "gui.kineticarmory.armorsets.entity_filter.add_filtered.tooltip"
-                        ), b -> addFiltered());
+                        )).onClick(b -> addFiltered()).build();
 
-        leftSearchBox = addTextField(
-                LEFT_X + 8, SEARCH_Y, PANEL_W - 16, Component.empty(),
-                ColorText.translatable("gui.kineticarmory.armorsets.entity_filter.search_available"),
-                null, null
-        );
+        leftSearchBox = ui().textField(LEFT_X + 8, SEARCH_Y, PANEL_W - 16).placeholder(KineticI18n.translatable("gui.kineticarmory.armorsets.entity_filter.search_available")).firstShownTextAsDefault().build();
 
-        leftSearchBox.setMaxLength(256);
-        leftSearchBox.setResponder(value -> {
+        leftSearchBox.limitTextLength(256);
+        leftSearchBox.onTextChange(value -> {
             leftScroll = 0;
             refreshLists();
         });
-rightSearchBox = addTextField(
-                RIGHT_X + 8, SEARCH_Y, PANEL_W - 16, Component.empty(),
-                ColorText.translatable("gui.kineticarmory.armorsets.entity_filter.search_added"),
-                null, null
-        );
+rightSearchBox = ui().textField(RIGHT_X + 8, SEARCH_Y, PANEL_W - 16).placeholder(KineticI18n.translatable("gui.kineticarmory.armorsets.entity_filter.search_added")).firstShownTextAsDefault().build();
 
-        rightSearchBox.setMaxLength(256);
-        rightSearchBox.setResponder(value -> {
+        rightSearchBox.limitTextLength(256);
+        rightSearchBox.onTextChange(value -> {
             rightScroll = 0;
             refreshLists();
         });
@@ -330,7 +324,7 @@ refreshLists();
     }
 
     private Component getRotationDirectionText() {
-        return ColorText.translatable(
+        return KineticI18n.translatable(
                 clockwiseRotation
                         ? "gui.kineticarmory.common.rotation.clockwise"
                         : "gui.kineticarmory.common.rotation.counterclockwise"
@@ -340,7 +334,7 @@ refreshLists();
     private boolean applyRotationSpeedInput(boolean notifyInvalid) {
         if (rotationSpeedBox == null) return true;
 
-        String raw = rotationSpeedBox.getValue().trim();
+        String raw = rotationSpeedBox.textValue().trim();
         if (!raw.isEmpty()) {
             try {
                 int value = Integer.parseInt(raw);
@@ -356,14 +350,14 @@ refreshLists();
         if (notifyInvalid) {
             KineticOverlays.toast(
                     "armorsets_rotation_speed_invalid",
-                    ColorText.translatable("msg.kineticarmory.armorsets.rotation_speed.invalid")
+                    KineticI18n.translatable("msg.kineticarmory.armorsets.rotation_speed.invalid")
             );
         }
         return false;
     }
 
     private Component getGlobalModeText() {
-        return ColorText.translatable(
+        return KineticI18n.translatable(
                 "WHITELIST".equalsIgnoreCase(globalMode)
                         ? "gui.kineticarmory.armorsets.entity_filter.mode.button.whitelist"
                         : "gui.kineticarmory.armorsets.entity_filter.mode.button.blacklist"
@@ -371,7 +365,7 @@ refreshLists();
     }
 
     private Component getGlobalModeTooltip() {
-        return ColorText.translatable(
+        return KineticI18n.translatable(
                 "WHITELIST".equalsIgnoreCase(globalMode)
                         ? "gui.kineticarmory.armorsets.entity_filter.mode.whitelist.tooltip"
                         : "gui.kineticarmory.armorsets.entity_filter.mode.blacklist.tooltip"
@@ -379,7 +373,7 @@ refreshLists();
     }
 
     private Component getSetFilterText() {
-        return ColorText.translatable(
+        return KineticI18n.translatable(
                 setFilterEnabled
                         ? "gui.kineticarmory.armorsets.entity_filter.set_toggle.button.enabled"
                         : "gui.kineticarmory.armorsets.entity_filter.set_toggle.button.disabled"
@@ -387,7 +381,7 @@ refreshLists();
     }
 
     private Component getSetFilterTooltip() {
-        return ColorText.translatable(
+        return KineticI18n.translatable(
                 setFilterEnabled
                         ? "gui.kineticarmory.armorsets.entity_filter.set_toggle.enabled.tooltip"
                         : "gui.kineticarmory.armorsets.entity_filter.set_toggle.disabled.tooltip"
@@ -396,13 +390,13 @@ refreshLists();
 
     private Component getLeftTitle() {
         if (!global) {
-            return ColorText.translatable(
+            return KineticI18n.translatable(
                     "gui.kineticarmory.armorsets.entity_filter.left_set",
                     selectedIds.size()
             );
         }
 
-        return ColorText.translatable(
+        return KineticI18n.translatable(
                 "WHITELIST".equalsIgnoreCase(globalMode)
                         ? "gui.kineticarmory.armorsets.entity_filter.left_whitelist"
                         : "gui.kineticarmory.armorsets.entity_filter.left_blacklist",
@@ -417,11 +411,11 @@ refreshLists();
     private void refreshLists() {
         String leftQuery = leftSearchBox == null
                 ? ""
-                : leftSearchBox.getValue();
+                : leftSearchBox.textValue();
 
         String rightQuery = rightSearchBox == null
                 ? ""
-                : rightSearchBox.getValue();
+                : rightSearchBox.textValue();
 
         leftEntities.clear();
         rightEntities.clear();
@@ -550,19 +544,18 @@ refreshLists();
     }
 
     @Override
-    protected void renderCanvasBackground(
-            @NotNull GuiGraphics g,
+    protected void renderBackground(KineticGraphics g,
             int mx,
             int my,
             float pt
     ) {
         deferredTooltip = null;
 
-        GuiTheme.panel(g, 0, 0, V_WIDTH, V_HEIGHT);
+        KineticTheme.panel(g, 0, 0, V_WIDTH, V_HEIGHT);
 
         drawCenteredNoShadow(
                 g,
-                this.title,
+                title(),
                 V_WIDTH / 2,
                 6,
                 0xFFFFFFFF
@@ -573,7 +566,7 @@ refreshLists();
         drawPanel(
                 g,
                 RIGHT_X,
-                ColorText.translatable(
+                KineticI18n.translatable(
                         "gui.kineticarmory.armorsets.entity_filter.right_available",
                         availableCount()
                 )
@@ -581,27 +574,19 @@ refreshLists();
     }
 
     private void drawPanel(
-            GuiGraphics g,
+            KineticGraphics g,
             int x,
             Component title
     ) {
-        GuiTheme.panelAlt(g, x, PANEL_Y, PANEL_W, PANEL_H);
+        KineticTheme.panelAlt(g, x, PANEL_Y, PANEL_W, PANEL_H);
 
-        g.drawString(
-                this.font,
-                title,
-                x + 8,
-                PANEL_Y + 9,
-                0xFFFFFFFF,
-                false
-        );
+        g.text(title, x + 8, PANEL_Y + 9, 0xFFFFFFFF, false);
 
-        GuiTheme.panel(g, x + 8, GRID_Y - 2, GRID_W, GRID_H + 4);
+        KineticTheme.panel(g, x + 8, GRID_Y - 2, GRID_W, GRID_H + 4);
     }
 
     @Override
-    protected void renderCanvasForeground(
-            @NotNull GuiGraphics g,
+    protected void renderForeground(KineticGraphics g,
             int mx,
             int my,
             float pt
@@ -626,32 +611,16 @@ refreshLists();
                 my
         );
 
-        renderScrollbar(
-                g,
-                mx,
-                my,
-                LEFT_X + PANEL_W - 7,
-                leftEntities.size(),
-                leftScroll,
-                draggingLeftScroll
-        );
+        renderScrollbar(g, mx, my, LEFT_X + PANEL_W - 7, true);
 
-        renderScrollbar(
-                g,
-                mx,
-                my,
-                RIGHT_X + PANEL_W - 7,
-                rightEntities.size(),
-                rightScroll,
-                draggingRightScroll
-        );
+        renderScrollbar(g, mx, my, RIGHT_X + PANEL_W - 7, false);
 
         Component status = global
-                ? ColorText.translatable(
+                ? KineticI18n.translatable(
                 "gui.kineticarmory.armorsets.entity_filter.global_status",
                 selectedIds.size()
         )
-                : ColorText.translatable(
+                : KineticI18n.translatable(
                 "gui.kineticarmory.armorsets.entity_filter.set_status",
                 selectedIds.size()
         );
@@ -666,12 +635,12 @@ refreshLists();
 
         if (deferredTooltip != null
                 && !deferredTooltip.isEmpty()) {
-            showTooltip(deferredTooltip, null);
+            showTooltip(deferredTooltip);
         }
     }
 
     private void renderGrid(
-            GuiGraphics g,
+            KineticGraphics g,
             List<EntityEntryData> dataList,
             int gridX,
             int scroll,
@@ -700,28 +669,28 @@ refreshLists();
                     && my >= y
                     && my < y + CELL_SIZE;
 
-            GuiTheme.surface(
+            KineticTheme.surface(
                     g,
                     x + 2,
                     y + 2,
                     CELL_SIZE - 4,
                     CELL_SIZE - 4,
-                    addedSide ? GuiTheme.Surface.PANEL : GuiTheme.Surface.PANEL_ALT
+                    addedSide ? KineticTheme.Surface.PANEL : KineticTheme.Surface.PANEL_ALT
             );
             if (hovered) {
-                GuiTheme.stateOutline(g, x + 1, y + 1, CELL_SIZE - 2, CELL_SIZE - 2, false, true, false);
+                KineticTheme.stateOutline(g, x + 1, y + 1, CELL_SIZE - 2, CELL_SIZE - 2, false, true, false);
             } else {
-                GuiTheme.indicatorOutline(
+                KineticTheme.indicatorOutline(
                         g,
                         x + 1,
                         y + 1,
                         CELL_SIZE - 2,
                         CELL_SIZE - 2,
-                        addedSide ? GuiTheme.Indicator.SUCCESS : GuiTheme.Indicator.MUTED
+                        addedSide ? KineticTheme.Indicator.SUCCESS : KineticTheme.Indicator.MUTED
                 );
             }
 
-            EntityPreviewRenderer.drawCheckerboard(
+            KineticEntityPreview.drawCheckerboard(
                     g,
                     x + 4,
                     y + 4,
@@ -740,28 +709,28 @@ refreshLists();
             if (hovered) {
                 List<Component> tooltip = new ArrayList<>();
 
-                tooltip.add(ColorText.translatable(
+                tooltip.add(KineticI18n.translatable(
                         "gui.kineticarmory.armorsets.entity_filter.entity.tooltip.name",
                         data.name()
                 ));
 
-                tooltip.add(ColorText.translatable(
+                tooltip.add(KineticI18n.translatable(
                         "gui.kineticarmory.armorsets.entity_filter.entity.tooltip.id",
                         data.id().toString()
                 ));
 
-                tooltip.add(ColorText.translatable(
+                tooltip.add(KineticI18n.translatable(
                         "gui.kineticarmory.armorsets.entity_filter.entity.tooltip.zoom",
                         getModelZoomPercent(data.id().toString())
                 ));
 
                 if (data.type() == null) {
-                    tooltip.add(ColorText.translatable(
+                    tooltip.add(KineticI18n.translatable(
                             "gui.kineticarmory.armorsets.entity_filter.entity.tooltip.invalid"
                     ));
                 }
 
-                tooltip.add(ColorText.translatable(
+                tooltip.add(KineticI18n.translatable(
                         addedSide
                                 ? "gui.kineticarmory.armorsets.entity_filter.click_remove"
                                 : "gui.kineticarmory.armorsets.entity_filter.click_add"
@@ -773,46 +742,29 @@ refreshLists();
     }
 
     private void renderScrollbar(
-            GuiGraphics g,
+            KineticGraphics g,
             int mouseX,
             int mouseY,
             int x,
-            int totalItems,
-            int scroll,
-            boolean dragging
+            boolean left
     ) {
-        int totalRows = rowCount(totalItems);
-        int maxScroll = Math.max(
-                0,
-                totalRows - VISIBLE_ROWS
-        );
+        syncBar(left).render(g, mouseX, mouseY, x, GRID_Y, 4, GRID_H, 20);
+    }
 
-        if (maxScroll > 0) {
-            int thumbH = KineticScroll.stateThumbHeight(
-                    GRID_H,
-                    VISIBLE_ROWS,
-                    totalRows,
-                    20
-            );
-
-            GuiTheme.scrollbar(
-                    g,
-                    mouseX,
-                    mouseY,
-                    x,
-                    GRID_Y,
-                    4,
-                    GRID_H,
-                    thumbH,
-                    maxScroll,
-                    scroll,
-                    dragging
-            );
-        }
+    /**
+     * 行偏移仍以 leftScroll/rightScroll 为准，滚动条控制器只负责绘制与拖拽。
+     * leftScroll/rightScroll stay the source of truth; the controllers only draw and drag the scrollbar.
+     */
+    private KineticScrollController syncBar(boolean left) {
+        KineticScrollController bar = left ? leftBar : rightBar;
+        bar.update(rowCount(left ? leftEntities.size() : rightEntities.size()), VISIBLE_ROWS);
+        int value = left ? leftScroll : rightScroll;
+        if (bar.offset() != value) bar.setOffset(value);
+        return bar;
     }
 
     private void renderAdaptiveEntity(
-            GuiGraphics g,
+            KineticGraphics g,
             int boxX,
             int boxY,
             EntityEntryData data,
@@ -829,16 +781,13 @@ refreshLists();
                 boxY,
                 boxW,
                 boxH,
-                this.canvasScale(),
-                this.canvasX(),
-                this.canvasY(),
                 hovered
         );
 
         if (!rendered) {
             drawCenteredNoShadow(
                     g,
-                    ColorText.translatable(
+                    KineticI18n.translatable(
                             "gui.kineticarmory.armorsets.entity_filter.preview_unavailable"
                     ),
                     boxX + boxW / 2,
@@ -849,7 +798,7 @@ refreshLists();
     }
 
     private int getModelZoomPercent(String id) {
-        return entityPreviewRenderer.getZoomPercent(id);
+        return entityPreviewRenderer.zoomPercent(id);
     }
 
     private void adjustHoveredModelZoom(double mx, double my, double delta) {
@@ -882,7 +831,7 @@ refreshLists();
     }
 
     private void drawCenteredNoShadow(
-            GuiGraphics g,
+            KineticGraphics g,
             Component text,
             int centerX,
             int y,
@@ -890,36 +839,22 @@ refreshLists();
     ) {
         String value = text.getString();
 
-        g.drawString(
-                this.font,
-                value,
-                centerX - this.font.width(value) / 2,
-                y,
-                color,
-                false
-        );
+        g.text(value, centerX - KineticText.width(value) / 2, y, color, false);
     }
 
     @Override
-    protected boolean canvasMouseClicked(
-            double mx,
-            double my,
-            int btn
-    ) {
-        boolean handled = super.canvasMouseClicked(
-                mx,
-                my,
-                btn
-        );
+    protected boolean onMouseClick(MouseInput input) {
+        double mx = input.x(), my = input.y(); int btn = input.rawButton();
+        boolean handled = false;
 
         if (handled) return true;
         if (!KineticMouseButtons.isPrimary(btn)) return false;
 
-        if (handleScrollbarClick(mx, my, true)) {
+        if (handleScrollbarClick(mx, my, input.button(), true)) {
             return true;
         }
 
-        if (handleScrollbarClick(mx, my, false)) {
+        if (handleScrollbarClick(mx, my, input.button(), false)) {
             return true;
         }
 
@@ -933,7 +868,7 @@ refreshLists();
 
         if (left != null) {
             removeEntity(left);
-            clearControlFocus();
+            clearFocus();
             return true;
         }
 
@@ -947,7 +882,7 @@ refreshLists();
 
         if (right != null) {
             addEntity(right);
-            clearControlFocus();
+            clearFocus();
             return true;
         }
 
@@ -957,47 +892,21 @@ refreshLists();
     private boolean handleScrollbarClick(
             double mx,
             double my,
+            MouseButton button,
             boolean left
     ) {
-        int panelX = left
-                ? LEFT_X
-                : RIGHT_X;
-
-        int totalItems = left
-                ? leftEntities.size()
-                : rightEntities.size();
-
-        int totalRows = rowCount(totalItems);
-
-        int maxScroll = Math.max(
-                0,
-                totalRows - VISIBLE_ROWS
-        );
-
-        int x = panelX + PANEL_W - 7;
-
-        boolean onScrollbar =
-                maxScroll > 0
-                        && mx >= x
-                        && mx <= x + 4
-                        && my >= GRID_Y
-                        && my <= GRID_Y + GRID_H;
-
-        if (!onScrollbar) {
+        int x = (left ? LEFT_X : RIGHT_X) + PANEL_W - 7;
+        KineticScrollController bar = syncBar(left);
+        if (!bar.beginDrag(mx, my, button, x, GRID_Y, 4, GRID_H, 20, 0)) {
             return false;
         }
-
         if (left) {
             draggingLeftScroll = true;
+            leftScroll = bar.offset();
         } else {
             draggingRightScroll = true;
+            rightScroll = bar.offset();
         }
-
-        updateScrollFromMouse(
-                my,
-                left
-        );
-
         return true;
     }
 
@@ -1035,13 +944,8 @@ refreshLists();
     }
 
     @Override
-    protected boolean canvasMouseDragged(
-            double mx,
-            double my,
-            int btn,
-            double dx,
-            double dy
-    ) {
+    protected boolean onMouseDrag(MouseDragInput input) {
+        double mx = input.x(), my = input.y(); int btn = input.rawButton(); double dx = input.deltaX(), dy = input.deltaY();
         if (KineticMouseButtons.isPrimary(btn) && draggingLeftScroll) {
             updateScrollFromMouse(
                     my,
@@ -1058,42 +962,28 @@ refreshLists();
             return true;
         }
 
-        return super.canvasMouseDragged(
-                mx,
-                my,
-                btn,
-                dx,
-                dy
-        );
+        return false;
     }
 
     @Override
-    protected boolean canvasMouseReleased(
-            double mx,
-            double my,
-            int btn
-    ) {
+    protected boolean onMouseRelease(MouseInput input) {
+        double mx = input.x(), my = input.y(); int btn = input.rawButton();
         if (KineticMouseButtons.isPrimary(btn)
                 && (draggingLeftScroll
                 || draggingRightScroll)) {
             draggingLeftScroll = false;
             draggingRightScroll = false;
+            leftBar.release(input.button());
+            rightBar.release(input.button());
             return true;
         }
 
-        return super.canvasMouseReleased(
-                mx,
-                my,
-                btn
-        );
+        return false;
     }
 
     @Override
-    protected boolean canvasMouseScrolled(
-            double mx,
-            double my,
-            double delta
-    ) {
+    protected boolean onMouseScroll(ScrollInput input) {
+        double mx = input.x(), my = input.y(), delta = input.deltaY();
         if (KineticClientRuntime.controlModifierDown()) {
             EntityEntryData hoveredLeft = getClickedEntity(
                     leftEntities,
@@ -1147,49 +1037,19 @@ refreshLists();
             }
         }
 
-        return super.canvasMouseScrolled(
-                mx,
-                my,
-                delta
-        );
+        return false;
     }
 
     private void updateScrollFromMouse(
             double my,
             boolean left
     ) {
-        int totalItems = left
-                ? leftEntities.size()
-                : rightEntities.size();
-
-        int totalRows = rowCount(totalItems);
-
-        int maxScroll = Math.max(
-                0,
-                totalRows - VISIBLE_ROWS
-        );
-
-        if (maxScroll > 0) {
-            int thumbH = KineticScroll.stateThumbHeight(
-                    GRID_H,
-                    VISIBLE_ROWS,
-                    totalRows,
-                    20
-            );
-
-            int value = KineticScroll.stateOffsetFromPointer(
-                    my,
-                    GRID_Y,
-                    GRID_H,
-                    thumbH,
-                    maxScroll
-            );
-
-            if (left) {
-                leftScroll = value;
-            } else {
-                rightScroll = value;
-            }
+        KineticScrollController bar = left ? leftBar : rightBar;
+        bar.drag(my, GRID_Y, GRID_H, 20);
+        if (left) {
+            leftScroll = bar.offset();
+        } else {
+            rightScroll = bar.offset();
         }
     }
 
@@ -1213,7 +1073,7 @@ refreshLists();
     }
 
     @Override
-    protected void screenRemoved() {
+    protected void onRemoved() {
         entityPreviewRenderer.clear();
     }
 

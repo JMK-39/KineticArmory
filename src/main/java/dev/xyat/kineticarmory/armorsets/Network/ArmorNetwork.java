@@ -1,5 +1,6 @@
 package dev.xyat.kineticarmory.armorsets.Network;
 
+import dev.xyat.kineticcore.api.text.KineticI18n;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -20,7 +21,6 @@ import dev.xyat.kineticcore.api.network.ServerPacketContext;
 import dev.xyat.kineticcore.api.resource.KineticResourceIds;
 import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.EncoderException;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.io.IOException;
@@ -363,7 +363,7 @@ public class ArmorNetwork {
     private static void handleRequestOpenEditor(RequestOpenEditorPacket message, ServerPacketContext context) {
         ServerPlayer player = context.sender();
         if (!player.hasPermissions(2)) {
-            player.sendSystemMessage(Component.translatable("commands.generic.permission"));
+            player.sendSystemMessage(KineticI18n.translatable("commands.generic.permission"));
             return;
         }
         ArmorConfig.reloadFromDisk();
@@ -395,13 +395,13 @@ public class ArmorNetwork {
         ArmorDataConfig config = message.config();
         String oldId = message.oldId();
         if (!player.hasPermissions(2)) {
-            player.sendSystemMessage(Component.translatable("commands.generic.permission"));
+            player.sendSystemMessage(KineticI18n.translatable("commands.generic.permission"));
             resyncArmorConfigs(player);
             sendEditorSaveResult(player, false);
             return;
         }
         if (config == null) {
-            player.sendSystemMessage(Component.translatable("msg.kineticarmory.armorsets.save_failed", ""));
+            player.sendSystemMessage(KineticI18n.translatable("msg.kineticarmory.armorsets.save_failed", ""));
             resyncArmorConfigs(player);
             sendEditorSaveResult(player, false);
             return;
@@ -417,7 +417,7 @@ public class ArmorNetwork {
         ArmorLoader.cleanUpConfig(config);
         config.prepareRuntimeCache();
         if (!ArmorLoader.saveChecked(config.id, config)) {
-            player.sendSystemMessage(Component.translatable(
+            player.sendSystemMessage(KineticI18n.translatable(
                     "msg.kineticarmory.armorsets.save_failed",
                     config.id
             ));
@@ -445,7 +445,7 @@ public class ArmorNetwork {
         ArmorCommand.executeReload(player.createCommandSourceStack());
         if (!ArmorConfig.syncOnReload) resyncArmorConfigs(player);
         if (renameCleanupFailed) {
-            player.sendSystemMessage(Component.translatable(
+            player.sendSystemMessage(KineticI18n.translatable(
                     "msg.kineticarmory.armorsets.rename_cleanup_failed",
                     oldId
             ));
@@ -471,7 +471,7 @@ public class ArmorNetwork {
         ServerPlayer player = context.sender();
         String id = message.id();
         if (!player.hasPermissions(2)) {
-            player.sendSystemMessage(Component.translatable("commands.generic.permission"));
+            player.sendSystemMessage(KineticI18n.translatable("commands.generic.permission"));
             resyncArmorConfigs(player);
             return;
         }
@@ -484,10 +484,10 @@ public class ArmorNetwork {
             Files.deleteIfExists(ArmorLoader.resolveConfigPath(id));
             ArmorCommand.executeReload(player.createCommandSourceStack());
             if (!ArmorConfig.syncOnReload) resyncArmorConfigs(player);
-            player.sendSystemMessage(Component.translatable("msg.kineticarmory.common.deleted"));
+            player.sendSystemMessage(KineticI18n.translatable("msg.kineticarmory.common.deleted"));
         } catch (IOException | IllegalArgumentException e) {
             KineticArmory.LOGGER.error("ArmorSet 删除失败: {}", id, e);
-            player.sendSystemMessage(Component.translatable(
+            player.sendSystemMessage(KineticI18n.translatable(
                     "msg.kineticarmory.armorsets.delete_failed",
                     id
             ));
@@ -496,7 +496,7 @@ public class ArmorNetwork {
     }
 
     private static void notifyInvalidSetId(ServerPlayer player) {
-        player.sendSystemMessage(Component.translatable("msg.kineticarmory.armorsets.invalid_id"));
+        player.sendSystemMessage(KineticI18n.translatable("msg.kineticarmory.armorsets.invalid_id"));
     }
 
     private static void resyncArmorConfigs(ServerPlayer player) {

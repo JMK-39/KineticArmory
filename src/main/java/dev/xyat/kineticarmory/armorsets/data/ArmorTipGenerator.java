@@ -1,11 +1,11 @@
 package dev.xyat.kineticarmory.armorsets.data;
 
+import dev.xyat.kineticcore.api.text.KineticI18n;
 import dev.xyat.kineticarmory.armorsets.predicate.ConditionData;
 import dev.xyat.kineticarmory.armorsets.predicate.ConditionTypeUtil;
 import dev.xyat.kineticcore.api.client.search.KineticSearch;
 import dev.xyat.kineticcore.api.registry.KineticRegistries;
 import dev.xyat.kineticcore.api.resource.KineticResourceIds;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.ArrayList;
@@ -36,7 +36,7 @@ public class ArmorTipGenerator {
         var effect = rl == null ? null : KineticRegistries.mobEffects().get(rl);
         if (effect != null) {
             String key = effect.getDescriptionId();
-            String translated = Component.translatable(key).getString();
+            String translated = KineticI18n.translatable(key).getString();
             return translated.equals(key) ? id : translated;
         }
         return id == null ? "" : id;
@@ -47,7 +47,7 @@ public class ArmorTipGenerator {
         var attr = rl == null ? null : KineticRegistries.attributes().get(rl);
         if (attr != null) {
             String key = attr.getDescriptionId();
-            String translated = Component.translatable(key).getString();
+            String translated = KineticI18n.translatable(key).getString();
             return translated.equals(key) ? id : translated;
         }
         return id == null ? "" : id;
@@ -58,7 +58,7 @@ public class ArmorTipGenerator {
         var item = rl == null ? null : KineticRegistries.items().get(rl);
         if (item != null) {
             String key = item.getDescriptionId();
-            String translated = Component.translatable(key).getString();
+            String translated = KineticI18n.translatable(key).getString();
             return translated.equals(key) ? id : translated;
         }
         return id == null ? "" : id;
@@ -68,7 +68,7 @@ public class ArmorTipGenerator {
         ResourceLocation rl = safeResourceLocation(id);
         if (rl != null) {
             String key = "dimension." + rl.getNamespace() + "." + rl.getPath();
-            String translated = Component.translatable(key).getString();
+            String translated = KineticI18n.translatable(key).getString();
             return translated.equals(key) ? id : translated;
         }
         return id == null ? "" : id;
@@ -84,23 +84,23 @@ public class ArmorTipGenerator {
         String pMax = params.getOrDefault("max", "0");
 
         return switch (type) {
-            case "ON_BLOCK" -> Component.translatable("tip.kineticarmory.armorsets.cond.block", "§3" + typeName, "§3[item:" + pId + "] " + getItemName(pId)).getString();
-            case "POTION_RANGE" -> Component.translatable("tip.kineticarmory.armorsets.cond.potion", "§3" + typeName, "§d" + getPotionName(pId), "§e" + params.getOrDefault("min_lvl", "0"), "§e" + params.getOrDefault("max_lvl", "255")).getString();
-            case "ATTR_RANGE" -> Component.translatable("tip.kineticarmory.armorsets.cond.attr", "§3" + typeName, "§b" + getAttrName(pId), "§e" + pMin, "§e" + pMax).getString();
-            case "DIMENSION" -> Component.translatable("tip.kineticarmory.armorsets.cond.value", "§3" + typeName, "§b" + getDimensionName(pId)).getString();
-            case "STAGE" -> Component.translatable("tip.kineticarmory.armorsets.cond.value", "§3" + typeName, "§b" + params.getOrDefault("stage", "unknown")).getString();
-            case "MOON_PHASE" -> Component.translatable("tip.kineticarmory.armorsets.cond.value", "§3" + typeName, "§b[item:minecraft:clock] " + params.getOrDefault("phase", "0")).getString();
-            case "MOUSE_LEFT_HOLD", "MOUSE_RIGHT_HOLD" -> Component.translatable(
+            case "ON_BLOCK" -> KineticI18n.translatable("tip.kineticarmory.armorsets.cond.block", "§3" + typeName, "§3[item:" + pId + "] " + getItemName(pId)).getString();
+            case "POTION_RANGE" -> KineticI18n.translatable("tip.kineticarmory.armorsets.cond.potion", "§3" + typeName, "§d" + getPotionName(pId), "§e" + params.getOrDefault("min_lvl", "0"), "§e" + params.getOrDefault("max_lvl", "255")).getString();
+            case "ATTR_RANGE" -> KineticI18n.translatable("tip.kineticarmory.armorsets.cond.attr", "§3" + typeName, "§b" + getAttrName(pId), "§e" + pMin, "§e" + pMax).getString();
+            case "DIMENSION" -> KineticI18n.translatable("tip.kineticarmory.armorsets.cond.value", "§3" + typeName, "§b" + getDimensionName(pId)).getString();
+            case "STAGE" -> KineticI18n.translatable("tip.kineticarmory.armorsets.cond.value", "§3" + typeName, "§b" + params.getOrDefault("stage", "unknown")).getString();
+            case "MOON_PHASE" -> KineticI18n.translatable("tip.kineticarmory.armorsets.cond.value", "§3" + typeName, "§b[item:minecraft:clock] " + params.getOrDefault("phase", "0")).getString();
+            case "MOUSE_LEFT_HOLD", "MOUSE_RIGHT_HOLD" -> KineticI18n.translatable(
                     "tip.kineticarmory.armorsets.cond.ticks",
                     "§3" + typeName,
                     "§b" + formatTickSeconds(params.getOrDefault("ticks", "1"))
             ).getString();
-            case "HEALTH_RANGE" -> Component.translatable("tip.kineticarmory.armorsets.cond.range", "§3" + typeName, "§e[item:minecraft:golden_apple] " + pMin, "§e" + pMax).getString();
-            case "FOOD_RANGE" -> Component.translatable("tip.kineticarmory.armorsets.cond.range", "§3" + typeName, "§e[item:minecraft:cooked_beef] " + pMin, "§e" + pMax).getString();
-            case "EXP_RANGE" -> Component.translatable("tip.kineticarmory.armorsets.cond.range", "§3" + typeName, "§e[item:minecraft:experience_bottle] " + pMin, "§e" + pMax).getString();
-            case "SPEED_RANGE" -> Component.translatable(
+            case "HEALTH_RANGE" -> KineticI18n.translatable("tip.kineticarmory.armorsets.cond.range", "§3" + typeName, "§e[item:minecraft:golden_apple] " + pMin, "§e" + pMax).getString();
+            case "FOOD_RANGE" -> KineticI18n.translatable("tip.kineticarmory.armorsets.cond.range", "§3" + typeName, "§e[item:minecraft:cooked_beef] " + pMin, "§e" + pMax).getString();
+            case "EXP_RANGE" -> KineticI18n.translatable("tip.kineticarmory.armorsets.cond.range", "§3" + typeName, "§e[item:minecraft:experience_bottle] " + pMin, "§e" + pMax).getString();
+            case "SPEED_RANGE" -> KineticI18n.translatable(
                     "tip.kineticarmory.armorsets.cond.range", "§3" + typeName, "§e" + pMin, "§e" + pMax).getString();
-            case "TIME_RANGE" -> Component.translatable(
+            case "TIME_RANGE" -> KineticI18n.translatable(
                     "tip.kineticarmory.armorsets.cond.range.seconds",
                     "§3" + typeName,
                     "§b" + formatOptionalTickSeconds(params.get("min"), "0"),
@@ -129,15 +129,15 @@ public class ArmorTipGenerator {
         if (conditions == null || conditions.isEmpty()) return "";
         StringBuilder sb = new StringBuilder(" §f(");
 
-        String joinStr = Component.translatable("tip.kineticarmory.armorsets.or").getString();
-        String prefix = Component.translatable("tip.kineticarmory.armorsets.requires_or").getString();
+        String joinStr = KineticI18n.translatable("tip.kineticarmory.armorsets.or").getString();
+        String prefix = KineticI18n.translatable("tip.kineticarmory.armorsets.requires_or").getString();
 
         if ("ALL".equalsIgnoreCase(mode)) {
-            joinStr = Component.translatable("tip.kineticarmory.armorsets.and").getString();
-            prefix = Component.translatable("tip.kineticarmory.armorsets.requires_all").getString();
+            joinStr = KineticI18n.translatable("tip.kineticarmory.armorsets.and").getString();
+            prefix = KineticI18n.translatable("tip.kineticarmory.armorsets.requires_all").getString();
         } else if ("MIN".equalsIgnoreCase(mode) || "MIN_COUNT".equalsIgnoreCase(mode)) {
-            joinStr = Component.translatable("tip.kineticarmory.armorsets.or").getString();
-            prefix = Component.translatable("tip.kineticarmory.armorsets.requires_min", "§e" + minCount).getString();
+            joinStr = KineticI18n.translatable("tip.kineticarmory.armorsets.or").getString();
+            prefix = KineticI18n.translatable("tip.kineticarmory.armorsets.requires_min", "§e" + minCount).getString();
         }
 
         sb.append(prefix);
@@ -145,7 +145,7 @@ public class ArmorTipGenerator {
             ConditionData cond = conditions.get(i);
             if (cond == null) continue;
             if (cond.invert) {
-                sb.append("§c").append(Component.translatable("tip.kineticarmory.armorsets.invert.prefix").getString()).append(" ");
+                sb.append("§c").append(KineticI18n.translatable("tip.kineticarmory.armorsets.invert.prefix").getString()).append(" ");
             }
             sb.append("§b");
             sb.append(buildCondString(cond));
@@ -207,7 +207,7 @@ public class ArmorTipGenerator {
         if (operation.equalsIgnoreCase("SET")) {
             valStr = "§e" + fmt(d.amount);
             String prefixKey = "tip.kineticarmory.armorsets.prefix.attr_set";
-            return applyLineWrap(Component.translatable(prefixKey, "§b" + name, valStr).getString() + getCondTxt(d.conditions, d.conditionMatchMode, d.conditionMinCount));
+            return applyLineWrap(KineticI18n.translatable(prefixKey, "§b" + name, valStr).getString() + getCondTxt(d.conditions, d.conditionMatchMode, d.conditionMinCount));
         } else if (operation.toUpperCase(Locale.ROOT).contains("MULTIPLY")) {
             valStr = color + (isPositive ? "+" : "") + fmt(d.amount * 100) + "%";
         } else {
@@ -215,39 +215,39 @@ public class ArmorTipGenerator {
         }
 
         String prefixKey = isPositive ? "tip.kineticarmory.armorsets.prefix.attr_buff" : "tip.kineticarmory.armorsets.prefix.attr_debuff";
-        return applyLineWrap(Component.translatable(prefixKey, "§b" + name, valStr).getString() + getCondTxt(d.conditions, d.conditionMatchMode, d.conditionMinCount));
+        return applyLineWrap(KineticI18n.translatable(prefixKey, "§b" + name, valStr).getString() + getCondTxt(d.conditions, d.conditionMatchMode, d.conditionMinCount));
     }
 
     public static String genPotTip(ArmorDataConfig.PotionEffectData d) {
         String name = getPotionName(d.effectId);
         String lvlStr = "§e" + (d.amplifier + 1);
         String durStr = "§e" + d.duration;
-        return applyLineWrap(Component.translatable("tip.kineticarmory.armorsets.prefix.potion", "§d" + name, lvlStr, durStr).getString() + getCondTxt(d.conditions, d.conditionMatchMode, d.conditionMinCount));
+        return applyLineWrap(KineticI18n.translatable("tip.kineticarmory.armorsets.prefix.potion", "§d" + name, lvlStr, durStr).getString() + getCondTxt(d.conditions, d.conditionMatchMode, d.conditionMinCount));
     }
 
     public static String genImmTip(ArmorDataConfig.DamageImmunityData d) {
         String name = KineticSearch.dictionaryName(d.damageType, KineticSearch.damageDictionary());
         if (d.multiplier == 0.0) {
-            return applyLineWrap(Component.translatable("tip.kineticarmory.armorsets.prefix.immunity", "§a" + name).getString() + getCondTxt(d.conditions, d.conditionMatchMode, d.conditionMinCount));
+            return applyLineWrap(KineticI18n.translatable("tip.kineticarmory.armorsets.prefix.immunity", "§a" + name).getString() + getCondTxt(d.conditions, d.conditionMatchMode, d.conditionMinCount));
         } else {
             boolean isBuff = d.multiplier < 1.0;
             String color = isBuff ? "§a" : "§c";
             String valStr = color + "x" + fmt(d.multiplier);
             String prefixKey = isBuff ? "tip.kineticarmory.armorsets.prefix.typed_damage_buff" : "tip.kineticarmory.armorsets.prefix.typed_damage_debuff";
-            return applyLineWrap(Component.translatable(prefixKey, "§c" + name, valStr).getString() + getCondTxt(d.conditions, d.conditionMatchMode, d.conditionMinCount));
+            return applyLineWrap(KineticI18n.translatable(prefixKey, "§c" + name, valStr).getString() + getCondTxt(d.conditions, d.conditionMatchMode, d.conditionMinCount));
         }
     }
 
     public static String genEffImmTip(ArmorDataConfig.EffectImmunityData d) {
         String name = getPotionName(d.effectId);
-        return applyLineWrap(Component.translatable("tip.kineticarmory.armorsets.prefix.effect_immunity", "§a" + name).getString() + getCondTxt(d.conditions, d.conditionMatchMode, d.conditionMinCount));
+        return applyLineWrap(KineticI18n.translatable("tip.kineticarmory.armorsets.prefix.effect_immunity", "§a" + name).getString() + getCondTxt(d.conditions, d.conditionMatchMode, d.conditionMinCount));
     }
 
     public static String genAtkTip(ArmorDataConfig.AttackEffectData d) {
         String name = getPotionName(d.effectId);
         String chanceStr = "§e" + (int)(d.chance * 100);
         String durStr = "§e" + fmt(d.duration);
-        return applyLineWrap(Component.translatable("tip.kineticarmory.armorsets.prefix.attack", chanceStr, "§c" + name, durStr).getString() + getCondTxt(d.conditions, d.conditionMatchMode, d.conditionMinCount));
+        return applyLineWrap(KineticI18n.translatable("tip.kineticarmory.armorsets.prefix.attack", chanceStr, "§c" + name, durStr).getString() + getCondTxt(d.conditions, d.conditionMatchMode, d.conditionMinCount));
     }
 
     public static String genConvTip(ArmorDataConfig.DamageConversionData d) {
@@ -255,14 +255,14 @@ public class ArmorTipGenerator {
         String tgtName = KineticSearch.dictionaryName(d.targetType, KineticSearch.specificDamageDictionary());
         String chanceStr = "§e" + (int)(d.chance * 100);
         String ratioStr = "§e" + (int)(d.ratio * 100);
-        return applyLineWrap(Component.translatable("tip.kineticarmory.armorsets.prefix.convert", chanceStr, "§c" + srcName, "§d" + tgtName, ratioStr).getString() + getCondTxt(d.conditions, d.conditionMatchMode, d.conditionMinCount));
+        return applyLineWrap(KineticI18n.translatable("tip.kineticarmory.armorsets.prefix.convert", chanceStr, "§c" + srcName, "§d" + tgtName, ratioStr).getString() + getCondTxt(d.conditions, d.conditionMatchMode, d.conditionMinCount));
     }
 
     public static String genDmgMulTip(ArmorDataConfig.DamageMultiplierData d) {
         boolean isBuff = d.multiplier < 1.0;
         String color = isBuff ? "§a" : "§c";
         String valStr = color + "x" + fmt(d.multiplier);
-        return applyLineWrap(Component.translatable("gui.kineticarmory.armorsets.effect.damage_multiplier", valStr).getString() + getCondTxt(d.conditions, d.conditionMatchMode, d.conditionMinCount));
+        return applyLineWrap(KineticI18n.translatable("gui.kineticarmory.armorsets.effect.damage_multiplier", valStr).getString() + getCondTxt(d.conditions, d.conditionMatchMode, d.conditionMinCount));
     }
 
     public static String genAtkDmgTip(ArmorDataConfig.AttackDamageMultiplierData d) {
@@ -270,11 +270,11 @@ public class ArmorTipGenerator {
         String color = isBuff ? "§a" : "§c";
         String valStr = color + "x" + fmt(d.multiplier);
         String prefixKey = isBuff ? "tip.kineticarmory.armorsets.prefix.attack_damage_buff" : "tip.kineticarmory.armorsets.prefix.attack_damage_debuff";
-        return applyLineWrap(Component.translatable(prefixKey, valStr).getString() + getCondTxt(d.conditions, d.conditionMatchMode, d.conditionMinCount));
+        return applyLineWrap(KineticI18n.translatable(prefixKey, valStr).getString() + getCondTxt(d.conditions, d.conditionMatchMode, d.conditionMinCount));
     }
 
     public static String genFlightTip(List<ConditionData> flightConditions, String mode, int minCount) {
-        String base = "§b" + Component.translatable("gui.kineticarmory.armorsets.detail.flight_effect").getString();
+        String base = "§b" + KineticI18n.translatable("gui.kineticarmory.armorsets.detail.flight_effect").getString();
         return applyLineWrap(base + getCondTxt(flightConditions, mode, minCount));
     }
 
@@ -296,7 +296,7 @@ public class ArmorTipGenerator {
 
         if (includePieceCounter && flexible) {
             String key = buildStaticTipOverrideKey("current_pieces", Collections.singletonList(total));
-            String text = Component.translatable("gui.kineticarmory.armorsets.tooltip.current_pieces", "§e" + pieceCount, "§a" + total).getString();
+            String text = KineticI18n.translatable("gui.kineticarmory.armorsets.tooltip.current_pieces", "§e" + pieceCount, "§a" + total).getString();
             lines.add(TooltipLine.text(getTipOverride(config, key, text), key));
         }
 
@@ -503,7 +503,7 @@ public class ArmorTipGenerator {
 
         if (includePieceCounter && flexible) {
             String key = buildStaticTipOverrideKey("current_pieces", Collections.singletonList(total));
-            String text = Component.translatable("gui.kineticarmory.armorsets.tooltip.current_pieces", "§e" + pieceCount, "§a" + total).getString();
+            String text = KineticI18n.translatable("gui.kineticarmory.armorsets.tooltip.current_pieces", "§e" + pieceCount, "§a" + total).getString();
             lines.add(TooltipLine.text(getTipOverride(config, key, text), key));
         }
 
@@ -539,16 +539,16 @@ public class ArmorTipGenerator {
         for (TooltipLine line : lines) {
             if (line != null && key.equals(line.overrideKey())) return;
         }
-        String text = Component.translatable(translationKey, ("tip.kineticarmory.armorsets.require_slots_empty".equals(translationKey) ? "§c" : "§a") + joinSlotNames(slotNames)).getString();
+        String text = KineticI18n.translatable(translationKey, ("tip.kineticarmory.armorsets.require_slots_empty".equals(translationKey) ? "§c" : "§a") + joinSlotNames(slotNames)).getString();
         lines.add(TooltipLine.text(getTipOverride(config, key, text), key));
     }
 
     private static String getSlotName(String slot) {
-        return Component.translatable("gui.kineticarmory.armorsets.slot." + slot).getString();
+        return KineticI18n.translatable("gui.kineticarmory.armorsets.slot." + slot).getString();
     }
 
     private static String joinSlotNames(List<String> slotNames) {
-        String separator = Component.translatable("tip.kineticarmory.armorsets.slot_separator").getString();
+        String separator = KineticI18n.translatable("tip.kineticarmory.armorsets.slot_separator").getString();
         StringBuilder builder = new StringBuilder();
         for (String name : slotNames) {
             if (name == null || name.isBlank()) continue;
@@ -623,10 +623,10 @@ public class ArmorTipGenerator {
         }
 
         String fullTitleKey = buildStaticTipOverrideKey("full_tier", Collections.emptyList());
-        lines.add(TooltipLine.effect(getTipOverride(config, fullTitleKey, Component.translatable("gui.kineticarmory.armorsets.tooltip.full_tier").getString()), Collections.emptyList(), true, fullTitleKey));
+        lines.add(TooltipLine.effect(getTipOverride(config, fullTitleKey, KineticI18n.translatable("gui.kineticarmory.armorsets.tooltip.full_tier").getString()), Collections.emptyList(), true, fullTitleKey));
         if (fullOnly.isEmpty()) {
             String fullAutoKey = buildStaticTipOverrideKey("full_auto_all", Collections.emptyList());
-            lines.add(TooltipLine.effect(getTipOverride(config, fullAutoKey, Component.translatable("gui.kineticarmory.armorsets.tooltip.full_auto_all").getString()), Collections.emptyList(), true, fullAutoKey));
+            lines.add(TooltipLine.effect(getTipOverride(config, fullAutoKey, KineticI18n.translatable("gui.kineticarmory.armorsets.tooltip.full_auto_all").getString()), Collections.emptyList(), true, fullAutoKey));
             return;
         }
 
@@ -688,11 +688,11 @@ public class ArmorTipGenerator {
 
     private static String pieceTierTitle(List<Integer> pieces) {
         if (pieces == null || pieces.isEmpty()) {
-            return Component.translatable("gui.kineticarmory.armorsets.tooltip.piece_tier", "§e0").getString();
+            return KineticI18n.translatable("gui.kineticarmory.armorsets.tooltip.piece_tier", "§e0").getString();
         }
         String first = String.valueOf(pieces.get(0));
         String label = piecesLabel(pieces);
-        String base = Component.translatable("gui.kineticarmory.armorsets.tooltip.piece_tier", "§e" + pieces.get(0)).getString();
+        String base = KineticI18n.translatable("gui.kineticarmory.armorsets.tooltip.piece_tier", "§e" + pieces.get(0)).getString();
         return label.equals(first) ? base : base.replaceFirst(Pattern.quote(first), label);
     }
 
