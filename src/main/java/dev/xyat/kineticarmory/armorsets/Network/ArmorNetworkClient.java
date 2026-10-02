@@ -15,7 +15,6 @@ import dev.xyat.kineticcore.api.text.KineticI18n;
 import dev.xyat.kineticcore.api.client.tooltip.KineticItemTooltips;
 import dev.xyat.kineticcore.api.config.client.KTConfigApi;
 import dev.xyat.kineticcore.api.runtime.KineticClientRuntime;
-import net.minecraft.network.chat.Component;
 
 public final class ArmorNetworkClient {
     private ArmorNetworkClient() {

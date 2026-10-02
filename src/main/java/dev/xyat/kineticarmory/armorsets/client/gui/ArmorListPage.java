@@ -11,17 +11,13 @@ import dev.xyat.kineticcore.api.client.gui.widget.list.*;
 import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
 import dev.xyat.kineticarmory.armorsets.client.ArmorClientSnapshot;
 import dev.xyat.kineticarmory.armorsets.Network.ArmorNetwork;
-import dev.xyat.kineticcore.api.client.input.KineticMouseButtons;
 import dev.xyat.kineticcore.api.client.search.KineticSearch;
 import dev.xyat.kineticcore.api.registry.KineticRegistries;
 import dev.xyat.kineticcore.api.resource.KineticResourceIds;
-import dev.xyat.kineticcore.api.runtime.KineticClientRuntime;
 import dev.xyat.kineticcore.api.text.KineticI18n;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import org.jetbrains.annotations.NotNull;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;

@@ -13,7 +13,6 @@ import dev.xyat.kineticcore.api.client.gui.ui.KineticUi;
 import dev.xyat.kineticcore.api.client.gui.widget.*;
 import dev.xyat.kineticcore.api.client.gui.widget.list.*;
 
-import dev.xyat.kineticcore.api.client.input.KineticMouseButtons;
 import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
 import dev.xyat.kineticcore.api.registry.KineticRegistries;
 import dev.xyat.kineticcore.api.runtime.KineticClientRuntime;

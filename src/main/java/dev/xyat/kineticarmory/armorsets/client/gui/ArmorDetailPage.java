@@ -16,11 +16,8 @@ import dev.xyat.kineticarmory.armorsets.data.ArmorTipGenerator;
 import dev.xyat.kineticarmory.armorsets.predicate.ConditionData;
 import dev.xyat.kineticarmory.armorsets.predicate.IConditionOwner;
 import dev.xyat.kineticarmory.armorsets.predicate.client.ConditionListPage;
-import dev.xyat.kineticcore.api.client.input.KineticMouseButtons;
 import dev.xyat.kineticcore.api.registry.KineticRegistries;
 import dev.xyat.kineticcore.api.resource.KineticResourceIds;
-import dev.xyat.kineticcore.api.runtime.KineticClientRuntime;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.regex.Matcher;

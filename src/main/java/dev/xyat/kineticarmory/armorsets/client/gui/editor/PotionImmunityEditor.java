@@ -12,9 +12,7 @@ import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
 import dev.xyat.kineticarmory.armorsets.data.ArmorTipGenerator;
 import dev.xyat.kineticarmory.armorsets.predicate.client.ConditionListPage;
 import dev.xyat.kineticcore.api.client.search.KineticSearch;
-import dev.xyat.kineticcore.api.runtime.KineticClientRuntime;
 import dev.xyat.kineticcore.api.text.KineticI18n;
-import net.minecraft.network.chat.Component;
 
 public class PotionImmunityEditor extends KineticPage {
     private final ArmorDataConfig config;

@@ -55,6 +55,8 @@ minecraft {
             workingDirectory project.file('run')
             property 'forge.logging.markers', 'REGISTRIES'
             property 'forge.logging.console.level', 'debug'
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
 
             mods {
                 "${pModId}" {
@@ -120,6 +122,7 @@ repositories {
 
 
 apply from: 'gradle/kinetic-addon-reobf-verification.gradle'
+apply from: 'gradle/kinetic-addon-architecture.gradle'
 
 dependencies {
     minecraft "net.minecraftforge:forge:${project.findProperty('minecraft_version')?.toString()}-${project.findProperty('forge_version')?.toString()}"
