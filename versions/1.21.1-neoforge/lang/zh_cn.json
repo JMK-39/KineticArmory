@@ -3,6 +3,8 @@
     "gui.kineticarmory.armorsets.tooltip.rclick":  "§e鼠标右键：切换数据组件匹配模式",
     "gui.kineticarmory.armorsets.tooltip.shift_edit_nbt":  "§dShift + 鼠标左键：编辑数据组件数据",
     "gui.kineticarmory.armorsets.nbt.none":  "忽略数据组件",
+    "gui.kineticarmory.armorsets.nbt.weak":  "部分数据组件匹配",
+    "gui.kineticarmory.armorsets.nbt.strong":  "数据组件完全一致",
     "gui.kineticarmory.armorsets.variant.nbt":  "§b数据组件",
     "gui.kineticarmory.armorsets.variant.row_sub":  "§bID：%s §e数据组件模式：%s",
     "gui.kineticarmory.armorsets.components.title":  "编辑物品数据组件",

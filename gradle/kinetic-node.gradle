@@ -280,3 +280,6 @@ if (pLoader == 'neoforge') {
         archiveFileName = 'kineticarmory-validation.jar'
     }
 }
+
+// English and Chinese must expose exactly the same authored translation keys.
+apply from: rootProject.file('gradle/kinetic-language-validation.gradle')

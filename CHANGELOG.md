@@ -1,3 +1,19 @@
+2026年10月04日 — Language key validation / 语言键一致性检查
+
+- Require identical authored English/Chinese keys and string values in source, version overrides and packaged resources; generated formatting keys are rejected during builds.
+
+- 强制检查源码、版本覆盖与最终资源的中英文完整键名一致、值为字符串；构建禁止派生格式语言键。
+
+---
+
+2026年10月04日 — 26.10.4
+
+- Completed the Chinese 1.21.1 component matching labels so both version-specific language files contain the same authored keys.
+
+- 补齐 1.21.1 中文数据组件匹配文案，确保两个版本专用语言文件的人工语言键一致。
+
+---
+
 2026年10月03日 16时42分 — 26.10.3
 
 - Added NeoForge 1.21.1 support alongside Forge 1.20.1, using Java 21 and matching KineticCore 26.10.3+.
