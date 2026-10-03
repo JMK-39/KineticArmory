@@ -26,8 +26,8 @@ KineticArmory 将已有装备组成可配置套装，让加成随穿戴件数、
 
 [GitHub project / 项目仓库](https://github.com/JMK-39/KineticArmory) · [CurseForge](https://www.curseforge.com/minecraft/mc-mods/kineticarmory)
 
-Detailed tutorials have been prepared as a local GitHub Wiki draft; the Wiki is pending publication.
+See the [English Wiki tutorial](https://github.com/JMK-39/KineticArmory/wiki/Tutorial) for detailed instructions (pages prepared locally; publication pending).
 
-详细教程已整理为本地 GitHub Wiki 草稿，Wiki 待上线。
+详细用法见[中文 Wiki 教程](https://github.com/JMK-39/KineticArmory/wiki/使用教程)（页面已在本地整理，待上线）。
 
 [Changelog / 更新日志](CHANGELOG.md)
