@@ -30,6 +30,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
+import dev.xyat.kineticarmory.armorsets.data.ArmorVersionCompat;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -308,7 +309,7 @@ public class ArmorManager {
                     handleDynamicEffectSync(entity, config, "POTION", pot.effectId, isMet, pieceCount);
                     if (isMet) {
                         MobEffect effect = pot.cachedEffect;
-                        if (effect != null) entity.addEffect(new MobEffectInstance(effect, getConfiguredPotionDurationTicks(pot), getConfiguredPotionAmplifier(config, pot, pieceCount), false, pot.showParticles));
+                        if (effect != null) entity.addEffect(new MobEffectInstance(ArmorVersionCompat.effect(effect), getConfiguredPotionDurationTicks(pot), getConfiguredPotionAmplifier(config, pot, pieceCount), false, pot.showParticles));
                     }
                 }
             }
@@ -504,7 +505,7 @@ public class ArmorManager {
                 handleDynamicEffectSync(entity, config, "POTION", pot.effectId, met, pieceCount);
                 if (met) {
                     MobEffect effect = pot.cachedEffect;
-                    if (effect != null) entity.addEffect(new MobEffectInstance(effect, pot.cachedDurationTicks, getConfiguredPotionAmplifier(config, pot, pieceCount), false, pot.showParticles));
+                    if (effect != null) entity.addEffect(new MobEffectInstance(ArmorVersionCompat.effect(effect), pot.cachedDurationTicks, getConfiguredPotionAmplifier(config, pot, pieceCount), false, pot.showParticles));
                 }
             }
         }
@@ -619,7 +620,7 @@ public class ArmorManager {
                     boolean isMet = dynamicStates.contains(config.id + "_ATTACK_" + ae.effectId);
                     if (isMet && attacker.getRandom().nextDouble() < ae.chance) {
                         MobEffect effect = ae.cachedEffect;
-                        if (effect != null) victim.addEffect(new MobEffectInstance(effect, ae.cachedDurationTicks, getConfiguredAttackEffectAmplifier(config, ae, runtime.pieceCount())));
+                        if (effect != null) victim.addEffect(new MobEffectInstance(ArmorVersionCompat.effect(effect), ae.cachedDurationTicks, getConfiguredAttackEffectAmplifier(config, ae, runtime.pieceCount())));
                     }
                 }
             }
@@ -630,7 +631,11 @@ public class ArmorManager {
         if (!ArmorConfig.enableSets) return;
         LivingEntity entity = event.entity();
         if (!isEntityAllowed(entity)) return;
+        //? if >=1.21 {
+        /*MobEffect incomingEffect = event.effectInstance().getEffect().value();
+        *///?} else {
         MobEffect incomingEffect = event.effectInstance().getEffect();
+        //?}
         for (ActiveSetRuntime runtime : getActiveRuntimeSets(entity)) {
             ArmorDataConfig config = runtime.config();
             if (config.effectImmunities == null) continue;
@@ -698,18 +703,18 @@ public class ArmorManager {
                 KineticArmory.LOGGER.warn("套装 [{}] 填写的属性 [{}] 或 UUID [{}] 无效, 无法添加!", set.id, data.attribute, data.uuid);
                 return;
             }
-            AttributeInstance inst = entity.getAttribute(attr);
+            AttributeInstance inst = entity.getAttribute(ArmorVersionCompat.attribute(attr));
             if (inst == null) return;
             double amount = getConfiguredAttributeAmount(set, data, pieceCount);
             double value = "SET".equalsIgnoreCase(data.operation) ? amount - inst.getBaseValue() : amount;
             AttributeModifier.Operation operation = "SET".equalsIgnoreCase(data.operation) ? AttributeModifier.Operation.ADDITION : data.cachedOperation;
-            AttributeModifier existing = inst.getModifier(uuid);
-            if (existing != null && (Double.compare(existing.getAmount(), value) != 0 || existing.getOperation() != operation)) {
-                inst.removeModifier(uuid);
+            AttributeModifier existing = inst.getModifier(ArmorVersionCompat.modifierId(uuid));
+            if (existing != null && (Double.compare(ArmorVersionCompat.amount(existing), value) != 0 || ArmorVersionCompat.operation(existing) != operation)) {
+                inst.removeModifier(ArmorVersionCompat.modifierId(uuid));
                 existing = null;
             }
             if (existing == null) {
-                inst.addTransientModifier(new AttributeModifier(uuid, modifierName, value, operation));
+                inst.addTransientModifier(ArmorVersionCompat.modifier(uuid, modifierName, value, operation));
             }
         } catch (Exception e) {
             KineticArmory.LOGGER.error("实体 [{}] 添加或刷新属性 [{}] 时出错!", entity.getName().getString(), data.attribute, e);
@@ -722,8 +727,8 @@ public class ArmorManager {
             Attribute attr = data.cachedAttribute;
             UUID uuid = data.cachedUuid;
             if (attr == null || uuid == null) return;
-            AttributeInstance inst = entity.getAttribute(attr);
-            if (inst != null && inst.getModifier(uuid) != null) inst.removeModifier(uuid);
+            AttributeInstance inst = entity.getAttribute(ArmorVersionCompat.attribute(attr));
+            if (inst != null && inst.getModifier(ArmorVersionCompat.modifierId(uuid)) != null) inst.removeModifier(ArmorVersionCompat.modifierId(uuid));
         } catch (Exception e) {
             KineticArmory.LOGGER.error("实体 [{}] 清除属性 [{}] 时发生了错误", entity.getName().getString(), data.attribute, e);
         }
@@ -852,7 +857,7 @@ public class ArmorManager {
         if (stack == null || stack.isEmpty()) return mixHash(hash, 0);
         hash = mixHash(hash, System.identityHashCode(stack.getItem()));
         hash = mixHash(hash, stack.getCount());
-        hash = mixHash(hash, stack.hasTag() && stack.getTag() != null ? stack.getTag().hashCode() : 0);
+        hash = mixHash(hash, ArmorVersionCompat.dataHash(stack));
         return hash;
     }
 

@@ -180,7 +180,7 @@ public class ArmorEditPage extends KineticPage {
 
     private ArmorDataConfig.ItemReq createReq(ItemStack stack) {
         ArmorDataConfig.ItemReq req = ArmorDataConfig.ItemReq.create(getId(stack));
-        if (!stack.isEmpty() && stack.hasTag() && stack.getTag() != null) req.nbtTag = stack.getTag().toString();
+        req.setItemData(dev.xyat.kineticarmory.armorsets.data.ArmorItemData.format(stack));
         return req;
     }
 
@@ -346,7 +346,7 @@ public class ArmorEditPage extends KineticPage {
             ItemStack stack = req.createDisplayStack();
             if (!stack.isEmpty()) {
                 g.item(stack, x + 1, y + 1);
-                String nbtStr = "WEAK".equals(req.nbtMode) ? "W" : ("STRONG".equals(req.nbtMode) ? "S" : "");
+                String nbtStr = "WEAK".equals(req.getDataMode()) ? "W" : ("STRONG".equals(req.getDataMode()) ? "S" : "");
                 if (!nbtStr.isEmpty()) g.itemDecorations(stack, x + 1, y + 1, nbtStr);
                 if (variantCount > 1) {
                     KineticTheme.indicatorFill(g, x + 10, y + 10, 8, 8, KineticTheme.Indicator.SUCCESS, 0.80F);
@@ -355,7 +355,7 @@ public class ArmorEditPage extends KineticPage {
                 if (hover) {
                     List<Component> t = new ArrayList<>();
                     t.add(stack.getHoverName());
-                    t.add(KineticI18n.translatable("gui.kineticarmory.armorsets.nbt_prefix", KineticI18n.translatable("gui.kineticarmory.armorsets.nbt." + (req.nbtMode == null ? "none" : req.nbtMode.toLowerCase()))));
+                    t.add(KineticI18n.translatable("gui.kineticarmory.armorsets.nbt_prefix", KineticI18n.translatable("gui.kineticarmory.armorsets.nbt." + (req.getDataMode() == null ? "none" : req.getDataMode().toLowerCase()))));
                     if (type == 0) {
                         t.add(KineticI18n.translatable("gui.kineticarmory.armorsets.variant.tooltip.open_list", variantCount));
                     } else {
@@ -410,10 +410,10 @@ public class ArmorEditPage extends KineticPage {
 
                 if (KineticClientRuntime.shiftModifierDown()) {
                     if (!req.id.equals("minecraft:air")) {
-                        String initNbt = (req.nbtTag != null && !req.nbtTag.trim().isEmpty()) ? req.nbtTag : "";
-                        KineticSelectors.openNbtEditor(initNbt, savedNbt -> {
-                            req.nbtTag = savedNbt;
-                            if (req.nbtMode == null || req.nbtMode.equals("NONE")) req.nbtMode = "WEAK";
+                        String initNbt = (req.getItemData() != null && !req.getItemData().trim().isEmpty()) ? req.getItemData() : "";
+                        ArmorItemDataEditor.open(ArmorEditPage.this, req.id, initNbt, savedNbt -> {
+                            req.setItemData(savedNbt);
+                            if (req.getDataMode() == null || req.getDataMode().equals("NONE")) req.setDataMode("WEAK");
                             KineticOverlays.toast(KineticI18n.translatable("msg.kineticarmory.common.saved"));
                         });
                     }
@@ -422,8 +422,8 @@ public class ArmorEditPage extends KineticPage {
                         if (!selection.isItem()) return;
                         ItemStack stack = selection.stack();
                         req.id = getId(stack);
-                        req.nbtTag = stack.hasTag() && stack.getTag() != null ? stack.getTag().toString() : "{}";
-                        if (req.nbtMode == null) req.nbtMode = "NONE";
+                        req.setItemData(dev.xyat.kineticarmory.armorsets.data.ArmorItemData.format(stack));
+                        if (req.getDataMode() == null) req.setDataMode("NONE");
                         cleanCurios();
                         cleanRejectedCurios();
                         rebuild();
@@ -431,10 +431,10 @@ public class ArmorEditPage extends KineticPage {
                 }
                 return true;
             } else if (KineticMouseButtons.isSecondary(btn) && !req.id.equals("minecraft:air")) {
-                req.nbtMode = ("NONE".equals(req.nbtMode) || req.nbtMode == null) ? "WEAK" : ("WEAK".equals(req.nbtMode) ? "STRONG" : "NONE");
+                req.setDataMode(("NONE".equals(req.getDataMode()) || req.getDataMode() == null) ? "WEAK" : ("WEAK".equals(req.getDataMode()) ? "STRONG" : "NONE"));
                 return true;
             } else if (KineticMouseButtons.isMiddle(btn)) {
-                req.id = "minecraft:air"; req.nbtMode = "NONE"; req.nbtTag="{}";
+                req.id = "minecraft:air"; req.setDataMode("NONE"); req.setItemData(dev.xyat.kineticarmory.armorsets.data.ArmorItemData.emptyData());
                 cleanCurios(); cleanRejectedCurios(); return true;
             }
         }

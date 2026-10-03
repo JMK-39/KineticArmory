@@ -70,8 +70,8 @@ public class ArmorLoader {
 
     private static void cleanItemReq(ArmorDataConfig.ItemReq req) {
         if (req != null) {
-            if ("NONE".equals(req.nbtMode)) req.nbtMode = null;
-            if ("{}".equals(req.nbtTag) || "".equals(req.nbtTag)) req.nbtTag = null;
+            if ("NONE".equals(req.getDataMode())) req.setDataMode(null);
+            if (dev.xyat.kineticarmory.armorsets.data.ArmorItemData.emptyData().equals(req.getItemData()) || "".equals(req.getItemData())) req.setItemData(null);
         }
     }
 

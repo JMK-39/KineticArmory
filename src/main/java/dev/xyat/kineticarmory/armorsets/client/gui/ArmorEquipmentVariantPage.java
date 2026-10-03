@@ -200,14 +200,14 @@ KineticButton delete = ui().button(deleteX, buttonY, ROW_BUTTON_W).text(KineticI
     private void setSlotRequirementMode(SlotRequirementMode mode) {
         if (mode == SlotRequirementMode.EMPTY) {
             ArmorDataConfig.ItemReq req = ArmorDataConfig.ItemReq.create("EMPTY");
-            req.nbtMode = "NONE";
-            req.nbtTag = "{}";
+            req.setDataMode("NONE");
+            req.setItemData(dev.xyat.kineticarmory.armorsets.data.ArmorItemData.emptyData());
             config.setSingleEquipmentVariant(slotKey, req);
             selectedIndex = 0;
         } else if (mode == SlotRequirementMode.ANY) {
             ArmorDataConfig.ItemReq req = ArmorDataConfig.ItemReq.create("ANY");
-            req.nbtMode = "NONE";
-            req.nbtTag = "{}";
+            req.setDataMode("NONE");
+            req.setItemData(dev.xyat.kineticarmory.armorsets.data.ArmorItemData.emptyData());
             config.setSingleEquipmentVariant(slotKey, req);
             selectedIndex = 0;
         } else {
@@ -239,7 +239,7 @@ KineticButton delete = ui().button(deleteX, buttonY, ROW_BUTTON_W).text(KineticI
 
     private ArmorDataConfig.ItemReq createReq(ItemStack stack) {
         ArmorDataConfig.ItemReq req = ArmorDataConfig.ItemReq.create(getId(stack));
-        if (!stack.isEmpty() && stack.hasTag() && stack.getTag() != null) req.nbtTag = stack.getTag().toString();
+        req.setItemData(dev.xyat.kineticarmory.armorsets.data.ArmorItemData.format(stack));
         return req;
     }
 
@@ -309,8 +309,8 @@ KineticButton delete = ui().button(deleteX, buttonY, ROW_BUTTON_W).text(KineticI
             if (stack.isEmpty()) return;
             ArmorDataConfig.ItemReq newReq = createReq(stack);
             req.id = newReq.id;
-            req.nbtTag = newReq.nbtTag;
-            if (req.nbtMode == null) req.nbtMode = "NONE";
+            req.setItemData(newReq.getItemData());
+            if (req.getDataMode() == null) req.setDataMode("NONE");
             config.normalizeEquipmentVariants();
             KineticOverlays.toast(KineticI18n.translatable("msg.kineticarmory.common.saved"));
             clampSelectionAndScroll();
@@ -325,10 +325,10 @@ KineticButton delete = ui().button(deleteX, buttonY, ROW_BUTTON_W).text(KineticI
 
     private void editNbt(ArmorDataConfig.ItemReq req) {
         if (!canEditNbt(req)) return;
-        String initNbt = (req.nbtTag != null && !req.nbtTag.trim().isEmpty()) ? req.nbtTag : "";
-        KineticSelectors.openNbtEditor(initNbt, savedNbt -> {
-            req.nbtTag = savedNbt;
-            if (req.nbtMode == null || req.nbtMode.equals("NONE")) req.nbtMode = "WEAK";
+        String initNbt = (req.getItemData() != null && !req.getItemData().trim().isEmpty()) ? req.getItemData() : "";
+        ArmorItemDataEditor.open(ArmorEquipmentVariantPage.this, req.id, initNbt, savedNbt -> {
+            req.setItemData(savedNbt);
+            if (req.getDataMode() == null || req.getDataMode().equals("NONE")) req.setDataMode("WEAK");
             config.normalizeEquipmentVariants();
             KineticOverlays.toast(KineticI18n.translatable("msg.kineticarmory.common.saved"));
         });
@@ -342,7 +342,7 @@ KineticButton delete = ui().button(deleteX, buttonY, ROW_BUTTON_W).text(KineticI
 
     private void toggleNbtMode(ArmorDataConfig.ItemReq req) {
         if (!canEditNbt(req)) return;
-        req.nbtMode = ("NONE".equals(req.nbtMode) || req.nbtMode == null) ? "WEAK" : ("WEAK".equals(req.nbtMode) ? "STRONG" : "NONE");
+        req.setDataMode(("NONE".equals(req.getDataMode()) || req.getDataMode() == null) ? "WEAK" : ("WEAK".equals(req.getDataMode()) ? "STRONG" : "NONE"));
         KineticOverlays.toast(KineticI18n.translatable("msg.kineticarmory.common.saved"));
     }
 
@@ -559,7 +559,7 @@ for (int index = start; index < end; index++) {
         Component line = KineticI18n.translatable(
                 "gui.kineticarmory.armorsets.variant.row_sub",
                 id,
-                getNbtModeName(req == null ? "NONE" : req.nbtMode)
+                getNbtModeName(req == null ? "NONE" : req.getDataMode())
         );
         g.scrollingText(line, x, y, maxWidth, 0xFFFFFFFF, false);
     }
@@ -590,7 +590,7 @@ for (int index = start; index < end; index++) {
         ItemStack stack = req.createDisplayStack();
         if (!stack.isEmpty()) {
             g.item(stack, x, y);
-            String nbtStr = "WEAK".equals(req.nbtMode) ? "W" : ("STRONG".equals(req.nbtMode) ? "S" : "");
+            String nbtStr = "WEAK".equals(req.getDataMode()) ? "W" : ("STRONG".equals(req.getDataMode()) ? "S" : "");
             if (!nbtStr.isEmpty()) g.itemDecorations(stack, x, y, nbtStr);
         }
     }
@@ -621,7 +621,7 @@ for (int index = start; index < end; index++) {
         if (isButtonHovered(backButton, mx, my)) return List.of(KineticI18n.translatable("gui.kineticarmory.armorsets.back"));
         for (int i = 0; i <= visibleRows; i++) {
             ArmorDataConfig.ItemReq req = reqOfVisibleRow(i);
-            if (isButtonHovered(modeButtons, i, mx, my)) return getNbtModeHelp(req == null ? "NONE" : req.nbtMode);
+            if (isButtonHovered(modeButtons, i, mx, my)) return getNbtModeHelp(req == null ? "NONE" : req.getDataMode());
             if (isButtonHovered(nbtButtons, i, mx, my)) return List.of(KineticI18n.translatable("gui.kineticarmory.armorsets.tooltip.shift_edit_nbt"));
             if (isButtonHovered(replaceButtons, i, mx, my)) return List.of(KineticI18n.translatable("gui.kineticarmory.armorsets.tooltip.lclick"));
             if (isButtonHovered(deleteButtons, i, mx, my)) return List.of(KineticI18n.translatable("gui.kineticarmory.armorsets.delete"));
@@ -644,7 +644,7 @@ for (int index = start; index < end; index++) {
         ArmorDataConfig.ItemReq req = list.get(index);
         List<Component> tooltip = new ArrayList<>();
         tooltip.add(getReqName(req));
-        tooltip.add(KineticI18n.translatable("gui.kineticarmory.armorsets.variant.row_sub", req.id, getNbtModeName(req.nbtMode)));
+        tooltip.add(KineticI18n.translatable("gui.kineticarmory.armorsets.variant.row_sub", req.id, getNbtModeName(req.getDataMode())));
         tooltip.add(KineticI18n.translatable("gui.kineticarmory.armorsets.tooltip.lclick"));
         tooltip.add(KineticI18n.translatable("gui.kineticarmory.armorsets.tooltip.rclick"));
         if (canEditNbt(req)) tooltip.add(KineticI18n.translatable("gui.kineticarmory.armorsets.tooltip.shift_edit_nbt"));

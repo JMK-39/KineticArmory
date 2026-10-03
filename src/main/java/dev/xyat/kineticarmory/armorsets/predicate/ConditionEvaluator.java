@@ -1,6 +1,7 @@
 package dev.xyat.kineticarmory.armorsets.predicate;
 
 import dev.xyat.kineticarmory.KineticArmory;
+import dev.xyat.kineticarmory.armorsets.data.ArmorVersionCompat;
 import dev.xyat.kineticcore.api.registry.KineticRegistries;
 import dev.xyat.kineticcore.api.resource.KineticResourceIds;
 import net.minecraft.core.BlockPos;
@@ -94,8 +95,8 @@ public final class ConditionEvaluator {
                 case "POTION_RANGE" -> {
                     ResourceLocation effectId = KineticResourceIds.tryParse(id);
                     MobEffect effect = effectId == null ? null : KineticRegistries.mobEffects().get(effectId);
-                    if (effect != null && entity.hasEffect(effect)) {
-                        MobEffectInstance instance = entity.getEffect(effect);
+                    if (effect != null && entity.hasEffect(ArmorVersionCompat.effect(effect))) {
+                        MobEffectInstance instance = entity.getEffect(ArmorVersionCompat.effect(effect));
                         int levelValue = instance == null ? 0 : instance.getAmplifier();
                         int minLevel = (int) parseDouble(condition.params.get("min_lvl"), 0);
                         int maxLevel = (int) parseDouble(condition.params.get("max_lvl"), 255);
@@ -105,8 +106,8 @@ public final class ConditionEvaluator {
                 case "ATTR_RANGE" -> {
                     ResourceLocation attributeId = KineticResourceIds.tryParse(id);
                     Attribute attribute = attributeId == null ? null : KineticRegistries.attributes().get(attributeId);
-                    if (attribute != null && entity.getAttributes().hasAttribute(attribute)) {
-                        double value = entity.getAttributeValue(attribute);
+                    if (attribute != null && entity.getAttributes().hasAttribute(ArmorVersionCompat.attribute(attribute))) {
+                        double value = entity.getAttributeValue(ArmorVersionCompat.attribute(attribute));
                         result = value >= min && value <= max;
                     }
                 }

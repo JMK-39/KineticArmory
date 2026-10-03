@@ -10,9 +10,9 @@ KineticArmory turns existing equipment into configurable sets with bonuses that 
 
 ### Requirements
 
-- Minecraft **1.20.1**, Forge **47.4.2+**, Java **17**.
-- Required: **26.9.28+**, **Curios 5.10.0+**.
-- Optional: **KubeJS 2001.6.5+** for set activation/deactivation scripts.
+- Java **21**; Minecraft **1.20.1 / Forge 47.4.2+** or **1.21.1 / NeoForge 21.1+**.
+- Required: matching **KineticCore 26.10.3+**, **Curios 5.10+** on Forge or **9.x** on NeoForge.
+- Optional: **KubeJS 2001.6.5+** on Forge or **2101.x** on NeoForge for set activation/deactivation scripts.
 - Install the mod and required dependencies on the server and connecting clients.
 
 Pack authors define which existing items form a set and what that set does. Installation alone does not give every armor combination predefined bonuses.
@@ -119,9 +119,9 @@ KineticArmory 将已有装备组织成可配置套装，让加成随穿戴件数
 
 ### 环境要求
 
-- Minecraft **1.20.1**、Forge **47.4.2+**、Java **17**。
-- 必需：**26.9.28+**、**Curios 5.10.0+**。
-- 可选：**KubeJS 2001.6.5+**，用于套装激活与失效脚本。
+- Java **21**；Minecraft **1.20.1 / Forge 47.4.2+** 或 **1.21.1 / NeoForge 21.1+**。
+- 必需：对应版本的 **KineticCore 26.10.3+**；Forge 使用 **Curios 5.10+**，NeoForge 使用 **Curios 9.x**。
+- 可选：Forge 使用 **KubeJS 2001.6.5+**，NeoForge 使用 **2101.x**，用于套装激活与失效脚本。
 - 服务端和连接的客户端均安装本模组及必需依赖。
 
 由整合包作者指定哪些已有物品组成套装、具有什么效果。安装后并不会自动为所有护甲组合添加预设加成。
@@ -219,3 +219,11 @@ kineticarmoryEvents.armorSetChange(event => {
 - **部分加成不生效：** 检查各效果自己的条件与件数组。
 - **提示不一致：** 检查重载同步和本地提示修饰键。
 - **命令动作：** 以 2 级权限服务器命令源执行，文本中的 `@p` 替换为穿戴者的计分板名称；应由管理员编写配置。
+
+## Multi-version build / 多版本构建
+
+Use Java 21 and `gradlew buildAll` (Gradle 9.8.0, Stonecutter 0.9.8, ModDevGradle 2.0.148). Enabled nodes: `1.20.1-forge`, `1.21.1-neoforge`. Release names are `kineticarmory-<loader>-<minecraft>-<version>.jar`; `output_mods_dir` is relative to the repository root when not absolute. Fixed mod dependencies prefer the `libs` directory beside Gradle's user home. Core dependencies must match the node's loader and Minecraft version. `-Pkineticcore_version=<version>` pins the core version.
+
+使用 Java 21 执行 `gradlew buildAll` 可同时构建两个已启用节点，产物默认输出到 `D:/NEWMODS`。1.20.1 使用 `nbtMode` 和 `nbtTag`（例如 `{Damage:5}`）；1.21.1 使用 `componentMode` 和 `components`（例如 `[damage=5]`，空值 `[]`），不接受或转换旧物品 NBT 写法。NONE 忽略数据，WEAK 匹配指定组件（其中 `custom_data` 按字段子集匹配），STRONG 匹配完整物品组件。配置 UUID 保持不变，在新游戏中映射为稳定属性修饰符 ID。26.1.2 节点仅预留，缺少对应 KineticCore 产物，尚不代表支持。
+
+验收结果见 [迁移报告](docs/multiversion-migration-report.md)。

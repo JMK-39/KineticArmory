@@ -372,8 +372,45 @@ public class ArmorDataConfig {
 
     public static class ItemReq {
         public String id;
+        //? if >=1.21 {
+        /*public String componentMode = "NONE";
+        public String components = ArmorItemData.emptyData();
+        *///?} else {
         public String nbtMode = "NONE";
-        public String nbtTag = "{}";
+        public String nbtTag = ArmorItemData.emptyData();
+        //?}
+
+        public String getDataMode() {
+            //? if >=1.21 {
+            /*return componentMode;
+            *///?} else {
+            return nbtMode;
+            //?}
+        }
+
+        public void setDataMode(String mode) {
+            //? if >=1.21 {
+            /*componentMode = mode;
+            *///?} else {
+            nbtMode = mode;
+            //?}
+        }
+
+        public String getItemData() {
+            //? if >=1.21 {
+            /*return components;
+            *///?} else {
+            return nbtTag;
+            //?}
+        }
+
+        public void setItemData(String data) {
+            //? if >=1.21 {
+            /*components = data;
+            *///?} else {
+            nbtTag = data;
+            //?}
+        }
 
         // 运行时缓存：不会写入 JSON，只用于性能优化
         private transient boolean cacheReady = false;
@@ -382,6 +419,10 @@ public class ArmorDataConfig {
         private transient String cachedNbtTag;
         private transient Item cachedItem;
         private transient CompoundTag cachedReqTag;
+        //? if >=1.21 {
+        /*private transient ArmorItemData.Rule cachedRule;
+        private transient Object cachedRegistryContext;
+        *///?}
         private transient ItemStack cachedDisplayStack = ItemStack.EMPTY;
         private transient boolean invalidNbt = false;
 
@@ -395,9 +436,15 @@ public class ArmorDataConfig {
 
         private void prepareCache() {
             String currentId = (id == null || id.isBlank()) ? "minecraft:air" : id;
-            String currentMode = (nbtMode == null || nbtMode.isBlank()) ? "NONE" : nbtMode.toUpperCase();
-            String currentTag = (nbtTag == null || nbtTag.isBlank()) ? "{}" : nbtTag;
+            String currentMode = (getDataMode() == null || getDataMode().isBlank()) ? "NONE" : getDataMode().toUpperCase();
+            String currentTag = (getItemData() == null || getItemData().isBlank()) ? ArmorItemData.emptyData() : getItemData();
             boolean needsItemLookup = !currentId.equalsIgnoreCase("EMPTY") && !currentId.equalsIgnoreCase("ANY") && !currentId.equals("minecraft:air");
+
+            //? if >=1.21 {
+            /*Object registryContext = ArmorItemData.registryContext();
+            if (cachedRegistryContext != registryContext) cacheReady = false;
+            cachedRegistryContext = registryContext;
+            *///?}
 
             if (cacheReady && currentId.equals(cachedId) && currentMode.equals(cachedNbtMode) && currentTag.equals(cachedNbtTag) && (!needsItemLookup || cachedItem != null)) {
                 return;
@@ -417,6 +464,18 @@ public class ArmorDataConfig {
                 cachedItem = rl == null ? null : KineticRegistries.items().get(rl);
             }
 
+            //? if >=1.21 {
+            /*cachedRule = null;
+            if (cachedItem != null) {
+                try {
+                    cachedRule = ArmorItemData.compile(cachedId, currentTag);
+                    cachedDisplayStack = cachedRule.display();
+                } catch (RuntimeException invalid) {
+                    invalidNbt = !"NONE".equals(cachedNbtMode);
+                    cachedDisplayStack = new ItemStack(cachedItem);
+                }
+            }
+            *///?} else {
             CompoundTag parsedTag = null;
             try {
                 if (!currentTag.trim().isEmpty() && !currentTag.equals("{}")) {
@@ -438,6 +497,7 @@ public class ArmorDataConfig {
                     cachedDisplayStack.setTag(parsedTag.copy());
                 }
             }
+            //?}
         }
 
         public ItemStack createDisplayStack() {
@@ -768,7 +828,7 @@ public class ArmorDataConfig {
 
     private static String itemReqKey(ItemReq req) {
         if (req == null) return "";
-        return (req.id == null ? "" : req.id) + "|" + (req.nbtMode == null ? "NONE" : req.nbtMode) + "|" + (req.nbtTag == null ? "{}" : req.nbtTag);
+        return (req.id == null ? "" : req.id) + "|" + (req.getDataMode() == null ? "NONE" : req.getDataMode()) + "|" + (req.getItemData() == null ? ArmorItemData.emptyData() : req.getItemData());
     }
 
     public List<ItemReq> getEquipmentVariants(String slot) {
@@ -1155,6 +1215,11 @@ public class ArmorDataConfig {
         if (mode == null || mode.equals("NONE")) return true;
         if (req.invalidNbt) return false;
 
+        //? if >=1.21 {
+        /*if (mode.equals("WEAK") || mode.equals("STRONG")) {
+            return req.cachedRule != null && req.cachedRule.matches(stack, mode.equals("STRONG"));
+        }
+        *///?} else {
         CompoundTag stackTag = stack.getTag();
         CompoundTag reqTag = req.cachedReqTag;
 
@@ -1167,6 +1232,7 @@ public class ArmorDataConfig {
             CompoundTag effectiveReqTag = (reqTag == null) ? new CompoundTag() : reqTag;
             return effectiveReqTag.equals(effectiveStackTag);
         }
+        //?}
         return true;
     }
 }

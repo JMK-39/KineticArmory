@@ -1,0 +1,13 @@
+{
+    "gui.kineticarmory.armorsets.nbt_prefix":  "§bComponents: §6%s",
+    "gui.kineticarmory.armorsets.tooltip.rclick":  "§eRight-click: switch Components matching mode",
+    "gui.kineticarmory.armorsets.tooltip.shift_edit_nbt":  "§dShift + Left-click: edit Components data",
+    "gui.kineticarmory.armorsets.nbt.none":  "Ignore Components",
+    "gui.kineticarmory.armorsets.nbt.weak":  "Weak Components",
+    "gui.kineticarmory.armorsets.nbt.strong":  "Exact Components",
+    "gui.kineticarmory.armorsets.variant.nbt":  "§bComponents",
+    "gui.kineticarmory.armorsets.variant.row_sub":  "§bID: %s §eComponents Mode: %s",
+    "gui.kineticarmory.armorsets.components.title":  "Edit item components",
+    "gui.kineticarmory.armorsets.components.hint":  "Example: [damage=5]; use [] for no components",
+    "gui.kineticarmory.armorsets.components.invalid":  "Invalid component syntax or value"
+}
