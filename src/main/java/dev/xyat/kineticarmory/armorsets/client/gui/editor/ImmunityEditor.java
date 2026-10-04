@@ -17,6 +17,8 @@ import dev.xyat.kineticcore.api.text.KineticI18n;
 import java.util.ArrayList;
 
 public class ImmunityEditor extends KineticPage {
+    // The panel width bounds the centered title with 4 px padding on either side.
+    private static final int PANEL_WIDTH = 240;
     private final ArmorDataConfig config;
     private final ArmorDataConfig.DamageImmunityData data; private boolean isNew;
     private KineticAutoCompleteField idInput;
@@ -86,8 +88,8 @@ public class ImmunityEditor extends KineticPage {
     }
 
     @Override protected void renderBackground(KineticGraphics g, int mx, int my, float pt) {
-        int cx = width() / 2; int cy = height() / 2 - 50; KineticTheme.panel(g, cx - 120, cy - 70, 240, 150);
-        g.centeredText(title(), cx, cy - 60, 0xFFFFFF, true);
+        int cx = width() / 2; int cy = height() / 2 - 50; KineticTheme.panel(g, cx - PANEL_WIDTH / 2, cy - 70, PANEL_WIDTH, 150);
+        g.scrollingTextCentered(title(), cx, cy - 60, PANEL_WIDTH - 8, 0xFFFFFF, true);
     }
 
 }

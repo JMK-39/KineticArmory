@@ -5,7 +5,6 @@ import dev.xyat.kineticcore.api.client.gui.input.MouseDragInput;
 import dev.xyat.kineticcore.api.client.gui.input.MouseButton;
 import dev.xyat.kineticcore.api.client.gui.input.MouseInput;
 import dev.xyat.kineticcore.api.client.gui.scroll.KineticScrollController;
-import dev.xyat.kineticcore.api.client.gui.text.KineticText;
 import dev.xyat.kineticcore.api.client.gui.overlay.KineticOverlays;
 import dev.xyat.kineticcore.api.client.gui.page.KineticPage;
 import dev.xyat.kineticcore.api.client.gui.render.KineticGraphics;
@@ -53,6 +52,9 @@ public class ArmorEntityFilterPage extends KineticPage {
     private static final int VISIBLE_ROWS = 3;
     private static final int GRID_W = COLS * CELL_SIZE;
     private static final int GRID_H = VISIBLE_ROWS * CELL_SIZE;
+    // Panel headings end before the same-row filtered-action button.
+    private static final int FILTER_ACTION_RIGHT_OFFSET = 80;
+    private static final int TEXT_GAP = 4;
     private static int rotationSpeedPercent = 100;
     private static boolean clockwiseRotation = true;
 
@@ -294,13 +296,13 @@ ui().button(356, topY, speedButtonW).text(getRotationDirectionText()).tooltip(Ki
                                 "gui.kineticarmory.armorsets.entity_filter.back.tooltip"
                         )).onClick(b -> backWithoutSave()).build();
 
-        ui().button(LEFT_X + PANEL_W - 80, PANEL_Y + 4, 72).text(KineticI18n.translatable(
+        ui().button(LEFT_X + PANEL_W - FILTER_ACTION_RIGHT_OFFSET, PANEL_Y + 4, 72).text(KineticI18n.translatable(
                                         "gui.kineticarmory.armorsets.entity_filter.remove_filtered"
                                 )).tooltip(KineticI18n.translatable(
                                 "gui.kineticarmory.armorsets.entity_filter.remove_filtered.tooltip"
                         )).onClick(b -> removeFiltered()).build();
 
-        ui().button(RIGHT_X + PANEL_W - 80, PANEL_Y + 4, 72).text(KineticI18n.translatable(
+        ui().button(RIGHT_X + PANEL_W - FILTER_ACTION_RIGHT_OFFSET, PANEL_Y + 4, 72).text(KineticI18n.translatable(
                                         "gui.kineticarmory.armorsets.entity_filter.add_filtered"
                                 )).tooltip(KineticI18n.translatable(
                                 "gui.kineticarmory.armorsets.entity_filter.add_filtered.tooltip"
@@ -558,6 +560,7 @@ refreshLists();
                 title(),
                 V_WIDTH / 2,
                 6,
+                V_WIDTH - LEFT_X * 2,
                 0xFFFFFFFF
         );
 
@@ -580,7 +583,7 @@ refreshLists();
     ) {
         KineticTheme.panelAlt(g, x, PANEL_Y, PANEL_W, PANEL_H);
 
-        g.text(title, x + 8, PANEL_Y + 9, 0xFFFFFFFF, false);
+        g.scrollingText(title, x + 8, PANEL_Y + 9, PANEL_W - FILTER_ACTION_RIGHT_OFFSET - 8 - TEXT_GAP, 0xFFFFFFFF, false);
 
         KineticTheme.panel(g, x + 8, GRID_Y - 2, GRID_W, GRID_H + 4);
     }
@@ -630,6 +633,7 @@ refreshLists();
                 status,
                 V_WIDTH / 2,
                 344,
+                V_WIDTH - LEFT_X * 2,
                 0xFFFFFFFF
         );
 
@@ -792,6 +796,7 @@ refreshLists();
                     ),
                     boxX + boxW / 2,
                     boxY + boxH / 2 - 4,
+                    boxW - TEXT_GAP * 2,
                     0xFFFF7777
             );
         }
@@ -835,11 +840,10 @@ refreshLists();
             Component text,
             int centerX,
             int y,
+            int maxWidth,
             int color
     ) {
-        String value = text.getString();
-
-        g.text(value, centerX - KineticText.width(value) / 2, y, color, false);
+        g.scrollingTextCentered(text, centerX, y, maxWidth, color, false);
     }
 
     @Override

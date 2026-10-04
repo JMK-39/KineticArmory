@@ -22,6 +22,7 @@ import java.util.*;
 public final class RuntimeValidation {
     private final ArmorDataConfig.ItemReq preheated = rule("minecraft:diamond_sword", "WEAK", "[enchantments={levels:{\"minecraft:sharpness\":2}}]");
     public RuntimeValidation() {
+        if (Boolean.getBoolean("kineticarmory.guiValidation")) {MinecraftForge.EVENT_BUS.addListener(this::validate);return;}
         preheated.createDisplayStack();
         MinecraftForge.EVENT_BUS.addListener(this::validate);
     }
@@ -39,6 +40,7 @@ public final class RuntimeValidation {
         require(ArmorDataConfig.isItemMatching(stack, rule("minecraft:diamond_sword", mode, data)) == expected, name);
     }
     private void validate(ServerStartedEvent event) {
+        if (Boolean.getBoolean("kineticarmory.guiValidation")) {dev.xyat.kineticcore.api.runtime.KineticClientRuntime.execute(GuiLongTextValidation::install);return;}
         try {
             var gson = new com.google.gson.Gson();
             var json = gson.toJson(rule("minecraft:diamond_sword", "WEAK", "[damage=5]"));

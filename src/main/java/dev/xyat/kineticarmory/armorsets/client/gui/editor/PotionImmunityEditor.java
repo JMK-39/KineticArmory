@@ -15,6 +15,8 @@ import dev.xyat.kineticcore.api.client.search.KineticSearch;
 import dev.xyat.kineticcore.api.text.KineticI18n;
 
 public class PotionImmunityEditor extends KineticPage {
+    // The panel width bounds the centered title with 4 px padding on either side.
+    private static final int PANEL_WIDTH = 240;
     private final ArmorDataConfig config;
     private final ArmorDataConfig.EffectImmunityData data; private boolean isNew;
     private KineticAutoCompleteField idInput; private String oldTip = null;
@@ -66,8 +68,8 @@ public class PotionImmunityEditor extends KineticPage {
     }
 
     @Override protected void renderBackground(KineticGraphics g, int mx, int my, float pt) {
-        int cx = width() / 2; int cy = height() / 2 - 50; KineticTheme.panel(g, cx - 120, cy - 60, 240, 115);
-        g.centeredText(title(), cx, cy - 50, 0xFFFFFF, true);
+        int cx = width() / 2; int cy = height() / 2 - 50; KineticTheme.panel(g, cx - PANEL_WIDTH / 2, cy - 60, PANEL_WIDTH, 115);
+        g.scrollingTextCentered(title(), cx, cy - 50, PANEL_WIDTH - 8, 0xFFFFFF, true);
     }
 
 }

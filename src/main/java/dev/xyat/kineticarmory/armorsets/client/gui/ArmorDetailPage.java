@@ -24,6 +24,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ArmorDetailPage extends KineticPage {
+    // Keep self-drawn text clear of panel edges and the row's delete button.
+    private static final int TEXT_GAP = 4;
     
     private final ArmorDataConfig config;
     private DetailListWidget listWidget;
@@ -199,7 +201,7 @@ public class ArmorDetailPage extends KineticPage {
         int panelHeight = height() - padding * 2;
 
         KineticTheme.panel(g, cx - panelWidth / 2, padding, panelWidth, panelHeight);
-        g.centeredText(title(), cx, padding + 10, 0xFFFFFF, true);
+        g.scrollingTextCentered(title(), cx, padding + 10, panelWidth - TEXT_GAP * 2, 0xFFFFFF, true);
 
     }
 
@@ -210,6 +212,7 @@ public class ArmorDetailPage extends KineticPage {
     class DetailListWidget extends KineticRowList<DetailEntry> {
         private static final int DELETE_BUTTON_W = 44;
         private static final int DELETE_BUTTON_H = 18;
+        private static final int ROW_TEXT_INSET = 5;
 
         DetailListWidget(int x, int y, int width, int height) {
             super(x, y, width, height, 22);
@@ -229,7 +232,8 @@ public class ArmorDetailPage extends KineticPage {
         protected void renderRow(KineticGraphics g, DetailEntry entry, int index, int l, int t, int w, int h,
                                  boolean hv, boolean selected) {
             int deleteX = deleteX(l, w);
-            renderTextWithIcons(g, entry.text(), l + 5, t + 6, deleteX - l - 10);
+            renderTextWithIcons(g, entry.text(), l + ROW_TEXT_INSET, t + 6,
+                    Math.max(0, deleteX - l - ROW_TEXT_INSET - TEXT_GAP));
             boolean delHovered = mouseX() >= deleteX && mouseX() < deleteX + DELETE_BUTTON_W
                     && mouseY() >= t + 1 && mouseY() < t + 1 + DELETE_BUTTON_H;
             KineticTheme.button(g, deleteX, t + 1, DELETE_BUTTON_W, DELETE_BUTTON_H,

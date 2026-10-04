@@ -50,6 +50,8 @@ public class ArmorTipEditorPage extends KineticPage {
     private static final int EDIT_BUTTON_WIDTH = 55;
     private static final int CANCEL_BUTTON_WIDTH = 55;
     private static final int ACTION_BUTTON_GAP = 4;
+    // Keep header text clear of the action buttons and panel edges.
+    private static final int TEXT_GAP = 4;
     private static final int[] COLORS = { 0x000000, 0x0000AA, 0x00AA00, 0x00AAAA, 0xAA0000, 0xAA00AA, 0xFFAA00, 0x5555FF, 0x55FF55, 0x55FFFF, 0xFF5555, 0xFF55FF, 0xFFFF55, 0xFFFFFF };
     private static final String[] CODES = {"0", "1", "2", "3", "4", "5", "6", "9", "a", "b", "c", "d", "e", "f"};
 
@@ -356,10 +358,12 @@ public class ArmorTipEditorPage extends KineticPage {
         int x0 = cx - guiW / 2;
 
         KineticTheme.panel(g, x0 - 5, 5, guiW + 10, this.height() - 10);
-        g.centeredText(title(), cx, 8, 0xFFFFFF, true);
+        int textRight = btnAdd.controlX() - TEXT_GAP;
+        int titleWidth = Math.max(0, Math.min(cx - x0, textRight - cx) * 2);
+        g.scrollingTextCentered(title(), cx, 8, titleWidth, 0xFFFFFF, true);
 
-        String dragHint = KineticI18n.translatable("gui.kineticarmory.armorsets.tips.drag_hint").getString();
-        g.text(dragHint, x0 + 5, 20, 0xFFFFFF, true);
+        g.scrollingText(KineticI18n.translatable("gui.kineticarmory.armorsets.tips.drag_hint"),
+                x0 + 5, 20, Math.max(0, textRight - x0 - 5), 0xFFFFFF, true);
 
     }
 
@@ -398,9 +402,9 @@ public class ArmorTipEditorPage extends KineticPage {
                 KineticTheme.separator(g, listWidget.controlX(), lineY, listWidget.rowWidth());
             }
 
-            int floatX = mx - 50;
-            int floatY = my - 10;
-            int w = listWidget.rowWidth();
+            int w = Math.min(listWidget.rowWidth(), Math.max(0, width() - 2 * TEXT_GAP));
+            int floatX = Math.max(TEXT_GAP, Math.min(mx - 50, width() - w - TEXT_GAP));
+            int floatY = Math.max(TEXT_GAP, Math.min(my - 10, height() - 20 - TEXT_GAP));
 
             KineticTheme.stateSurface(
                     g,
@@ -414,55 +418,66 @@ public class ArmorTipEditorPage extends KineticPage {
                     false
             );
 
-            renderTextWithIcons(g,  draggingText, floatX + 4, floatY + 6, w - 45);
+            renderTextWithIcons(g, draggingText, floatX + TEXT_GAP, floatY + 6, Math.max(0, w - TEXT_GAP * 2));
         }
     }
 
-    private void renderTextWithIcons(KineticGraphics g, String text, int x, int y, int maxW) {
+    private void renderTextWithIcons(KineticGraphics g, String text, int x, int y, int maxWidth) {
         text = text.replaceAll("\\n\\s*(§[0-9a-fk-or])?", "");
 
         Pattern pattern = Pattern.compile("\\[(item|effect):([^]]+)]");
-        Matcher matcher = pattern.matcher(text);
-        String cleanText = text.replaceAll("\\[(item|effect):([^]]+)]", "");
-
-        int contentWidth = KineticText.width(cleanText);
-        while (matcher.find()) {
-            String textBefore = text.substring(0, matcher.start());
-            String cleanBefore = textBefore.replaceAll("\\[(item|effect):([^]]+)]", "");
-            contentWidth = Math.max(contentWidth, KineticText.width(cleanBefore) + 12);
+        Matcher measure = pattern.matcher(text);
+        int contentWidth = 0;
+        int lastEnd = 0;
+        while (measure.find()) {
+            contentWidth += KineticText.width(formattingBefore(text, lastEnd) + text.substring(lastEnd, measure.start()));
+            contentWidth += 12;
+            lastEnd = measure.end();
         }
+        contentWidth += KineticText.width(formattingBefore(text, lastEnd) + text.substring(lastEnd));
 
-        int offset = KineticText.scrollOffset(contentWidth, maxW);
-        g.scissor(x, y - 2, x + maxW, y + KineticText.lineHeight() + 3);
+        int offset = KineticText.scrollOffset(contentWidth, maxWidth);
+        g.scissor(x, y - 2, x + maxWidth, y + KineticText.lineHeight() + 3);
         try {
-            g.text(cleanText, x - offset, y, 16777215, false);
-
-            matcher.reset();
+            Matcher matcher = pattern.matcher(text);
+            int currentX = x - offset;
+            lastEnd = 0;
             while (matcher.find()) {
+                String plain = formattingBefore(text, lastEnd) + text.substring(lastEnd, matcher.start());
+                g.text(plain, currentX, y, 0xFFFFFF, false);
+                currentX += KineticText.width(plain);
+
                 String type = matcher.group(1);
                 String id = matcher.group(2);
-                String textBefore = text.substring(0, matcher.start());
-                String cleanBefore = textBefore.replaceAll("\\[(item|effect):([^]]+)]", "");
-                int iconX = x - offset + KineticText.width(cleanBefore);
-                int iconY = y - 2;
-
                 if (type.equals("item")) {
                     net.minecraft.resources.ResourceLocation rl = KineticResourceIds.tryParse(id);
                     if (rl != null) {
                         net.minecraft.world.item.Item item = KineticRegistries.items().get(rl);
                         if (item != null && item != net.minecraft.world.item.Items.AIR) {
                             g.push();
-                            g.translate(iconX, iconY);
+                            g.translate(currentX, y - 2);
                             g.scale(0.7f, 0.7f);
                             g.item(new net.minecraft.world.item.ItemStack(item), 0, 0);
                             g.pop();
                         }
                     }
                 }
+
+                lastEnd = matcher.end();
+                currentX += 12;
             }
+            g.text(formattingBefore(text, lastEnd) + text.substring(lastEnd), currentX, y, 0xFFFFFF, false);
         } finally {
             g.endScissor();
         }
+    }
+
+    // Retain legacy colors and font styles when an icon splits a single authored line.
+    private static String formattingBefore(String text, int end) {
+        Matcher formats = Pattern.compile("(?i)§[0-9a-fk-or]").matcher(text.substring(0, end));
+        StringBuilder codes = new StringBuilder();
+        while (formats.find()) codes.append(formats.group());
+        return codes.toString();
     }
 
     private record TipRow(String text, int layoutIndex, boolean iconLine) {}

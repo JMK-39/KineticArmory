@@ -36,6 +36,9 @@ public class ArmorPieceBonusPage extends KineticPage {
     private static final int ROW_H = 25;
     private static final int VISIBLE_ROWS = 10;
     private static final int SCROLL_W = 4;
+    private static final int TEXT_GAP = 4;
+    // The existing right-aligned tier value column reserves 132 pixels.
+    private static final int TIER_VALUE_W = 132;
 
     
     private final ArmorDataConfig config;
@@ -412,7 +415,7 @@ ui().button(valueX + 98, controlY, 74).text(KineticI18n.translatable("gui.kineti
     @Override
     protected void renderBackground(KineticGraphics g, int mx, int my, float pt) {
         KineticTheme.panel(g, PANEL_PADDING, PANEL_PADDING, width() - PANEL_PADDING * 2, height() - PANEL_PADDING * 2);
-        g.centeredText(title(), width() / 2, PANEL_PADDING + 10, 0xFFFFFF, true);
+        g.scrollingTextCentered(title(), width() / 2, PANEL_PADDING + 10, width() - 2 * (PANEL_PADDING + TEXT_GAP), 0xFFFFFF, true);
         KineticTheme.panelAlt(g, leftX, leftY, leftW, leftH);
         KineticTheme.panelAlt(g, rightX, rightY, rightW, rightH);
         renderEffectRows(g, mx, my);
@@ -422,21 +425,28 @@ ui().button(valueX + 98, controlY, 74).text(KineticI18n.translatable("gui.kineti
     @Override
     protected void renderForeground(KineticGraphics g, int mx, int my, float pt) {
         if (pieceInput != null) {
-            g.text(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.piece_input_label"), pieceInput.controlX(), pieceInput.controlY() - 11, 0xFFFFAA00, false);
+            g.scrollingText(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.piece_input_label"), pieceInput.controlX(), pieceInput.controlY() - 11, pieceInput.controlWidth() - TEXT_GAP, 0xFFFFAA00, false);
         }
         if (valueInput != null) {
-            g.text(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.value_input_label"), valueInput.controlX(), valueInput.controlY() - 11, 0xFFFFAA00, false);
+            g.scrollingText(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.value_input_label"), valueInput.controlX(), valueInput.controlY() - 11, valueInput.controlWidth() - TEXT_GAP, 0xFFFFAA00, false);
         }
-        g.text(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.effect_list_title"), leftX, leftY - 13, 0xFFFFAA00, false);
-        g.text(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.tier_list_title"), rightX, rightY - 13, 0xFFFFAA00, false);
-        if (warningMessage != null) g.centeredText(warningMessage, width() / 2, PANEL_PADDING + 24, 0xFFFF5555, true);
+        g.scrollingText(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.effect_list_title"), leftX, leftY - 13, leftW - TEXT_GAP, 0xFFFFAA00, false);
+        g.scrollingText(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.tier_list_title"), rightX, rightY - 13, rightW - TEXT_GAP, 0xFFFFAA00, false);
+        if (warningMessage != null) {
+            // Warnings share the input-caption row; retain their center without crossing the value caption.
+            int warningLeft = valueInput == null ? PANEL_PADDING + TEXT_GAP
+                    : valueInput.controlX() + valueInput.controlWidth() + TEXT_GAP;
+            int warningWidth = Math.max(0, 2 * Math.min(width() / 2 - warningLeft,
+                    width() - PANEL_PADDING - TEXT_GAP - width() / 2));
+            g.scrollingTextCentered(warningMessage, width() / 2, PANEL_PADDING + 24, warningWidth, 0xFFFF5555, true);
+        }
     }
 
     private void renderEffectRows(KineticGraphics g, int mx, int my) {
         int visible = Math.max(1, leftH / ROW_H);
         effectScroll.update(effects.size(), visible);
         if (effects.isEmpty()) {
-            g.centeredText(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.empty_effects"), leftX + leftW / 2, leftY + 16, 0xFFAAAAAA, true);
+            g.scrollingTextCentered(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.empty_effects"), leftX + leftW / 2, leftY + 16, leftW - 2 * TEXT_GAP, 0xFFAAAAAA, true);
             return;
         }
         int first = effectScroll.smoothIndexOffset();
@@ -481,7 +491,7 @@ ui().button(valueX + 98, controlY, 74).text(KineticI18n.translatable("gui.kineti
         int visible = Math.max(1, rightH / ROW_H);
         tierScroll.update(tiers.size(), visible);
         if (tiers.isEmpty()) {
-            g.centeredText(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.empty_tiers"), rightX + rightW / 2, rightY + 16, 0xFFAAAAAA, true);
+            g.scrollingTextCentered(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.empty_tiers"), rightX + rightW / 2, rightY + 16, rightW - 2 * TEXT_GAP, 0xFFAAAAAA, true);
             return;
         }
         int first = tierScroll.smoothIndexOffset();
@@ -519,10 +529,14 @@ ui().button(valueX + 98, controlY, 74).text(KineticI18n.translatable("gui.kineti
             }
             g.text(enabled ? "[x]" : "[ ]", rightX + 6, y + 9, enabled ? 0xFF55FF55 : 0xFFAAAAAA, false);
             Component label = KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.tier_row", option.pieces());
-            g.text(label, rightX + 36, y + 9, rowSelected ? 0xFFFFFFFF : 0xFFDDDDDD, false);
+            int labelX = rightX + 36;
+            int valueRight = rightX + rightW - 18;
+            int valueWidth = Math.min(TIER_VALUE_W, Math.max(0, valueRight - labelX - TEXT_GAP));
+            int labelRight = selectedEffect == null ? valueRight : valueRight - valueWidth;
+            g.scrollingText(label, labelX, y + 9, Math.max(0, labelRight - labelX - TEXT_GAP), rowSelected ? 0xFFFFFFFF : 0xFFDDDDDD, false);
             if (selectedEffect != null) {
                 String valueText = getTierValueText(group, selectedEffect);
-                g.scrollingTextRight(Component.literal(valueText), rightX + rightW - 18, y + 9, 132, enabled ? 0xFFFFFF55 : 0xFFAAAAAA, false);
+                g.scrollingTextRight(Component.literal(valueText), valueRight, y + 9, valueWidth, enabled ? 0xFFFFFF55 : 0xFFAAAAAA, false);
             }
         }
         g.endScissor();

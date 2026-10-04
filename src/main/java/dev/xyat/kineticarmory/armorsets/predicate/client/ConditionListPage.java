@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ConditionListPage extends KineticPage {
+    private static final int GUI_WIDTH = 400;
     private final IConditionOwner owner;
     private final List<ConditionData> conditions;
     private KineticToggleActionList listWidget;
@@ -52,7 +53,7 @@ public class ConditionListPage extends KineticPage {
     protected void build(KineticUi ui) {
         int cx = width() / 2;
         int cy = height() / 2;
-        int guiW = 400;
+        int guiW = GUI_WIDTH;
         int guiH = 220;
         int y0 = cy - guiH / 2;
 
@@ -150,16 +151,16 @@ public class ConditionListPage extends KineticPage {
     protected void renderBackground(KineticGraphics g, int mx, int my, float pt) {
         int cx = width() / 2;
         int cy = height() / 2;
-        int guiW = 400;
+        int guiW = GUI_WIDTH;
         int guiH = 220;
         KineticTheme.panel(g, cx - guiW / 2 - 10, cy - guiH / 2 - 10, guiW + 20, guiH + 20);
-        g.centeredText(title(), cx, cy - guiH / 2 + 5, 0xFFFFFF, true);
+        g.scrollingTextCentered(title(), cx, cy - guiH / 2 + 5, guiW - 4, 0xFFFFFF, true);
     }
 
     @Override
     protected void renderForeground(KineticGraphics g, int mx, int my, float pt) {
         if (conditions.isEmpty()) {
-            g.centeredText(KineticI18n.translatable("gui.kineticarmory.predicate.empty"), width() / 2, height() / 2, 0xAAAAAA, true);
+            g.scrollingTextCentered(KineticI18n.translatable("gui.kineticarmory.predicate.empty"), width() / 2, height() / 2, GUI_WIDTH - 4, 0xAAAAAA, true);
         }
     }
 }

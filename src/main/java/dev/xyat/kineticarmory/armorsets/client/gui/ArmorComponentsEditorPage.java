@@ -11,6 +11,9 @@ import net.minecraft.network.chat.Component;
 import java.util.function.Consumer;
 
 public final class ArmorComponentsEditorPage extends KineticPage {
+    // Share the editor's content column with its title, hint, and validation message.
+    private static final int EDITOR_MARGIN = 15;
+    private static final int EDITOR_MAX_WIDTH = 700;
     private final String itemId;
     private final Consumer<String> onSave;
     private String data;
@@ -26,7 +29,7 @@ public final class ArmorComponentsEditorPage extends KineticPage {
 
     @Override
     protected void build(KineticUi ui) {
-        int editorWidth = Math.min(width() - 30, 700);
+        int editorWidth = Math.min(width() - EDITOR_MARGIN * 2, EDITOR_MAX_WIDTH);
         int x = (width() - editorWidth) / 2;
         var input = ui.textArea(x, 45, editorWidth, Math.max(30, height() - 110))
                 .label(title()).maxLength(32767).value(data).onChange(text -> {
@@ -62,10 +65,11 @@ public final class ArmorComponentsEditorPage extends KineticPage {
 
     @Override
     protected void renderBackground(KineticGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        graphics.centeredText(title(), width() / 2, 8, 0xFFFFFF, true);
-        graphics.centeredText(KineticI18n.translatable("gui.kineticarmory.armorsets.components.hint"), width() / 2, 27, 0xAAAAAA, false);
-        if (!valid) graphics.centeredText(KineticI18n.translatable("gui.kineticarmory.armorsets.components.invalid"),
-                width() / 2, height() - 53, 0xFF5555, false);
+        int textWidth = Math.min(width() - EDITOR_MARGIN * 2, EDITOR_MAX_WIDTH);
+        graphics.scrollingTextCentered(title(), width() / 2, 8, textWidth, 0xFFFFFF, true);
+        graphics.scrollingTextCentered(KineticI18n.translatable("gui.kineticarmory.armorsets.components.hint"), width() / 2, 27, textWidth, 0xAAAAAA, false);
+        if (!valid) graphics.scrollingTextCentered(KineticI18n.translatable("gui.kineticarmory.armorsets.components.invalid"),
+                width() / 2, height() - 53, textWidth, 0xFF5555, false);
     }
 }
 *///?}

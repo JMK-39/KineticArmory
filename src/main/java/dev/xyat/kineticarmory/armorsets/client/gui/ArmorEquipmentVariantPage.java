@@ -38,6 +38,7 @@ public class ArmorEquipmentVariantPage extends KineticPage {
     private static final int ROW_BUTTON_W = 48;
     private static final int ROW_BUTTON_H = 18;
     private static final int ROW_BUTTON_GAP = 6;
+    private static final int TEXT_GAP = 4;
 
     
     private final ArmorDataConfig config;
@@ -483,7 +484,7 @@ KineticButton delete = ui().button(deleteX, buttonY, ROW_BUTTON_W).text(KineticI
 
     @Override
     protected void renderForeground(KineticGraphics g, int mx, int my, float pt) {
-        g.centeredText(title(), width() / 2, panelY + 11, 0xFFFFFFFF, true);
+        g.scrollingTextCentered(title(), width() / 2, panelY + 11, panelW - 2 * (listX - panelX), 0xFFFFFFFF, true);
     }
 
     @Override
@@ -497,15 +498,15 @@ KineticButton delete = ui().button(deleteX, buttonY, ROW_BUTTON_W).text(KineticI
 
         SlotRequirementMode mode = getSlotRequirementMode();
         if (mode == SlotRequirementMode.EMPTY) {
-            g.centeredText(KineticI18n.translatable("gui.kineticarmory.armorsets.variant.mode_empty_note"), listX + listW / 2, listY + 18, 0xFFFF5555, true);
+            g.scrollingTextCentered(KineticI18n.translatable("gui.kineticarmory.armorsets.variant.mode_empty_note"), listX + listW / 2, listY + 18, listW - 2 * (6 + TEXT_GAP), 0xFFFF5555, true);
             return;
         }
         if (mode == SlotRequirementMode.ANY) {
-            g.centeredText(KineticI18n.translatable("gui.kineticarmory.armorsets.variant.mode_any_note"), listX + listW / 2, listY + 18, 0xFF55FF55, true);
+            g.scrollingTextCentered(KineticI18n.translatable("gui.kineticarmory.armorsets.variant.mode_any_note"), listX + listW / 2, listY + 18, listW - 2 * (6 + TEXT_GAP), 0xFF55FF55, true);
             return;
         }
         if (variants().isEmpty()) {
-            g.centeredText(KineticI18n.translatable("gui.kineticarmory.armorsets.variant.empty"), listX + listW / 2, listY + 18, 0xFFAAAAAA, true);
+            g.scrollingTextCentered(KineticI18n.translatable("gui.kineticarmory.armorsets.variant.empty"), listX + listW / 2, listY + 18, listW - 2 * (6 + TEXT_GAP), 0xFFAAAAAA, true);
         }
 
         renderRows(g, mx, my);
@@ -545,7 +546,7 @@ for (int index = start; index < end; index++) {
 
             int textX = iconX + ICON_BOX + 10;
             int firstButtonX = listX + rowW - 7 - ROW_BUTTON_W * 4 - ROW_BUTTON_GAP * 3;
-            int textW = Math.max(20, firstButtonX - textX - 8);
+            int textW = Math.max(0, firstButtonX - textX - TEXT_GAP);
             drawTrimmedText(g, getReqName(req).getString(), textX, rowY + 6, textW);
             drawInfoLine(g, req, textX, rowY + 20, textW);
         }

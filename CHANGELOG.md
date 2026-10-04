@@ -1,3 +1,21 @@
+## 26.10.4 — 2026-10-04
+
+### English
+
+- Keep long headings, warnings, parameter labels and list text inside their own regions with shared scrolling APIs. Covers equipment sets, piece bonuses, variants, tips, effects, commands, entity filters and condition/bonus editors.
+- Keep titles clear of Type labels and tip action buttons, bonus warnings clear of input captions, and row names clear of value columns or action buttons.
+- Reserve icon space in mixed tip rows and keep the drag preview inside the page.
+- Require matching KineticCore 26.10.4+. No gameplay, configuration syntax or language keys changed.
+
+### 简体中文
+
+- 装备套装、件数奖励、候选装备、提示、效果、命令、实体过滤及条件/加成编辑器的长标题、警告、参数标签和列表文字通过核心API在各自范围内滚动。
+- 标题避开类型标签与提示操作按钮；件数警告避开输入框标签；行名称避开数值列和操作按钮。
+- 图文提示行给图标预留空间，拖动预览限制在页面内。
+- 要求匹配的KineticCore26.10.4+；未修改玩法、配置语法或语言键。
+
+---
+
 2026年10月04日 — Language key validation / 语言键一致性检查
 
 - Require identical authored English/Chinese keys and string values in source, version overrides and packaged resources; generated formatting keys are rejected during builds.

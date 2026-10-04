@@ -32,6 +32,7 @@ import java.util.List;
 public class ArmorEditPage extends KineticPage {
 
     private static final int SLOT_SIZE = 18;
+    private static final int TEXT_GAP = 4;
 
     
     private final ArmorDataConfig config;
@@ -283,22 +284,24 @@ public class ArmorEditPage extends KineticPage {
     @Override
     protected void renderForeground(KineticGraphics g, int mx, int my, float pt) {
         int cx = this.width() / 2; int topY = this.height() / 2 - 110;
+        int panelTextWidth = Math.min(this.width() - 40, 360) - 2 * TEXT_GAP;
 
         int titleY = topY - 23;
         if (this.warningMessage != null) {
-            g.centeredText(this.warningMessage, cx, titleY - 12, 0xFFFFFF, true);
+            g.scrollingTextCentered(this.warningMessage, cx, titleY - 12, panelTextWidth, 0xFFFFFF, true);
         }
 
-        g.centeredText(title(), cx, titleY, 0xFFFFFF, true);
+        g.scrollingTextCentered(title(), cx, titleY, panelTextWidth, 0xFFFFFF, true);
 
         int vanillaStartX = cx - ((18 + 2) * 6 - 2) / 2;
         int extStartX = cx - ((18 + 2) * 18 - 2) / 2;
+        int sectionTextWidth = (SLOT_SIZE + 2) * 18 - 2 - 2 * TEXT_GAP;
         int vanillaY = topY + 95; int curioY = vanillaY + 34; int rejectedY = curioY + 54;
 
         for (int i = 0; i < 6; i++) renderSlot(g, vanillaStartX + i * 20, vanillaY, mx, my, vanillaSlots[i], i, 0);
-        g.centeredText(KineticI18n.translatable("gui.kineticarmory.armorsets.section.curio"), cx, curioY - 12, 0xFFAA00, true);
+        g.scrollingTextCentered(KineticI18n.translatable("gui.kineticarmory.armorsets.section.curio"), cx, curioY - 12, sectionTextWidth, 0xFFAA00, true);
         for (int i = 0; i < 36; i++) renderSlot(g, extStartX + (i % 18) * 20, curioY + (i / 18) * 20, mx, my, "curio", i, 1);
-        g.centeredText(KineticI18n.translatable("gui.kineticarmory.armorsets.section.rejected"), cx, rejectedY - 12, 0xFF5555, true);
+        g.scrollingTextCentered(KineticI18n.translatable("gui.kineticarmory.armorsets.section.rejected"), cx, rejectedY - 12, sectionTextWidth, 0xFF5555, true);
         for (int i = 0; i < 36; i++) renderSlot(g, extStartX + (i % 18) * 20, rejectedY + (i / 18) * 20, mx, my, "rejected", i, 2);
     }
 
