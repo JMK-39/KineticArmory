@@ -21,6 +21,9 @@ import dev.xyat.kineticarmory.armorsets.data.ArmorTipGenerator;
 import dev.xyat.kineticcore.api.client.input.KineticKeyBindings;
 import dev.xyat.kineticcore.api.text.KineticI18n;
 import net.minecraft.network.chat.Component;
+import dev.xyat.kineticcore.api.registry.KineticRegistries;
+import dev.xyat.kineticcore.api.resource.KineticResourceIds;
+import net.minecraft.world.effect.MobEffect;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -129,11 +132,11 @@ ui().button(valueX + 98, controlY, 74).text(KineticI18n.translatable("gui.kineti
     private void rebuildEffects() {
         String keepKey = selectedEffect == null ? null : selectedEffect.key();
         effects.clear();
-        if (config.potionEffects != null) for (ArmorDataConfig.PotionEffectData d : config.potionEffects) effects.add(new PieceEffectEntry(config.keyOf(d), ArmorTipGenerator.genPotTip(d), d.amplifier, true));
+        if (config.potionEffects != null) for (ArmorDataConfig.PotionEffectData d : config.potionEffects) effects.add(PieceEffectEntry.potion(config.keyOf(d), ArmorTipGenerator.genPotTip(d), d.amplifier, true, d.effectId));
         if (config.attributes != null) for (ArmorDataConfig.AttributeModifierData d : config.attributes) effects.add(new PieceEffectEntry(config.keyOf(d), ArmorTipGenerator.genAttrTip(d), d.amount, true));
         if (config.damageImmunities != null) for (ArmorDataConfig.DamageImmunityData d : config.damageImmunities) effects.add(new PieceEffectEntry(config.keyOf(d), ArmorTipGenerator.genImmTip(d), d.multiplier, true));
-        if (config.effectImmunities != null) for (ArmorDataConfig.EffectImmunityData d : config.effectImmunities) effects.add(new PieceEffectEntry(config.keyOf(d), ArmorTipGenerator.genEffImmTip(d), 0.0, false));
-        if (config.attackEffects != null) for (ArmorDataConfig.AttackEffectData d : config.attackEffects) effects.add(new PieceEffectEntry(config.keyOf(d), ArmorTipGenerator.genAtkTip(d), d.amplifier, true));
+        if (config.effectImmunities != null) for (ArmorDataConfig.EffectImmunityData d : config.effectImmunities) effects.add(PieceEffectEntry.potion(config.keyOf(d), ArmorTipGenerator.genEffImmTip(d), 0.0, false, d.effectId));
+        if (config.attackEffects != null) for (ArmorDataConfig.AttackEffectData d : config.attackEffects) effects.add(PieceEffectEntry.potion(config.keyOf(d), ArmorTipGenerator.genAtkTip(d), d.amplifier, true, d.effectId));
         if (config.damageConversions != null) for (ArmorDataConfig.DamageConversionData d : config.damageConversions) effects.add(new PieceEffectEntry(config.keyOf(d), ArmorTipGenerator.genConvTip(d), d.ratio, true));
         if (config.damageMultipliers != null) for (ArmorDataConfig.DamageMultiplierData d : config.damageMultipliers) effects.add(new PieceEffectEntry(config.keyOf(d), ArmorTipGenerator.genDmgMulTip(d), d.multiplier, true));
         if (config.attackDamageMultipliers != null) for (ArmorDataConfig.AttackDamageMultiplierData d : config.attackDamageMultipliers) effects.add(new PieceEffectEntry(config.keyOf(d), ArmorTipGenerator.genAtkDmgTip(d), d.multiplier, true));
@@ -471,9 +474,16 @@ ui().button(valueX + 98, controlY, 74).text(KineticI18n.translatable("gui.kineti
                     false
             );
             String text = cleanDisplayText(effect.text());
-            drawTrimmedText(g, text, leftX + 6, y + 5, leftW - 22, selected ? 0xFFFFFFFF : 0xFFDDDDDD);
+            int textX = leftX + 6;
+            int textWidth = leftW - 22;
+            if (effect.effect() != null) {
+                g.effectIcon(effect.effect(), textX, y + 4, 16);
+                textX += 20;
+                textWidth -= 20;
+            }
+            drawTrimmedText(g, text, textX, y + 5, textWidth, selected ? 0xFFFFFFFF : 0xFFDDDDDD);
             String summary = buildEffectSummary(effect);
-            if (!summary.isEmpty()) drawTrimmedText(g, summary, leftX + 6, y + 16, leftW - 22, 0xFF55FF55);
+            if (!summary.isEmpty()) drawTrimmedText(g, summary, textX, y + 16, textWidth, 0xFF55FF55);
         }
         g.endScissor();
         effectScroll.render(
@@ -690,6 +700,16 @@ ui().button(valueX + 98, controlY, 74).text(KineticI18n.translatable("gui.kineti
         return false;
     }
 
-    private record PieceEffectEntry(String key, String text, double baseValue, boolean valueEditable) {}
+    private record PieceEffectEntry(String key, String text, double baseValue, boolean valueEditable, MobEffect effect) {
+        PieceEffectEntry(String key, String text, double baseValue, boolean valueEditable) {
+            this(key, text, baseValue, valueEditable, null);
+        }
+
+        static PieceEffectEntry potion(String key, String text, double baseValue, boolean valueEditable, String effectId) {
+            var id = effectId == null ? null : KineticResourceIds.tryParse(effectId);
+            var effect = id == null ? null : KineticRegistries.mobEffects().get(id);
+            return new PieceEffectEntry(key, effect == null ? text : text + " §7(" + id + ")", baseValue, valueEditable, effect);
+        }
+    }
     private record TierOption(int pieces, ArmorDataConfig.PieceBonusGroup group) {}
 }

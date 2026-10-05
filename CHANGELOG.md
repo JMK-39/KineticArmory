@@ -1,3 +1,15 @@
+## 2026-10-05 — Potion list icons / 药水列表图标
+
+### English
+
+- Add leading effect icons and effect IDs to potion, attack-effect and effect-immunity rows in the detail and piece-bonus lists through shared KineticCore APIs.
+- Preserve existing controls, row heights, colors and interactions; reserve icon space only within each row's text bounds. Autocomplete popup icons require a shared Core API extension.
+
+### 简体中文
+
+- 通过 KineticCore 公共 API，为详情和件数加成列表中的药水、攻击效果、药水免疫行添加行首效果图标与效果 ID。
+- 保留既有控件、行高、颜色与交互，仅在行内文字范围中预留图标空间；自动补全弹窗图标仍需核心公共 API 扩展。
+
 ## 26.10.4 — 2026-10-04
 
 ### English

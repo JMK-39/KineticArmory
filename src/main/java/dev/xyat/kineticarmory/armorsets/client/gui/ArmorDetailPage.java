@@ -18,6 +18,7 @@ import dev.xyat.kineticarmory.armorsets.predicate.IConditionOwner;
 import dev.xyat.kineticarmory.armorsets.predicate.client.ConditionListPage;
 import dev.xyat.kineticcore.api.registry.KineticRegistries;
 import dev.xyat.kineticcore.api.resource.KineticResourceIds;
+import net.minecraft.world.effect.MobEffect;
 
 import java.util.List;
 import java.util.regex.Matcher;
@@ -117,7 +118,7 @@ public class ArmorDetailPage extends KineticPage {
     private void refreshList() {
         List<DetailEntry> entries = new java.util.ArrayList<>();
 
-        config.potionEffects.forEach(d -> entries.add(new DetailEntry(ArmorTipGenerator.genPotTip(d), () -> {
+        config.potionEffects.forEach(d -> entries.add(DetailEntry.potion(ArmorTipGenerator.genPotTip(d), d.effectId, () -> {
             openChild(new PotionEditor(config, d));
         }, () -> {
             config.tips.remove(ArmorTipGenerator.genPotTip(d));
@@ -141,7 +142,7 @@ public class ArmorDetailPage extends KineticPage {
             refreshList();
         })));
 
-        config.effectImmunities.forEach(d -> entries.add(new DetailEntry(ArmorTipGenerator.genEffImmTip(d), () -> {
+        config.effectImmunities.forEach(d -> entries.add(DetailEntry.potion(ArmorTipGenerator.genEffImmTip(d), d.effectId, () -> {
             openChild(new PotionImmunityEditor(config, d));
         }, () -> {
             config.tips.remove(ArmorTipGenerator.genEffImmTip(d));
@@ -149,7 +150,7 @@ public class ArmorDetailPage extends KineticPage {
             refreshList();
         })));
 
-        config.attackEffects.forEach(d -> entries.add(new DetailEntry(ArmorTipGenerator.genAtkTip(d), () -> {
+        config.attackEffects.forEach(d -> entries.add(DetailEntry.potion(ArmorTipGenerator.genAtkTip(d), d.effectId, () -> {
             openChild(new AttackEffectEditor(config, d));
         }, () -> {
             config.tips.remove(ArmorTipGenerator.genAtkTip(d));
@@ -206,7 +207,16 @@ public class ArmorDetailPage extends KineticPage {
     }
 
     /** 一行效果：文字可含 [item:..] 图标，右侧内嵌删除按钮 / One effect row with inline icons and a delete button. */
-    record DetailEntry(String text, Runnable onEdit, Runnable onDelete) {
+    record DetailEntry(String text, Runnable onEdit, Runnable onDelete, MobEffect effect) {
+        DetailEntry(String text, Runnable onEdit, Runnable onDelete) {
+            this(text, onEdit, onDelete, null);
+        }
+
+        static DetailEntry potion(String text, String effectId, Runnable onEdit, Runnable onDelete) {
+            var id = effectId == null ? null : KineticResourceIds.tryParse(effectId);
+            var effect = id == null ? null : KineticRegistries.mobEffects().get(id);
+            return new DetailEntry(effect == null ? text : text + " §7(" + id + ")", onEdit, onDelete, effect);
+        }
     }
 
     class DetailListWidget extends KineticRowList<DetailEntry> {
@@ -232,8 +242,13 @@ public class ArmorDetailPage extends KineticPage {
         protected void renderRow(KineticGraphics g, DetailEntry entry, int index, int l, int t, int w, int h,
                                  boolean hv, boolean selected) {
             int deleteX = deleteX(l, w);
-            renderTextWithIcons(g, entry.text(), l + ROW_TEXT_INSET, t + 6,
-                    Math.max(0, deleteX - l - ROW_TEXT_INSET - TEXT_GAP));
+            int textX = l + ROW_TEXT_INSET;
+            if (entry.effect() != null) {
+                g.effectIcon(entry.effect(), textX, t + 2, 16);
+                textX += 20;
+            }
+            renderTextWithIcons(g, entry.text(), textX, t + 6,
+                    Math.max(0, deleteX - textX - TEXT_GAP));
             boolean delHovered = mouseX() >= deleteX && mouseX() < deleteX + DELETE_BUTTON_W
                     && mouseY() >= t + 1 && mouseY() < t + 1 + DELETE_BUTTON_H;
             KineticTheme.button(g, deleteX, t + 1, DELETE_BUTTON_W, DELETE_BUTTON_H,
