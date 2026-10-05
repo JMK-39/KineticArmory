@@ -17,13 +17,19 @@ public class ArmorCommand {
     public static void register(LiteralArgumentBuilder<CommandSourceStack> root) {
     }
 
+    /** The reload command: reloads the sets and, when "sync on reload" is on, refreshes every online player. */
     public static void executeReload(CommandSourceStack source) {
-        ArmorConfig.rebuildEntityRuleCache();
-        ArmorLoader.load();
+        reloadSets(source.getServer());
         if (ArmorConfig.syncOnReload) {
             ArmorNetwork.broadcastEntityFilter();
             ArmorNetwork.broadcastArmorConfigs();
         }
-        ArmorManager.forceRecalculateAll(source.getServer());
+    }
+
+    /** Reloads the sets after an editor save without sending anything; the caller answers the editing player. */
+    public static void reloadSets(net.minecraft.server.MinecraftServer server) {
+        ArmorConfig.rebuildEntityRuleCache();
+        ArmorLoader.load();
+        ArmorManager.forceRecalculateAll(server);
     }
 }

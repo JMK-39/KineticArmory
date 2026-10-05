@@ -442,8 +442,9 @@ public class ArmorNetwork {
             }
         }
 
-        ArmorCommand.executeReload(player.createCommandSourceStack());
-        if (!ArmorConfig.syncOnReload) resyncArmorConfigs(player);
+        ArmorCommand.reloadSets(player.getServer());
+        // Editor saves answer only the editing player; other players receive the sets when they log in.
+        resyncArmorConfigs(player);
         if (renameCleanupFailed) {
             player.sendSystemMessage(KineticI18n.translatable(
                     "msg.kineticarmory.armorsets.rename_cleanup_failed",
@@ -463,7 +464,7 @@ public class ArmorNetwork {
         ArmorConfig.allowedEntities = message.rules() == null ? new ArrayList<>() : new ArrayList<>(message.rules());
         ArmorConfig.save();
         ArmorManager.forceRecalculateAll(player.getServer());
-        broadcastEntityFilter();
+        syncEntityFilter(player, false);
         sendEditorSaveResult(player, true);
     }
 
@@ -482,8 +483,9 @@ public class ArmorNetwork {
         }
         try {
             Files.deleteIfExists(ArmorLoader.resolveConfigPath(id));
-            ArmorCommand.executeReload(player.createCommandSourceStack());
-            if (!ArmorConfig.syncOnReload) resyncArmorConfigs(player);
+            ArmorCommand.reloadSets(player.getServer());
+            // Editor saves answer only the editing player; other players receive the sets when they log in.
+            resyncArmorConfigs(player);
             player.sendSystemMessage(KineticI18n.translatable("msg.kineticarmory.common.deleted"));
         } catch (IOException | IllegalArgumentException e) {
             KineticArmory.LOGGER.error("ArmorSet 删除失败: {}", id, e);

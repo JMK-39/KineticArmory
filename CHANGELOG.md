@@ -2,6 +2,7 @@
 
 ### English
 
+- Saving, renaming or deleting an armor set, or saving the entity filter, answers only the admin who saved; the sets are no longer sent to every online player on each save. Other players receive them when they log in. The reload command and the reload button still refresh everyone when "Sync on reload" is on.
 - Enabled Minecraft 26.1.2 / NeoForge 26.1.2.112 (Java 25); releases now cover Forge 1.20.1, NeoForge 1.21.1 and NeoForge 26.1.2. Requires Curios 15 on 26.1.2; KubeJS integration compiles against KubeJS 26.1.2-8 but its 26.1 build does not start on 26.1.2 yet.
 - Every version uses the same screens. On 1.21.1 and 26.1.2, item component data (`[damage=5]`) is now edited in Core's NBT editor, the same editor Forge uses for NBT, instead of a separate page. Requires KineticCore 26.10.5+.
 - Armor sets written for 1.21.1 keep their attribute ids on 26.1.2 (`minecraft:generic.attack_damage` matches `minecraft:attack_damage`) in attribute bonuses, attribute conditions and generated tips.
@@ -10,6 +11,7 @@
 
 ### 简体中文
 
+- 保存、重命名或删除套装，以及保存实体过滤，只回复保存的管理员，不再每次保存都发送给所有在线玩家；其他玩家在登录时获得。开启"重载时同步"时，重载命令与重载按钮仍会刷新所有人。
 - 启用 Minecraft 26.1.2 / NeoForge 26.1.2.112（Java 25）；发布版本覆盖 Forge 1.20.1、NeoForge 1.21.1 与 NeoForge 26.1.2。26.1.2 需要 Curios 15；KubeJS 联动按 KubeJS 26.1.2-8 编译，但其 26.1 版本目前无法在 26.1.2 上启动。
 - 所有版本使用相同界面。1.21.1 与 26.1.2 的物品数据组件（`[damage=5]`）改用核心 NBT 编辑器编辑，与 Forge 编辑 NBT 的界面一致，不再使用单独页面。要求 KineticCore 26.10.5+。
 - 1.21.1 写下的套装在 26.1.2 上保留属性 ID（`minecraft:generic.attack_damage` 对应 `minecraft:attack_damage`），适用于属性加成、属性条件与自动生成的提示。
