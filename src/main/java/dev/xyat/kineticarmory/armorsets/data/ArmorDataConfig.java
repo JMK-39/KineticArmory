@@ -167,7 +167,7 @@ public class ArmorDataConfig {
             if (runtimeCacheReady) return;
             runtimeCacheReady = true;
             ResourceLocation rl = attribute == null ? null : KineticResourceIds.tryParse(attribute);
-            cachedAttribute = rl == null ? null : KineticRegistries.attributes().get(rl);
+            cachedAttribute = ArmorVersionCompat.attribute(rl);
             try { cachedUuid = uuid == null ? null : UUID.fromString(uuid); } catch (Exception ignored) { cachedUuid = null; }
             cachedOperation = parseAttributeOperation(operation);
         }

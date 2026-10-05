@@ -23,8 +23,12 @@ public final class RuntimeValidation {
     private final ArmorDataConfig.ItemReq preheated = rule("minecraft:diamond_sword", "WEAK", "[enchantments={levels:{\"minecraft:sharpness\":2}}]");
     public RuntimeValidation() {
         if (Boolean.getBoolean("kineticarmory.guiValidation")) {MinecraftForge.EVENT_BUS.addListener(this::validate);return;}
-        preheated.createDisplayStack();
-        MinecraftForge.EVENT_BUS.addListener(this::validate);
+        // 26.1 binds item components after mods are constructed, so no stack can exist this early there.
+*///?}
+//? if >=1.21 <26.1
+/*        preheated.createDisplayStack();*/
+//? if >=1.21 {
+/*        MinecraftForge.EVENT_BUS.addListener(this::validate);
     }
 
     private static void require(boolean value, String message) {

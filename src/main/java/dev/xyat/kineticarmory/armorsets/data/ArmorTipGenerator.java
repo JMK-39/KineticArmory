@@ -44,7 +44,7 @@ public class ArmorTipGenerator {
 
     private static String getAttrName(String id) {
         ResourceLocation rl = safeResourceLocation(id);
-        var attr = rl == null ? null : KineticRegistries.attributes().get(rl);
+        var attr = ArmorVersionCompat.attribute(rl);
         if (attr != null) {
             String key = attr.getDescriptionId();
             String translated = KineticI18n.translatable(key).getString();

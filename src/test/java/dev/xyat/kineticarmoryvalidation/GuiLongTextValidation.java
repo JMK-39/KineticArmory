@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 /^** Uses the existing client and unsaved page drafts. Never clicks or saves editor changes. *^/
 public final class GuiLongTextValidation {
     private static final Logger LOG=LoggerFactory.getLogger(GuiLongTextValidation.class);
-    private static final String ROOT="D:/IDEAWork/KineticArmory/.gradle/gui-long-text-20261004/";
+    private static final String ROOT=System.getProperty("kineticarmory.guiValidation.output","D:/IDEAWork/KineticArmory/.gradle/gui-long-text-20261004/");
     private static final String[] NAMES={"armor-edit","bonus-empty","bonus","bonus-warning","variants","variants-empty-only","variants-any","variants-empty","tips","tips-edit","tips-drag","detail","commands","commands-edit","entity-global","entity-set","conditions-empty","conditions","condition-attr","condition-item","condition-time","condition-dimension","attribute","potion","immunity","attack-effect","effect-immunity","damage-conversion","attack-damage","components","components-invalid"};
     private static boolean installed,started,screenshot,finished,originalFullscreen;
     private static String originalLanguage;
@@ -90,7 +90,7 @@ public final class GuiLongTextValidation {
         if(page>=NAMES.length){nextPhase();return;}
         openPage(page);
         screenshot=false;due=System.currentTimeMillis()+1000;
-        LOG.info("ARMORY_GUI_OPEN phase={} case={} page={}",phase,NAMES[page],KineticGui.currentPage().getClass().getName());
+        LOG.info("ARMORY_GUI_OPEN phase={} case={} page={}",phase,NAMES[page],(KineticGui.currentPage()!=null?KineticGui.currentPage().getClass().getName():String.valueOf(Minecraft.getInstance().screen)));
     }
     @SuppressWarnings("unchecked")
     private static void openPage(int index) throws Exception {
@@ -125,7 +125,7 @@ public final class GuiLongTextValidation {
             case 26 -> KineticGui.open(new PotionImmunityEditor(config,null));
             case 27 -> KineticGui.open(new DamageConversionEditor(config,null));
             case 28 -> KineticGui.open(new AttackDamageEditor(config,null));
-            case 29,30 -> KineticGui.open(new ArmorComponentsEditorPage("minecraft:diamond_sword",index==29?"[damage=1]":"[invalid=]",value->{}));
+            case 29,30 -> dev.xyat.kineticcore.api.client.gui.selector.KineticSelectors.openNbtEditor(index==29?"[damage=1]":"[invalid=]",text->{try{dev.xyat.kineticarmory.armorsets.data.ArmorItemData.compile("minecraft:diamond_sword",text);return null;}catch(RuntimeException invalid){return String.valueOf(invalid.getMessage());}},value->{});
         }
     }
     private static ArmorDataConfig sample() {

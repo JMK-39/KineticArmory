@@ -105,7 +105,7 @@ public final class ConditionEvaluator {
                 }
                 case "ATTR_RANGE" -> {
                     ResourceLocation attributeId = KineticResourceIds.tryParse(id);
-                    Attribute attribute = attributeId == null ? null : KineticRegistries.attributes().get(attributeId);
+                    Attribute attribute = ArmorVersionCompat.attribute(attributeId);
                     if (attribute != null && entity.getAttributes().hasAttribute(ArmorVersionCompat.attribute(attribute))) {
                         double value = entity.getAttributeValue(ArmorVersionCompat.attribute(attribute));
                         result = value >= min && value <= max;

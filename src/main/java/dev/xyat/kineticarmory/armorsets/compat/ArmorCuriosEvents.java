@@ -18,7 +18,13 @@ public final class ArmorCuriosEvents {
     public static synchronized void register() {
         if (registered) return;
         registered = true;
+        // Curios 15 reports a different item and a changed item state as separate events; set matching depends on both.
+        //? if >=26.1 {
+        /*KineticExternalEvents.subscribe(CurioChangeEvent.Item.class, ArmorCuriosEvents::onCurioChange);
+        KineticExternalEvents.subscribe(CurioChangeEvent.State.class, ArmorCuriosEvents::onCurioChange);
+        *///?} else {
         KineticExternalEvents.subscribe(CurioChangeEvent.class, ArmorCuriosEvents::onCurioChange);
+        //?}
     }
 
     private static void onCurioChange(CurioChangeEvent event) {

@@ -12,6 +12,18 @@ import java.util.UUID;
 public final class ArmorVersionCompat {
     private ArmorVersionCompat() {}
 
+    /** The attribute a config names, or null. */
+    public static Attribute attribute(net.minecraft.resources.ResourceLocation id) {
+        if (id == null) return null;
+        Attribute attribute = KineticRegistries.attributes().get(id);
+        // 26.1 dropped the "generic." style prefixes from attribute ids; configs written for older versions keep matching.
+        int prefix = id.getPath().indexOf('.');
+        if (attribute == null && prefix > 0) {
+            attribute = KineticRegistries.attributes().get(KineticResourceIds.of(id.getNamespace(), id.getPath().substring(prefix + 1)));
+        }
+        return attribute;
+    }
+
     //? if >=1.21 {
     /*public static net.minecraft.core.Holder<MobEffect> effect(MobEffect value) {
         return KineticRegistries.mobEffects().holder(value);

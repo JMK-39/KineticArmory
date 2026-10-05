@@ -1,3 +1,21 @@
+## 26.10.5 — 2026-10-05
+
+### English
+
+- Enabled Minecraft 26.1.2 / NeoForge 26.1.2.112 (Java 25); releases now cover Forge 1.20.1, NeoForge 1.21.1 and NeoForge 26.1.2. Requires Curios 15 on 26.1.2; KubeJS integration compiles against KubeJS 26.1.2-8 but its 26.1 build does not start on 26.1.2 yet.
+- Every version uses the same screens. On 1.21.1 and 26.1.2, item component data (`[damage=5]`) is now edited in Core's NBT editor, the same editor Forge uses for NBT, instead of a separate page. Requires KineticCore 26.10.5+.
+- Armor sets written for 1.21.1 keep their attribute ids on 26.1.2 (`minecraft:generic.attack_damage` matches `minecraft:attack_damage`) in attribute bonuses, attribute conditions and generated tips.
+- On 26.1.2 a set reacts to both kinds of Curios change: a different item and a changed item state. Time conditions read the overworld clock and moon-phase conditions read the moon phase at the entity, the 26.1 sources of both values.
+- Verified: all three versions build; the server runtime checks pass on 1.21.1 and 26.1.2; 186 English/Chinese 26.1.2 client captures at 854×480 and 1536×864 match the 1.21.1 layouts.
+
+### 简体中文
+
+- 启用 Minecraft 26.1.2 / NeoForge 26.1.2.112（Java 25）；发布版本覆盖 Forge 1.20.1、NeoForge 1.21.1 与 NeoForge 26.1.2。26.1.2 需要 Curios 15；KubeJS 联动按 KubeJS 26.1.2-8 编译，但其 26.1 版本目前无法在 26.1.2 上启动。
+- 所有版本使用相同界面。1.21.1 与 26.1.2 的物品数据组件（`[damage=5]`）改用核心 NBT 编辑器编辑，与 Forge 编辑 NBT 的界面一致，不再使用单独页面。要求 KineticCore 26.10.5+。
+- 1.21.1 写下的套装在 26.1.2 上保留属性 ID（`minecraft:generic.attack_damage` 对应 `minecraft:attack_damage`），适用于属性加成、属性条件与自动生成的提示。
+- 26.1.2 上套装会响应两类饰品变化：更换物品与物品状态改变。时间条件读取主世界时钟，月相条件读取实体所在位置的月相，均为 26.1 中这两个数值的来源。
+- 验证：三个版本均可构建；服务端运行时检查在 1.21.1 与 26.1.2 通过；26.1.2 客户端中英文 854×480 与 1536×864 共 186 张截图，与 1.21.1 布局一致。
+
 ## 2026-10-05 — Potion list icons / 药水列表图标
 
 ### English
