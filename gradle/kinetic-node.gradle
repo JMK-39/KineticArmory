@@ -288,3 +288,35 @@ if (pLoader == 'neoforge') {
 
 // English and Chinese must expose exactly the same authored translation keys.
 apply from: rootProject.file('gradle/kinetic-language-validation.gradle')
+
+// Forge 1.20.1: the GUI capture fixture as a reobfuscated mod, for running inside an installed modpack.
+if (project.property('loader') == 'forge') {
+    def captureMetadata = layout.buildDirectory.dir('gui-capture-validation')
+    def writeCaptureMetadata = tasks.register('writeGuiCaptureValidationMetadata') {
+        outputs.dir captureMetadata
+        doLast {
+            File target = new File(captureMetadata.get().asFile, 'META-INF/mods.toml')
+            target.parentFile.mkdirs()
+            target.setText('modLoader="javafml"\nloaderVersion="[1,)"\nlicense="LGPLv3"\n[[mods]]\nmodId="kineticarmory_validation"\nversion="1.0.0"\ndisplayName="KineticArmory GUI capture"\n', 'UTF-8')
+            new File(captureMetadata.get().asFile, 'pack.mcmeta').setText('{"pack":{"description":"Opt-in GUI capture fixture","pack_format":15}}', 'UTF-8')
+        }
+    }
+    def captureJar = tasks.register('guiCaptureValidationJar', Jar) {
+        dependsOn 'testClasses', writeCaptureMetadata
+        from(sourceSets.test.output) { include 'dev/xyat/kineticarmoryvalidation/GuiLongTextValidation*.class', 'dev/xyat/kineticarmoryvalidation/GuiCaptureForgeEntry.class' }
+        from captureMetadata
+        archiveFileName = 'kineticarmory-gui-capture.jar'
+    }
+    afterEvaluate {
+        def shipped = tasks.named('reobfJar').get()
+        tasks.register('reobfGuiCaptureValidationJar', shipped.getClass().superclass) {
+            dependsOn captureJar
+            input.set(captureJar.flatMap { it.archiveFile })
+            libraries.from(shipped.libraries, sourceSets.main.output)
+            remapOperation.toolType.set(shipped.remapOperation.toolType)
+            remapOperation.toolClasspath.from(shipped.remapOperation.toolClasspath)
+            remapOperation.mappings.from(shipped.remapOperation.mappings)
+            archiveFileName = 'kineticarmory-gui-capture-reobf.jar'
+        }
+    }
+}

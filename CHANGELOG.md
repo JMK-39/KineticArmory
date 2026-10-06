@@ -5,14 +5,18 @@
 - The piece bonus list and the set effects overview show each bonus on one clean line. They reused the tooltip text, whose line breaks showed up as a wide gap in the bonus list and joined words together in the overview ("chance to applySlowness"). Saved tips are unchanged.
 - The condition editor's title has its own row, so the "Select Predicate Type" label is shown in full instead of being cut to "Select…" beside the title.
 - The set editor's effect dialogs (attribute bonus, potion effect, damage and potion immunity, attack effect, damage conversion, attack damage multiplier) and the condition editor are centred in the window both ways. Their height follows their content, so each one sits in the middle whatever its size, instead of some sitting high and some low.
-- Checked with screenshots of all 31 screens on 1.21.1 and 26.1.2, in English and Chinese, at two window sizes and with extra-long text; both versions look the same.
+- In the set commands, hover tips and set effects lists, the Conds and Delete buttons sat on the row frame lines. Rows are now taller and their buttons, icons and text are centred, 3 px clear of the frame on every side.
+- In the time-range condition, an empty minimum or maximum means "no limit" and is no longer marked red.
+- Checked with screenshots of all 31 screens on 1.21.1 and 26.1.2, in English and Chinese, at two window sizes and with extra-long text; both versions look the same. On 1.20.1 the same screens were captured inside an installed modpack at 1920×1080 and 854×480 with an automatic check that no text or button touches a frame line.
 
 ### 简体中文
 
 - 套装件数加成列表和套装效果总览中，每条加成显示为一整行。之前它们复用了提示文本，其中的换行在加成列表里显示为一大段空白，在总览中则把单词连在一起（"chance to applySlowness"）。已保存的提示不受影响。
 - 条件编辑器的标题单独占一行，"选择谓词类型"标签可以完整显示，不再在标题旁被截成"Select…"。
 - 套装编辑器的效果子界面（属性加成、药水效果、伤害与药水免疫、攻击效果、伤害转换、攻击伤害倍率）以及条件编辑器在窗口中水平、垂直居中。界面高度随内容计算，无论大小都位于正中，不再有的偏上、有的偏下。
-- 已在 1.21.1 与 26.1.2 上对全部 31 个界面截图检查，涵盖英文和中文、两种窗口尺寸以及超长文本；两个版本外观一致。
+- 套装指令、悬浮提示和套装效果列表中，"条件"与"删除"按钮压在行边框线上。现在行高增加，按钮、图标和文字垂直居中，四周与边框保持 3 像素。
+- 时间范围条件中，最小值或最大值留空表示"不限"，不再标红。
+- 已在 1.21.1 与 26.1.2 上对全部 31 个界面截图检查，涵盖英文和中文、两种窗口尺寸以及超长文本；两个版本外观一致。1.20.1 上则在已安装的整合包中以 1920×1080 与 854×480 截图，并自动检查文字和按钮都不碰到边框线。
 
 ## 26.10.5 — 2026-10-05
 

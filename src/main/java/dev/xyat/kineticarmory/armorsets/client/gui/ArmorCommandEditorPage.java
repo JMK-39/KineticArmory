@@ -185,9 +185,10 @@ public class ArmorCommandEditorPage extends KineticPage {
      * Command list: left click edits; inline "conditions" and "delete" buttons.
      */
     class CommandListWidget extends KineticRowList<CommandRow> {
-        private static final int ROW_H = 20;
+        // The row frame is ROW_H - 2 tall; its 16 px buttons sit 3 px inside it, clear of both frame lines.
+        private static final int ROW_H = 24;
+        private static final int ROW_BUTTON_Y = 3;
         private static final int ROW_BUTTON_W = 42;
-        private static final int ROW_BUTTON_H = 18;
         private static final int ROW_BUTTON_GAP = 2;
 
         private final List<ArmorDataConfig.CommandData> commandList;
@@ -237,12 +238,13 @@ public class ArmorCommandEditorPage extends KineticPage {
             int deleteX = deleteX(left, rowWidth);
             int conditionsX = conditionsX(left, rowWidth);
             int maxWidth = Math.max(0, conditionsX - left - 8);
-            graphics.scrollingText(Component.literal(row.text()), left + 4, top + 5, maxWidth, 0xFFFFFF, false);
+            graphics.scrollingText(Component.literal(row.text()), left + 4, top + (rowHeight - 2 - 8) / 2, maxWidth, 0xFFFFFF, false);
+            int buttonY = top + ROW_BUTTON_Y;
 
-            KineticTheme.button(graphics, conditionsX, top, ROW_BUTTON_W, KineticPage.CONTROL_HEIGHT,
-                    KineticI18n.translatable("gui.kineticarmory.armorsets.conditions"), over(conditionsX, top), true, false);
-            KineticTheme.button(graphics, deleteX, top, ROW_BUTTON_W, KineticPage.CONTROL_HEIGHT,
-                    KineticI18n.translatable("gui.kineticarmory.armorsets.delete"), over(deleteX, top), true, false);
+            KineticTheme.button(graphics, conditionsX, buttonY, ROW_BUTTON_W, KineticPage.CONTROL_HEIGHT,
+                    KineticI18n.translatable("gui.kineticarmory.armorsets.conditions"), over(conditionsX, buttonY), true, false);
+            KineticTheme.button(graphics, deleteX, buttonY, ROW_BUTTON_W, KineticPage.CONTROL_HEIGHT,
+                    KineticI18n.translatable("gui.kineticarmory.armorsets.delete"), over(deleteX, buttonY), true, false);
         }
 
         private void deleteEntry(int index) {
@@ -261,15 +263,16 @@ public class ArmorCommandEditorPage extends KineticPage {
         @Override
         protected boolean onRowClick(CommandRow row, int index, MouseInput input) {
             int top = rowTop(index);
-            if (input.y() < top || input.y() >= top + ROW_BUTTON_H) return false;
+            if (input.y() < top || input.y() >= top + ROW_H - 2) return false;
+            int buttonY = top + ROW_BUTTON_Y;
             if (!input.isLeft()) return false;
             int left = controlX();
             int rowWidth = rowsWidth();
-            if (input.inside(deleteX(left, rowWidth), top, ROW_BUTTON_W, KineticPage.CONTROL_HEIGHT)) {
+            if (input.inside(deleteX(left, rowWidth), buttonY, ROW_BUTTON_W, KineticPage.CONTROL_HEIGHT)) {
                 deleteEntry(row.index());
                 return true;
             }
-            if (input.inside(conditionsX(left, rowWidth), top, ROW_BUTTON_W, KineticPage.CONTROL_HEIGHT)) {
+            if (input.inside(conditionsX(left, rowWidth), buttonY, ROW_BUTTON_W, KineticPage.CONTROL_HEIGHT)) {
                 openConditions(row.index());
                 return true;
             }

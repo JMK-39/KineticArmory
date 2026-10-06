@@ -221,11 +221,14 @@ public class ArmorDetailPage extends KineticPage {
 
     class DetailListWidget extends KineticRowList<DetailEntry> {
         private static final int DELETE_BUTTON_W = 44;
-        private static final int DELETE_BUTTON_H = 18;
+        private static final int DELETE_BUTTON_H = 16;
         private static final int ROW_TEXT_INSET = 5;
+        // Row frames are ROW_FRAME_H tall; icon, text and Delete button are centred, 3 px clear of the frame lines.
+        private static final int ROW_FRAME_H = 22;
+        private static final int BUTTON_Y = (ROW_FRAME_H - DELETE_BUTTON_H) / 2;
 
         DetailListWidget(int x, int y, int width, int height) {
-            super(x, y, width, height, 22);
+            super(x, y, width, height, ROW_FRAME_H + 2);
         }
 
         private int deleteX(int left, int w) {
@@ -235,7 +238,7 @@ public class ArmorDetailPage extends KineticPage {
         @Override
         protected void renderRowBackground(KineticGraphics g, int index, int x, int y, int width, int height,
                                            boolean hovered, boolean selected) {
-            KineticTheme.stateSurface(g, x, y, width, 20, KineticTheme.Surface.PANEL_ALT, false, hovered, false);
+            KineticTheme.stateSurface(g, x, y, width, ROW_FRAME_H, KineticTheme.Surface.PANEL_ALT, false, hovered, false);
         }
 
         @Override
@@ -244,22 +247,22 @@ public class ArmorDetailPage extends KineticPage {
             int deleteX = deleteX(l, w);
             int textX = l + ROW_TEXT_INSET;
             if (entry.effect() != null) {
-                g.effectIcon(entry.effect(), textX, t + 2, 16);
+                g.effectIcon(entry.effect(), textX, t + (ROW_FRAME_H - 16) / 2, 16);
                 textX += 20;
             }
-            renderTextWithIcons(g, entry.text(), textX, t + 6,
+            renderTextWithIcons(g, entry.text(), textX, t + (ROW_FRAME_H - 8) / 2,
                     Math.max(0, deleteX - textX - TEXT_GAP));
             boolean delHovered = mouseX() >= deleteX && mouseX() < deleteX + DELETE_BUTTON_W
-                    && mouseY() >= t + 1 && mouseY() < t + 1 + DELETE_BUTTON_H;
-            KineticTheme.button(g, deleteX, t + 1, DELETE_BUTTON_W, DELETE_BUTTON_H,
+                    && mouseY() >= t + BUTTON_Y && mouseY() < t + BUTTON_Y + DELETE_BUTTON_H;
+            KineticTheme.button(g, deleteX, t + BUTTON_Y, DELETE_BUTTON_W, DELETE_BUTTON_H,
                     KineticI18n.translatable("gui.kineticarmory.armorsets.delete"), delHovered, true, false);
         }
 
         @Override
         protected boolean onRowClick(DetailEntry entry, int index, MouseInput input) {
             int t = rowTop(index);
-            if (input.y() < t || input.y() >= t + 20) return false;
-            if (input.isLeft() && input.inside(deleteX(controlX(), rowsWidth()), t + 1, DELETE_BUTTON_W, DELETE_BUTTON_H)) {
+            if (input.y() < t || input.y() >= t + ROW_FRAME_H) return false;
+            if (input.isLeft() && input.inside(deleteX(controlX(), rowsWidth()), t + BUTTON_Y, DELETE_BUTTON_W, DELETE_BUTTON_H)) {
                 entry.onDelete().run();
                 return true;
             }

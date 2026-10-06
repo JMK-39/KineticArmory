@@ -1,5 +1,4 @@
-//? if >=1.21 {
-/*package dev.xyat.kineticarmoryvalidation;
+package dev.xyat.kineticarmoryvalidation;
 
 import dev.xyat.kineticcore.api.client.event.KineticClientEvents;
 import dev.xyat.kineticcore.api.client.gui.KineticGui;
@@ -23,7 +22,7 @@ import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/^** Uses the existing client and unsaved page drafts. Never clicks or saves editor changes. *^/
+/*** Uses the existing client and unsaved page drafts. Never clicks or saves editor changes. */
 public final class GuiLongTextValidation {
     private static final Logger LOG=LoggerFactory.getLogger(GuiLongTextValidation.class);
     private static final String ROOT=System.getProperty("kineticarmory.guiValidation.output","D:/IDEAWork/KineticArmory/.gradle/gui-long-text-20261004/");
@@ -125,7 +124,12 @@ public final class GuiLongTextValidation {
             case 26 -> KineticGui.open(new PotionImmunityEditor(config,null));
             case 27 -> KineticGui.open(new DamageConversionEditor(config,null));
             case 28 -> KineticGui.open(new AttackDamageEditor(config,null));
-            case 29,30 -> dev.xyat.kineticcore.api.client.gui.selector.KineticSelectors.openNbtEditor(index==29?"[damage=1]":"[invalid=]",text->{try{dev.xyat.kineticarmory.armorsets.data.ArmorItemData.compile("minecraft:diamond_sword",text);return null;}catch(RuntimeException invalid){return String.valueOf(invalid.getMessage());}},value->{});
+            case 29,30 -> {
+                //? if >=1.21 {
+                /*dev.xyat.kineticcore.api.client.gui.selector.KineticSelectors.openNbtEditor(index==29?"[damage=1]":"[invalid=]",text->{try{dev.xyat.kineticarmory.armorsets.data.ArmorItemData.compile("minecraft:diamond_sword",text);return null;}catch(RuntimeException invalid){return String.valueOf(invalid.getMessage());}},value->{});
+                *///?} else
+                dev.xyat.kineticcore.api.client.gui.selector.KineticSelectors.openNbtEditor(index==29?"{Damage:1}":"{Damage:}",text->{try{net.minecraft.nbt.TagParser.parseTag(text);return null;}catch(Exception invalid){return String.valueOf(invalid.getMessage());}},value->{});
+            }
         }
     }
     private static ArmorDataConfig sample() {
@@ -175,7 +179,7 @@ public final class GuiLongTextValidation {
         try(var image=Screenshot.takeScreenshot(mc.getMainRenderTarget())){image.writeToFile(path);}
         captures++;LOG.info("ARMORY_GUI_CAPTURE phase={} case={} image={}x{}",phase,NAMES[page],mc.getWindow().getWidth(),mc.getWindow().getHeight());
     }
-    /^** Logs controls of the open screen that overlap or sit closer than 2 px (Core layout check). *^/
+    /*** Logs controls of the open screen that overlap or sit closer than 2 px (Core layout check). */
     private static void layout() {
         try {
             for(Object problem:(List<?>)Class.forName("dev.xyat.kineticcore.internal.client.gui.LayoutCheck").getMethod("currentScreenProblems").invoke(null))
@@ -207,4 +211,3 @@ public final class GuiLongTextValidation {
         @Override public net.minecraft.util.FormattedCharSequence getVisualOrder(net.minecraft.network.chat.FormattedText text){return delegate.getVisualOrder(text);}
     }
 }
-*///?}

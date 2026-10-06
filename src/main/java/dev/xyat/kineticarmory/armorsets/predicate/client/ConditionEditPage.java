@@ -104,7 +104,10 @@ public class ConditionEditPage extends KineticPage {
                 boolean allowEmpty = "TIME_RANGE".equals(newType);
                 double minimum = allowEmpty ? 0.0D : 0.05D;
                 double maximum = allowEmpty ? 1199.95D : Integer.MAX_VALUE / 20.0D;
-                KineticNumberField box = ui().numberField(cx - FIELD_WIDTH / 2, currentY + PARAM_FIELD_OFFSET, FIELD_WIDTH, NumberType.DECIMAL).allowNegative(false).range(minimum, maximum).firstShownTextAsDefault().build();
+                var builder = ui().numberField(cx - FIELD_WIDTH / 2, currentY + PARAM_FIELD_OFFSET, FIELD_WIDTH, NumberType.DECIMAL).allowNegative(false).range(minimum, maximum).firstShownTextAsDefault();
+                // A time range may leave either end empty (no limit), so an empty field is not an error there.
+                if (allowEmpty) builder.optional();
+                KineticNumberField box = builder.build();
                 box.limitTextLength(32);
                 box.setTextValue(secondsDisplayValue(initialVal, allowEmpty));
                 box.onTextChange(value -> updateSecondsParam(def.key(), box, allowEmpty));

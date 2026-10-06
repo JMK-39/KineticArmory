@@ -404,21 +404,21 @@ public class ArmorTipEditorPage extends KineticPage {
 
             int w = Math.min(listWidget.rowWidth(), Math.max(0, width() - 2 * TEXT_GAP));
             int floatX = Math.max(TEXT_GAP, Math.min(mx - 50, width() - w - TEXT_GAP));
-            int floatY = Math.max(TEXT_GAP, Math.min(my - 10, height() - 20 - TEXT_GAP));
+            int floatY = Math.max(TEXT_GAP, Math.min(my - 10, height() - 22 - TEXT_GAP));
 
             KineticTheme.stateSurface(
                     g,
                     floatX,
                     floatY,
                     w,
-                    20,
+                    22,
                     KineticTheme.Surface.PANEL_ALT,
                     true,
                     false,
                     false
             );
 
-            renderTextWithIcons(g, draggingText, floatX + TEXT_GAP, floatY + 6, Math.max(0, w - TEXT_GAP * 2));
+            renderTextWithIcons(g, draggingText, floatX + TEXT_GAP, floatY + 7, Math.max(0, w - TEXT_GAP * 2));
         }
     }
 
@@ -491,7 +491,9 @@ public class ArmorTipEditorPage extends KineticPage {
      * Tip row list: Ctrl+left-drag to reorder, left click to edit, inline delete button.
      */
     class TipListWidget extends KineticRowList<TipRow> {
-        private static final int ROW_H = 22;
+        // Row frames are ROW_FRAME_H tall; the 16 px Delete button and the text sit centred, 3 px clear of the frame lines.
+        private static final int ROW_H = 24;
+        private static final int ROW_FRAME_H = 22;
         private static final int ROW_INSET = 12;
         private static final int DELETE_BUTTON_W = 44;
         private static final int DELETE_BUTTON_H = KineticPage.CONTROL_HEIGHT;
@@ -521,7 +523,7 @@ public class ArmorTipEditorPage extends KineticPage {
         }
 
         private int deleteY(int rowTop) {
-            return rowTop + (20 - DELETE_BUTTON_H) / 2;
+            return rowTop + (ROW_FRAME_H - DELETE_BUTTON_H) / 2;
         }
 
         @Override
@@ -536,7 +538,7 @@ public class ArmorTipEditorPage extends KineticPage {
             int l = rowLeft();
             int w = rowWidth();
             if (draggingIndex == row.layoutIndex()) {
-                KineticTheme.stateSurface(g, l, t, w, 20, KineticTheme.Surface.PANEL_ALT, true, true, false);
+                KineticTheme.stateSurface(g, l, t, w, ROW_FRAME_H, KineticTheme.Surface.PANEL_ALT, true, true, false);
                 return;
             }
 
@@ -546,7 +548,7 @@ public class ArmorTipEditorPage extends KineticPage {
                     l,
                     t,
                     w,
-                    20,
+                    ROW_FRAME_H,
                     row.iconLine() ? KineticTheme.Surface.PANEL : KineticTheme.Surface.PANEL_ALT,
                     editing,
                     hv,
@@ -555,7 +557,7 @@ public class ArmorTipEditorPage extends KineticPage {
 
             int deleteX = deleteX();
             int maxW = Math.max(0, deleteX - l - 8);
-            renderTextWithIcons(g, row.text(), l + 4, t + 6, maxW);
+            renderTextWithIcons(g, row.text(), l + 4, t + (ROW_FRAME_H - 8) / 2, maxW);
 
             int deleteY = deleteY(t);
             boolean deleteHovered = mouseX() >= deleteX && mouseX() < deleteX + DELETE_BUTTON_W
@@ -579,7 +581,7 @@ public class ArmorTipEditorPage extends KineticPage {
         @Override
         protected boolean onRowClick(TipRow row, int index, MouseInput input) {
             int t = rowTop(index);
-            if (input.y() < t || input.y() >= t + 20) return false;
+            if (input.y() < t || input.y() >= t + ROW_FRAME_H) return false;
             if (input.isLeft() && input.inside(deleteX(), deleteY(t), DELETE_BUTTON_W, DELETE_BUTTON_H)) {
                 deleteRow(row);
                 return true;
