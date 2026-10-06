@@ -26,8 +26,15 @@ import java.util.Set;
 
 public class ConditionEditPage extends KineticPage {
     private static final int FIELD_WIDTH = 240;
-    // The panel top sits 82 above the centre so the title has its own row above the type label (cy - 62).
-    private static final int PANEL_TOP = 82;
+    // Rows from the panel top: title, type label, type field, then one label + field per parameter, then the buttons.
+    // The panel height follows from the parameter count and the panel is centred in the page both ways.
+    private static final int TITLE_Y = 10;
+    private static final int TYPE_LABEL_Y = 28;
+    private static final int TYPE_FIELD_Y = 40;
+    private static final int FIRST_PARAM_Y = 72;
+    private static final int PARAM_STEP = 45;
+    private static final int PARAM_FIELD_OFFSET = 12;
+    private static final int BOTTOM_PADDING = 10;
     private static final int PANEL_WIDTH = 280;
     private static final int TITLE_WIDTH = PANEL_WIDTH - 24;
     private final List<ConditionData> parentList;
@@ -56,13 +63,13 @@ public class ConditionEditPage extends KineticPage {
     }
 
     @Override protected void build(KineticUi ui) {
-        int cx = width() / 2; int cy = height() / 2;
+        int cx = width() / 2;
 
-        typeInput = ui().autoComplete(cx - FIELD_WIDTH / 2, cy - 50, FIELD_WIDTH, ConditionTypeUtil::getSuggestions).firstShownTextAsDefault().build();
+        typeInput = ui().autoComplete(cx - FIELD_WIDTH / 2, panelTop() + TYPE_FIELD_Y, FIELD_WIDTH, ConditionTypeUtil::getSuggestions).firstShownTextAsDefault().build();
         typeInput.setTextValue((data.type != null && !data.type.isEmpty()) ? data.type.toUpperCase() : "");
 
-        saveBtn = ui().button(cx - 60, cy + 30, 55).text(KineticI18n.translatable("gui.kineticarmory.predicate.save")).onClick(b -> save()).build();
-        backBtn = ui().button(cx + 5, cy + 30, 55).text(KineticI18n.translatable("gui.kineticarmory.predicate.back")).onClick(b -> {
+        saveBtn = ui().button(cx - 60, panelTop() + buttonsOffset(currentSchema.size()), 55).text(KineticI18n.translatable("gui.kineticarmory.predicate.save")).onClick(b -> save()).build();
+        backBtn = ui().button(cx + 5, panelTop() + buttonsOffset(currentSchema.size()), 55).text(KineticI18n.translatable("gui.kineticarmory.predicate.back")).onClick(b -> {
             navigateBack();
         }).build();
         lastTickType = ConditionTypeUtil.getRawType(typeInput.textValue());
@@ -86,7 +93,9 @@ public class ConditionEditPage extends KineticPage {
 
         currentSchema = ConditionTypeUtil.getParamSchema(newType);
         int cx = width() / 2;
-        int currentY = (height() / 2) - 10;
+        int top = panelTop();
+        typeInput.moveControlY(top + TYPE_FIELD_Y);
+        int currentY = top + FIRST_PARAM_Y;
 
         for (ConditionTypeUtil.ParamDef def : currentSchema) {
             String initialVal = currentParamValues.getOrDefault(def.key(), def.defaultVal());
@@ -95,7 +104,7 @@ public class ConditionEditPage extends KineticPage {
                 boolean allowEmpty = "TIME_RANGE".equals(newType);
                 double minimum = allowEmpty ? 0.0D : 0.05D;
                 double maximum = allowEmpty ? 1199.95D : Integer.MAX_VALUE / 20.0D;
-                KineticNumberField box = ui().numberField(cx - FIELD_WIDTH / 2, currentY + 12, FIELD_WIDTH, NumberType.DECIMAL).allowNegative(false).range(minimum, maximum).firstShownTextAsDefault().build();
+                KineticNumberField box = ui().numberField(cx - FIELD_WIDTH / 2, currentY + PARAM_FIELD_OFFSET, FIELD_WIDTH, NumberType.DECIMAL).allowNegative(false).range(minimum, maximum).firstShownTextAsDefault().build();
                 box.limitTextLength(32);
                 box.setTextValue(secondsDisplayValue(initialVal, allowEmpty));
                 box.onTextChange(value -> updateSecondsParam(def.key(), box, allowEmpty));
@@ -103,7 +112,7 @@ public class ConditionEditPage extends KineticPage {
                 dynamicWidgets.add(box);
             } else if (def.type() == ConditionTypeUtil.ParamDataType.ITEM) {
                 String displayStr = initialVal.isEmpty() ? KineticI18n.translatable("gui.kineticarmory.predicate.select_item").getString() : initialVal;
-                KineticButton btn = ui().button(cx - FIELD_WIDTH / 2, currentY + 12, FIELD_WIDTH).text(Component.literal(displayStr)).onClick(b -> {
+                KineticButton btn = ui().button(cx - FIELD_WIDTH / 2, currentY + PARAM_FIELD_OFFSET, FIELD_WIDTH).text(Component.literal(displayStr)).onClick(b -> {
                     syncCurrentValues();
                     KineticSelectors.openItemSelector(selection -> {
                         if (!selection.isItem()) return;
@@ -114,7 +123,7 @@ public class ConditionEditPage extends KineticPage {
                 dynamicWidgets.add(btn);
             }
             else if (def.type() == ConditionTypeUtil.ParamDataType.NUMBER || def.type() == ConditionTypeUtil.ParamDataType.STRING) {
-                KineticTextField box = ui().textField(cx - FIELD_WIDTH / 2, currentY + 12, FIELD_WIDTH).firstShownTextAsDefault().build();
+                KineticTextField box = ui().textField(cx - FIELD_WIDTH / 2, currentY + PARAM_FIELD_OFFSET, FIELD_WIDTH).firstShownTextAsDefault().build();
                 box.setTextValue(initialVal);
 
                 if (def.key().equals("stage")) {
@@ -132,20 +141,17 @@ public class ConditionEditPage extends KineticPage {
                 dynamicWidgets.add(box);
             }
             else {
-                KineticAutoCompleteField acBox = ui().autoComplete(cx - FIELD_WIDTH / 2, currentY + 12, FIELD_WIDTH, () -> ConditionTypeUtil.getSuggestionsFor(def.type())).firstShownTextAsDefault().build();
+                KineticAutoCompleteField acBox = ui().autoComplete(cx - FIELD_WIDTH / 2, currentY + PARAM_FIELD_OFFSET, FIELD_WIDTH, () -> ConditionTypeUtil.getSuggestionsFor(def.type())).firstShownTextAsDefault().build();
                 acBox.setTextValue(initialVal);
                 acBox.onTextChange(s -> currentParamValues.put(def.key(), ConditionTypeUtil.extractValue(s)));
                 dynamicAcBoxes.add(acBox); dynamicWidgets.add(acBox);
             }
-            currentY += 45;
+            currentY += PARAM_STEP;
         }
 
-        saveBtn.moveControlY(currentY + 10);
-        backBtn.moveControlY(currentY + 10);
-
-        int panelStartY = (height() / 2) - PANEL_TOP;
-        int buttonsBottomY = saveBtn.controlY() + saveBtn.controlHeight();
-        dynamicPanelHeight = (buttonsBottomY + 15) - panelStartY;
+        saveBtn.moveControlY(top + buttonsOffset(currentSchema.size()));
+        backBtn.moveControlY(top + buttonsOffset(currentSchema.size()));
+        dynamicPanelHeight = panelHeight(currentSchema.size());
     }
 
     private String selectedItemId(ItemStack stack) {
@@ -184,13 +190,26 @@ public class ConditionEditPage extends KineticPage {
         }
     }
 
+    /** Offset of the Save / Back row from the panel top: 10 px below the last field, or below the type field. */
+    private static int buttonsOffset(int params) {
+        return params == 0 ? TYPE_FIELD_Y + 30 : FIRST_PARAM_Y + (params - 1) * PARAM_STEP + PARAM_FIELD_OFFSET + 30;
+    }
+
+    private static int panelHeight(int params) {
+        return buttonsOffset(params) + 20 + BOTTOM_PADDING;
+    }
+
+    private int panelTop() {
+        return (height() - panelHeight(currentSchema.size())) / 2;
+    }
+
     @Override protected void renderBackground(KineticGraphics g, int mx, int my, float pt) {
-        int cx = width() / 2; int cy = height() / 2;
-        int panelY = cy - PANEL_TOP;
+        int cx = width() / 2;
+        int panelY = panelTop();
         KineticTheme.panel(g, cx - PANEL_WIDTH / 2, panelY, PANEL_WIDTH, dynamicPanelHeight);
 
-        g.scrollingTextCentered(title(), cx, panelY + 10, TITLE_WIDTH, 0xFFFFFF, true);
-        g.scrollingText(KineticI18n.translatable("gui.kineticarmory.predicate.type"), cx - FIELD_WIDTH / 2, cy - 62, FIELD_WIDTH, 0xAAAAAA, true);
+        g.scrollingTextCentered(title(), cx, panelY + TITLE_Y, TITLE_WIDTH, 0xFFFFFF, true);
+        g.scrollingText(KineticI18n.translatable("gui.kineticarmory.predicate.type"), cx - FIELD_WIDTH / 2, panelY + TYPE_LABEL_Y, FIELD_WIDTH, 0xAAAAAA, true);
     }
 
     @Override protected void renderForeground(KineticGraphics g, int mx, int my, float pt) {
@@ -198,7 +217,7 @@ public class ConditionEditPage extends KineticPage {
 
         for (int i = 0; i < currentSchema.size(); i++) {
             ConditionTypeUtil.ParamDef def = currentSchema.get(i);
-            int y = (height() / 2) - 10 + i * 45;
+            int y = panelTop() + FIRST_PARAM_Y + i * PARAM_STEP;
 
             String label = ConditionTypeUtil.getTranslatedParamName(def.key());
             if (isSecondsParam(ConditionTypeUtil.getRawType(typeInput.textValue()), def.key())) {

@@ -36,17 +36,17 @@ public class AttackDamageEditor extends KineticPage {
     }
 
     @Override protected void build(KineticUi ui) {
-        int cx = width() / 2; int cy = height() / 2 - 50;
-        valInput = ui().numberAutoComplete(cx - 100, cy - 30, 200, NumberType.DECIMAL, ArrayList::new).allowNegative(true).firstShownTextAsDefault().build();
+        EditorPanel p = panel(); int cx = p.centerX;
+        valInput = ui().numberAutoComplete(cx - 100, p.rowY(0), 200, NumberType.DECIMAL, ArrayList::new).allowNegative(true).firstShownTextAsDefault().build();
         valInput.setPlaceholder(KineticI18n.translatable("gui.kineticarmory.armorsets.input.attack_multiplier"));
         valInput.setTextValue(tempVal != null ? tempVal : (isNew ? "" : String.valueOf(data.multiplier)));
 
-        ui().button(cx - 100, cy - 5, 200).text(KineticI18n.translatable("gui.kineticarmory.armorsets.editor.conditions", data.conditions.size())).onClick(b -> {
+        ui().button(cx - 100, p.rowY(1), 200).text(KineticI18n.translatable("gui.kineticarmory.armorsets.editor.conditions", data.conditions.size())).onClick(b -> {
             if (syncToData()) return;
             openChild(new ConditionListPage(data));
         }).build();
 
-        ui().button(cx - 60, cy + 25, 55).text(KineticI18n.translatable("gui.kineticarmory.armorsets.save")).onClick(b -> {
+        ui().button(cx - 60, p.buttonY(), 55).text(KineticI18n.translatable("gui.kineticarmory.armorsets.save")).onClick(b -> {
             if (syncToData()) return;
             if (valInput.textValue().trim().isEmpty()) { KineticOverlays.toast(KineticI18n.translatable("msg.kineticarmory.armorsets.empty_field")); return; }
             if (oldTip != null) config.tips.remove(oldTip);
@@ -58,7 +58,7 @@ public class AttackDamageEditor extends KineticPage {
             config.tips.add(newTip);
             oldTip = newTip;
         }).build();
-        ui().button(cx + 5, cy + 25, 55).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> { navigateBack(); }).build();
+        ui().button(cx + 5, p.buttonY(), 55).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> { navigateBack(); }).build();
     }
 
     private boolean syncToData() {
@@ -78,8 +78,10 @@ public class AttackDamageEditor extends KineticPage {
     }
 
     @Override protected void renderBackground(KineticGraphics g, int mx, int my, float pt) {
-        int cx = width() / 2; int cy = height() / 2 - 50; KineticTheme.panel(g, cx - PANEL_WIDTH / 2, cy - 60, PANEL_WIDTH, 115);
-        g.scrollingTextCentered(title(), cx, cy - 50, PANEL_WIDTH - 8, 0xFFFFFF, true);
+        panel().render(g, title());
     }
 
+    private EditorPanel panel() {
+        return new EditorPanel(width(), height(), PANEL_WIDTH, 2);
+    }
 }

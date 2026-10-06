@@ -40,29 +40,29 @@ public class AttackEffectEditor extends KineticPage {
     }
 
     @Override protected void build(KineticUi ui) {
-        int cx = width() / 2; int cy = height() / 2 - 50;
-        idInput = ui().autoComplete(cx - 100, cy - 35, 200, KineticSearch::potionDictionary).placeholder(KineticI18n.translatable("gui.kineticarmory.armorsets.input.id")).firstShownTextAsDefault().build();
+        EditorPanel p = panel(); int cx = p.centerX;
+        idInput = ui().autoComplete(cx - 100, p.rowY(0), 200, KineticSearch::potionDictionary).placeholder(KineticI18n.translatable("gui.kineticarmory.armorsets.input.id")).firstShownTextAsDefault().build();
         idInput.setTextValue(tempId != null ? tempId : (isNew ? "" : (data.effectId != null ? data.effectId : "")));
 
         int w = 60; int gap = 10; int startX = cx - 100;
-        durInput = ui().numberAutoComplete(startX, cy - 10, w, NumberType.DECIMAL, ArrayList::new).allowNegative(true).firstShownTextAsDefault().build();
+        durInput = ui().numberAutoComplete(startX, p.rowY(1), w, NumberType.DECIMAL, ArrayList::new).allowNegative(true).firstShownTextAsDefault().build();
         durInput.setPlaceholder(KineticI18n.translatable("gui.kineticarmory.armorsets.input.duration"));
         durInput.setTextValue(tempDur != null ? tempDur : (isNew ? "" : String.valueOf(data.duration)));
 
-        lvlInput = ui().numberAutoComplete(startX + w + gap, cy - 10, w, NumberType.INT, ArrayList::new).allowNegative(true).firstShownTextAsDefault().build();
+        lvlInput = ui().numberAutoComplete(startX + w + gap, p.rowY(1), w, NumberType.INT, ArrayList::new).allowNegative(true).firstShownTextAsDefault().build();
         lvlInput.setPlaceholder(KineticI18n.translatable("gui.kineticarmory.armorsets.input.level"));
         lvlInput.setTextValue(tempLvl != null ? tempLvl : (isNew ? "" : String.valueOf(data.amplifier)));
 
-        chanceInput = ui().numberAutoComplete(startX + (w + gap) * 2, cy - 10, w, NumberType.DECIMAL, ArrayList::new).allowNegative(true).firstShownTextAsDefault().build();
+        chanceInput = ui().numberAutoComplete(startX + (w + gap) * 2, p.rowY(1), w, NumberType.DECIMAL, ArrayList::new).allowNegative(true).firstShownTextAsDefault().build();
         chanceInput.setPlaceholder(KineticI18n.translatable("gui.kineticarmory.armorsets.input.chance"));
         chanceInput.setTextValue(tempChance != null ? tempChance : (isNew ? "" : String.valueOf(data.chance)));
 
-        ui().button(cx - 100, cy + 15, 200).text(KineticI18n.translatable("gui.kineticarmory.armorsets.editor.conditions", data.conditions.size())).onClick(b -> {
+        ui().button(cx - 100, p.rowY(2), 200).text(KineticI18n.translatable("gui.kineticarmory.armorsets.editor.conditions", data.conditions.size())).onClick(b -> {
             if (syncToData()) return;
             openChild(new ConditionListPage(data));
         }).build();
 
-        ui().button(cx - 60, cy + 45, 55).text(KineticI18n.translatable("gui.kineticarmory.armorsets.save")).onClick(b -> {
+        ui().button(cx - 60, p.buttonY(), 55).text(KineticI18n.translatable("gui.kineticarmory.armorsets.save")).onClick(b -> {
             if (syncToData()) return;
             if (data.effectId.isEmpty()) { KineticOverlays.toast(KineticI18n.translatable("msg.kineticarmory.armorsets.empty_field")); return; }
             if (oldTip != null) config.tips.remove(oldTip);
@@ -74,7 +74,7 @@ public class AttackEffectEditor extends KineticPage {
             config.tips.add(newTip);
             oldTip = newTip;
         }).build();
-        ui().button(cx + 5, cy + 45, 55).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> { navigateBack(); }).build();
+        ui().button(cx + 5, p.buttonY(), 55).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> { navigateBack(); }).build();
     }
 
     private boolean syncToData() {
@@ -104,9 +104,10 @@ public class AttackEffectEditor extends KineticPage {
     }
 
     @Override protected void renderBackground(KineticGraphics g, int mx, int my, float pt) {
-        int cx = width() / 2; int cy = height() / 2 - 50;
-        KineticTheme.panel(g, cx - PANEL_WIDTH / 2, cy - 70, PANEL_WIDTH, 150);
-        g.scrollingTextCentered(title(), cx, cy - 60, PANEL_WIDTH - 8, 0xFFFFFF, true);
+        panel().render(g, title());
     }
 
+    private EditorPanel panel() {
+        return new EditorPanel(width(), height(), PANEL_WIDTH, 3);
+    }
 }

@@ -44,26 +44,26 @@ public class AttributeEditor extends KineticPage {
     }
 
     @Override protected void build(KineticUi ui) {
-        int cx = width() / 2; int cy = height() / 2 - 50;
-        idInput = ui().autoComplete(cx - 100, cy - 35, 200, KineticSearch::attributeDictionary).placeholder(KineticI18n.translatable("gui.kineticarmory.armorsets.input.id")).firstShownTextAsDefault().build();
+        EditorPanel p = panel(); int cx = p.centerX;
+        idInput = ui().autoComplete(cx - 100, p.rowY(0), 200, KineticSearch::attributeDictionary).placeholder(KineticI18n.translatable("gui.kineticarmory.armorsets.input.id")).firstShownTextAsDefault().build();
         idInput.setTextValue(tempId != null ? tempId : (isNew ? "" : (data.attribute != null ? data.attribute : "")));
 
-        amountInput = ui().numberAutoComplete(cx - 100, cy - 10, 95, NumberType.DECIMAL, ArrayList::new).allowNegative(true).firstShownTextAsDefault().build();
+        amountInput = ui().numberAutoComplete(cx - 100, p.rowY(1), 95, NumberType.DECIMAL, ArrayList::new).allowNegative(true).firstShownTextAsDefault().build();
         amountInput.setPlaceholder(KineticI18n.translatable("gui.kineticarmory.armorsets.input.amount"));
         amountInput.setTextValue(tempAmount != null ? tempAmount : (isNew ? "" : String.valueOf(data.amount)));
 
-        ui().button(cx + 5, cy - 10, 95).text(KineticI18n.translatable("gui.kineticarmory.armorsets.op." + currentOp.toLowerCase())).onClick(b -> {
+        ui().button(cx + 5, p.rowY(1), 95).text(KineticI18n.translatable("gui.kineticarmory.armorsets.op." + currentOp.toLowerCase())).onClick(b -> {
             currentOp = currentOp.equals("ADDITION") ? "MULTIPLY_TOTAL" : (currentOp.equals("MULTIPLY_TOTAL") ? "SET" : "ADDITION");
             b.setText(KineticI18n.translatable("gui.kineticarmory.armorsets.op." + currentOp.toLowerCase()));
             data.operation = currentOp;
         }).build();
 
-        ui().button(cx - 100, cy + 15, 200).text(KineticI18n.translatable("gui.kineticarmory.armorsets.editor.conditions", data.conditions.size())).onClick(b -> {
+        ui().button(cx - 100, p.rowY(2), 200).text(KineticI18n.translatable("gui.kineticarmory.armorsets.editor.conditions", data.conditions.size())).onClick(b -> {
             if (syncToData()) return;
             openChild(new ConditionListPage(data));
         }).build();
 
-        ui().button(cx - 60, cy + 45, 55).text(KineticI18n.translatable("gui.kineticarmory.armorsets.save")).onClick(b -> {
+        ui().button(cx - 60, p.buttonY(), 55).text(KineticI18n.translatable("gui.kineticarmory.armorsets.save")).onClick(b -> {
             if (syncToData()) return;
             if (data.attribute.isEmpty()) { KineticOverlays.toast(KineticI18n.translatable("msg.kineticarmory.armorsets.empty_field")); return; }
             if (oldTip != null) config.tips.remove(oldTip);
@@ -76,7 +76,7 @@ public class AttributeEditor extends KineticPage {
             oldTip = newTip;
         }).build();
 
-        ui().button(cx + 5, cy + 45, 55).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> { navigateBack(); }).build();
+        ui().button(cx + 5, p.buttonY(), 55).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> { navigateBack(); }).build();
     }
 
     private boolean syncToData() {
@@ -101,8 +101,10 @@ public class AttributeEditor extends KineticPage {
     }
 
     @Override protected void renderBackground(KineticGraphics g, int mx, int my, float pt) {
-        int cx = width() / 2; int cy = height() / 2 - 50; KineticTheme.panel(g, cx - PANEL_WIDTH / 2, cy - 70, PANEL_WIDTH, 150);
-        g.scrollingTextCentered(title(), cx, cy - 60, PANEL_WIDTH - 8, 0xFFFFFF, true);
+        panel().render(g, title());
     }
 
+    private EditorPanel panel() {
+        return new EditorPanel(width(), height(), PANEL_WIDTH, 3);
+    }
 }

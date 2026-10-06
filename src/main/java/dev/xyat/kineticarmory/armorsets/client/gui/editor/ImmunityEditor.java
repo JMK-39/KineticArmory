@@ -39,20 +39,20 @@ public class ImmunityEditor extends KineticPage {
     }
 
     @Override protected void build(KineticUi ui) {
-        int cx = width() / 2; int cy = height() / 2 - 50;
-        idInput = ui().autoComplete(cx - 100, cy - 35, 200, KineticSearch::damageDictionary).placeholder(KineticI18n.translatable("gui.kineticarmory.armorsets.input.id_or_tag")).firstShownTextAsDefault().build();
+        EditorPanel p = panel(); int cx = p.centerX;
+        idInput = ui().autoComplete(cx - 100, p.rowY(0), 200, KineticSearch::damageDictionary).placeholder(KineticI18n.translatable("gui.kineticarmory.armorsets.input.id_or_tag")).firstShownTextAsDefault().build();
         idInput.setTextValue(tempId != null ? tempId : (isNew ? "" : (data.damageType != null ? data.damageType : "")));
 
-        valInput = ui().numberAutoComplete(cx - 100, cy - 10, 200, NumberType.DECIMAL, ArrayList::new).allowNegative(true).firstShownTextAsDefault().build();
+        valInput = ui().numberAutoComplete(cx - 100, p.rowY(1), 200, NumberType.DECIMAL, ArrayList::new).allowNegative(true).firstShownTextAsDefault().build();
         valInput.setPlaceholder(KineticI18n.translatable("gui.kineticarmory.armorsets.input.multiplier"));
         valInput.setTextValue(tempVal != null ? tempVal : (isNew ? "" : String.valueOf(data.multiplier)));
 
-        ui().button(cx - 100, cy + 15, 200).text(KineticI18n.translatable("gui.kineticarmory.armorsets.editor.conditions", data.conditions.size())).onClick(b -> {
+        ui().button(cx - 100, p.rowY(2), 200).text(KineticI18n.translatable("gui.kineticarmory.armorsets.editor.conditions", data.conditions.size())).onClick(b -> {
             if (syncToData()) return;
             openChild(new ConditionListPage(data));
         }).build();
 
-        ui().button(cx - 60, cy + 45, 55).text(KineticI18n.translatable("gui.kineticarmory.armorsets.save")).onClick(b -> {
+        ui().button(cx - 60, p.buttonY(), 55).text(KineticI18n.translatable("gui.kineticarmory.armorsets.save")).onClick(b -> {
             if (syncToData()) return;
             if (data.damageType.isEmpty()) { KineticOverlays.toast(KineticI18n.translatable("msg.kineticarmory.armorsets.empty_field")); return; }
             if (oldTip != null) config.tips.remove(oldTip);
@@ -64,7 +64,7 @@ public class ImmunityEditor extends KineticPage {
             config.tips.add(newTip);
             oldTip = newTip;
         }).build();
-        ui().button(cx + 5, cy + 45, 55).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> { navigateBack(); }).build();
+        ui().button(cx + 5, p.buttonY(), 55).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> { navigateBack(); }).build();
     }
 
     private boolean syncToData() {
@@ -88,8 +88,10 @@ public class ImmunityEditor extends KineticPage {
     }
 
     @Override protected void renderBackground(KineticGraphics g, int mx, int my, float pt) {
-        int cx = width() / 2; int cy = height() / 2 - 50; KineticTheme.panel(g, cx - PANEL_WIDTH / 2, cy - 70, PANEL_WIDTH, 150);
-        g.scrollingTextCentered(title(), cx, cy - 60, PANEL_WIDTH - 8, 0xFFFFFF, true);
+        panel().render(g, title());
     }
 
+    private EditorPanel panel() {
+        return new EditorPanel(width(), height(), PANEL_WIDTH, 3);
+    }
 }

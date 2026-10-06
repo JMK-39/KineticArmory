@@ -40,27 +40,27 @@ public class DamageConversionEditor extends KineticPage {
     }
 
     @Override protected void build(KineticUi ui) {
-        int cx = width() / 2; int cy = height() / 2 - 50;
-        srcInput = ui().autoComplete(cx - 125, cy - 30, 110, KineticSearch::damageDictionary).placeholder(KineticI18n.translatable("gui.kineticarmory.armorsets.input.source_type")).firstShownTextAsDefault().build();
+        EditorPanel p = panel(); int cx = p.centerX;
+        srcInput = ui().autoComplete(cx - 125, p.rowY(0), 110, KineticSearch::damageDictionary).placeholder(KineticI18n.translatable("gui.kineticarmory.armorsets.input.source_type")).firstShownTextAsDefault().build();
         srcInput.setTextValue(tempSrc != null ? tempSrc : (isNew ? "" : (data.sourceType != null ? data.sourceType : "")));
 
-        tgtInput = ui().autoComplete(cx + 15, cy - 30, 110, KineticSearch::specificDamageDictionary).placeholder(KineticI18n.translatable("gui.kineticarmory.armorsets.input.target_type")).firstShownTextAsDefault().build();
+        tgtInput = ui().autoComplete(cx + 15, p.rowY(0), 110, KineticSearch::specificDamageDictionary).placeholder(KineticI18n.translatable("gui.kineticarmory.armorsets.input.target_type")).firstShownTextAsDefault().build();
         tgtInput.setTextValue(tempTgt != null ? tempTgt : (isNew ? "" : (data.targetType != null ? data.targetType : "")));
 
-        ratioInput = ui().numberAutoComplete(cx - 125, cy - 5, 110, NumberType.DECIMAL, ArrayList::new).allowNegative(true).firstShownTextAsDefault().build();
+        ratioInput = ui().numberAutoComplete(cx - 125, p.rowY(1), 110, NumberType.DECIMAL, ArrayList::new).allowNegative(true).firstShownTextAsDefault().build();
         ratioInput.setPlaceholder(KineticI18n.translatable("gui.kineticarmory.armorsets.input.ratio"));
         ratioInput.setTextValue(tempRatio != null ? tempRatio : (isNew ? "" : String.valueOf(data.ratio)));
 
-        chanceInput = ui().numberAutoComplete(cx + 15, cy - 5, 110, NumberType.DECIMAL, ArrayList::new).allowNegative(true).firstShownTextAsDefault().build();
+        chanceInput = ui().numberAutoComplete(cx + 15, p.rowY(1), 110, NumberType.DECIMAL, ArrayList::new).allowNegative(true).firstShownTextAsDefault().build();
         chanceInput.setPlaceholder(KineticI18n.translatable("gui.kineticarmory.armorsets.input.chance"));
         chanceInput.setTextValue(tempChance != null ? tempChance : (isNew ? "" : String.valueOf(data.chance)));
 
-        ui().button(cx - 100, cy + 20, 200).text(KineticI18n.translatable("gui.kineticarmory.armorsets.editor.conditions", data.conditions.size())).onClick(b -> {
+        ui().button(cx - 100, p.rowY(2), 200).text(KineticI18n.translatable("gui.kineticarmory.armorsets.editor.conditions", data.conditions.size())).onClick(b -> {
             if (syncToData()) return;
             openChild(new ConditionListPage(data));
         }).build();
 
-        ui().button(cx - 60, cy + 50, 55).text(KineticI18n.translatable("gui.kineticarmory.armorsets.save")).onClick(b -> {
+        ui().button(cx - 60, p.buttonY(), 55).text(KineticI18n.translatable("gui.kineticarmory.armorsets.save")).onClick(b -> {
             if (syncToData()) return;
             if (data.sourceType.isEmpty() || data.targetType.isEmpty()) {
                 KineticOverlays.toast(KineticI18n.translatable("msg.kineticarmory.armorsets.empty_field")); return;
@@ -78,7 +78,7 @@ public class DamageConversionEditor extends KineticPage {
             config.tips.add(newTip);
             oldTip = newTip;
         }).build();
-        ui().button(cx + 5, cy + 50, 55).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> { navigateBack(); }).build();
+        ui().button(cx + 5, p.buttonY(), 55).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> { navigateBack(); }).build();
     }
 
     private boolean syncToData() {
@@ -109,8 +109,10 @@ public class DamageConversionEditor extends KineticPage {
     }
 
     @Override protected void renderBackground(KineticGraphics g, int mx, int my, float pt) {
-        int cx = width() / 2; int cy = height() / 2 - 50; KineticTheme.panel(g, cx - PANEL_WIDTH / 2, cy - 60, PANEL_WIDTH, 145);
-        g.scrollingTextCentered(title(), cx, cy - 50, PANEL_WIDTH - 8, 0xFFFFFF, true);
+        panel().render(g, title());
     }
 
+    private EditorPanel panel() {
+        return new EditorPanel(width(), height(), PANEL_WIDTH, 3);
+    }
 }
