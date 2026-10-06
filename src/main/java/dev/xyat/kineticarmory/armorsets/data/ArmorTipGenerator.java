@@ -157,7 +157,23 @@ public class ArmorTipGenerator {
         return sb.toString();
     }
 
+    private static final ThreadLocal<Boolean> SINGLE_LINE = ThreadLocal.withInitial(() -> false);
+
+    /**
+     * Runs a tip generator without its tooltip line breaks, for one-line list rows. The saved tips keep the wrapped
+     * form, so rows must not be compared with them.
+     */
+    public static String singleLine(java.util.function.Supplier<String> generator) {
+        SINGLE_LINE.set(true);
+        try {
+            return generator.get();
+        } finally {
+            SINGLE_LINE.set(false);
+        }
+    }
+
     private static String applyLineWrap(String text) {
+        if (SINGLE_LINE.get()) return text;
         StringBuilder result = new StringBuilder();
         int count = 0;
         int i = 0;

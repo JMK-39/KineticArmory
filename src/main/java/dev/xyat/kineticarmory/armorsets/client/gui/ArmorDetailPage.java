@@ -118,7 +118,7 @@ public class ArmorDetailPage extends KineticPage {
     private void refreshList() {
         List<DetailEntry> entries = new java.util.ArrayList<>();
 
-        config.potionEffects.forEach(d -> entries.add(DetailEntry.potion(ArmorTipGenerator.genPotTip(d), d.effectId, () -> {
+        config.potionEffects.forEach(d -> entries.add(DetailEntry.potion(ArmorTipGenerator.singleLine(() -> ArmorTipGenerator.genPotTip(d)), d.effectId, () -> {
             openChild(new PotionEditor(config, d));
         }, () -> {
             config.tips.remove(ArmorTipGenerator.genPotTip(d));
@@ -126,7 +126,7 @@ public class ArmorDetailPage extends KineticPage {
             refreshList();
         })));
 
-        config.attributes.forEach(d -> entries.add(new DetailEntry(ArmorTipGenerator.genAttrTip(d), () -> {
+        config.attributes.forEach(d -> entries.add(new DetailEntry(ArmorTipGenerator.singleLine(() -> ArmorTipGenerator.genAttrTip(d)), () -> {
             openChild(new AttributeEditor(config, d));
         }, () -> {
             config.tips.remove(ArmorTipGenerator.genAttrTip(d));
@@ -134,7 +134,7 @@ public class ArmorDetailPage extends KineticPage {
             refreshList();
         })));
 
-        config.damageImmunities.forEach(d -> entries.add(new DetailEntry(ArmorTipGenerator.genImmTip(d), () -> {
+        config.damageImmunities.forEach(d -> entries.add(new DetailEntry(ArmorTipGenerator.singleLine(() -> ArmorTipGenerator.genImmTip(d)), () -> {
             openChild(new ImmunityEditor(config, d));
         }, () -> {
             config.tips.remove(ArmorTipGenerator.genImmTip(d));
@@ -142,7 +142,7 @@ public class ArmorDetailPage extends KineticPage {
             refreshList();
         })));
 
-        config.effectImmunities.forEach(d -> entries.add(DetailEntry.potion(ArmorTipGenerator.genEffImmTip(d), d.effectId, () -> {
+        config.effectImmunities.forEach(d -> entries.add(DetailEntry.potion(ArmorTipGenerator.singleLine(() -> ArmorTipGenerator.genEffImmTip(d)), d.effectId, () -> {
             openChild(new PotionImmunityEditor(config, d));
         }, () -> {
             config.tips.remove(ArmorTipGenerator.genEffImmTip(d));
@@ -150,7 +150,7 @@ public class ArmorDetailPage extends KineticPage {
             refreshList();
         })));
 
-        config.attackEffects.forEach(d -> entries.add(DetailEntry.potion(ArmorTipGenerator.genAtkTip(d), d.effectId, () -> {
+        config.attackEffects.forEach(d -> entries.add(DetailEntry.potion(ArmorTipGenerator.singleLine(() -> ArmorTipGenerator.genAtkTip(d)), d.effectId, () -> {
             openChild(new AttackEffectEditor(config, d));
         }, () -> {
             config.tips.remove(ArmorTipGenerator.genAtkTip(d));
@@ -158,7 +158,7 @@ public class ArmorDetailPage extends KineticPage {
             refreshList();
         })));
 
-        config.damageConversions.forEach(d -> entries.add(new DetailEntry(ArmorTipGenerator.genConvTip(d), () -> {
+        config.damageConversions.forEach(d -> entries.add(new DetailEntry(ArmorTipGenerator.singleLine(() -> ArmorTipGenerator.genConvTip(d)), () -> {
             openChild(new DamageConversionEditor(config, d));
         }, () -> {
             config.tips.remove(ArmorTipGenerator.genConvTip(d));
@@ -166,7 +166,7 @@ public class ArmorDetailPage extends KineticPage {
             refreshList();
         })));
 
-        config.attackDamageMultipliers.forEach(d -> entries.add(new DetailEntry(ArmorTipGenerator.genAtkDmgTip(d), () -> {
+        config.attackDamageMultipliers.forEach(d -> entries.add(new DetailEntry(ArmorTipGenerator.singleLine(() -> ArmorTipGenerator.genAtkDmgTip(d)), () -> {
             openChild(new AttackDamageEditor(config, d));
         }, () -> {
             config.tips.remove(ArmorTipGenerator.genAtkDmgTip(d));
@@ -175,7 +175,7 @@ public class ArmorDetailPage extends KineticPage {
         })));
 
         if (config.allowFlight) {
-            entries.add(new DetailEntry(ArmorTipGenerator.genFlightTip(config.flightConditions, config.flightConditionMatchMode, config.flightConditionMinCount), () -> {
+            entries.add(new DetailEntry(ArmorTipGenerator.singleLine(() -> ArmorTipGenerator.genFlightTip(config.flightConditions, config.flightConditionMatchMode, config.flightConditionMinCount)), () -> {
                 IConditionOwner flightOwner = new IConditionOwner() {
                     @Override public List<ConditionData> getConditions() { return config.flightConditions; }
                     @Override public String getMatchMode() { return config.flightConditionMatchMode == null ? "ANY" : config.flightConditionMatchMode; }

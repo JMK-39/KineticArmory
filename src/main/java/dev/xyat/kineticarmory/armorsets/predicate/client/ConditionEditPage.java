@@ -26,9 +26,10 @@ import java.util.Set;
 
 public class ConditionEditPage extends KineticPage {
     private static final int FIELD_WIDTH = 240;
-    // The type label shares the title's line; reserve its own region before the centered title.
-    private static final int TYPE_LABEL_WIDTH = 40;
-    private static final int TITLE_WIDTH = FIELD_WIDTH - 2 * (TYPE_LABEL_WIDTH + 4);
+    // The panel top sits 82 above the centre so the title has its own row above the type label (cy - 62).
+    private static final int PANEL_TOP = 82;
+    private static final int PANEL_WIDTH = 280;
+    private static final int TITLE_WIDTH = PANEL_WIDTH - 24;
     private final List<ConditionData> parentList;
     private final ConditionData data;
     private boolean isNew;
@@ -142,7 +143,7 @@ public class ConditionEditPage extends KineticPage {
         saveBtn.moveControlY(currentY + 10);
         backBtn.moveControlY(currentY + 10);
 
-        int panelStartY = (height() / 2) - 70;
+        int panelStartY = (height() / 2) - PANEL_TOP;
         int buttonsBottomY = saveBtn.controlY() + saveBtn.controlHeight();
         dynamicPanelHeight = (buttonsBottomY + 15) - panelStartY;
     }
@@ -185,11 +186,11 @@ public class ConditionEditPage extends KineticPage {
 
     @Override protected void renderBackground(KineticGraphics g, int mx, int my, float pt) {
         int cx = width() / 2; int cy = height() / 2;
-        int panelY = cy - 70;
-        KineticTheme.panel(g, cx - 140, panelY, 280, dynamicPanelHeight);
+        int panelY = cy - PANEL_TOP;
+        KineticTheme.panel(g, cx - PANEL_WIDTH / 2, panelY, PANEL_WIDTH, dynamicPanelHeight);
 
         g.scrollingTextCentered(title(), cx, panelY + 10, TITLE_WIDTH, 0xFFFFFF, true);
-        g.scrollingText(KineticI18n.translatable("gui.kineticarmory.predicate.type"), cx - FIELD_WIDTH / 2, cy - 62, TYPE_LABEL_WIDTH, 0xAAAAAA, true);
+        g.scrollingText(KineticI18n.translatable("gui.kineticarmory.predicate.type"), cx - FIELD_WIDTH / 2, cy - 62, FIELD_WIDTH, 0xAAAAAA, true);
     }
 
     @Override protected void renderForeground(KineticGraphics g, int mx, int my, float pt) {

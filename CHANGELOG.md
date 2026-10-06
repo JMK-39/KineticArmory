@@ -1,3 +1,17 @@
+## 26.10.6 — 2026-10-06
+
+### English
+
+- The piece bonus list and the set effects overview show each bonus on one clean line. They reused the tooltip text, whose line breaks showed up as a wide gap in the bonus list and joined words together in the overview ("chance to applySlowness"). Saved tips are unchanged.
+- The condition editor's title has its own row, so the "Select Predicate Type" label is shown in full instead of being cut to "Select…" beside the title.
+- Checked with screenshots of all 31 screens on 1.21.1 and 26.1.2, in English and Chinese, at two window sizes and with extra-long text; both versions look the same.
+
+### 简体中文
+
+- 套装件数加成列表和套装效果总览中，每条加成显示为一整行。之前它们复用了提示文本，其中的换行在加成列表里显示为一大段空白，在总览中则把单词连在一起（"chance to applySlowness"）。已保存的提示不受影响。
+- 条件编辑器的标题单独占一行，"选择谓词类型"标签可以完整显示，不再在标题旁被截成"Select…"。
+- 已在 1.21.1 与 26.1.2 上对全部 31 个界面截图检查，涵盖英文和中文、两种窗口尺寸以及超长文本；两个版本外观一致。
+
 ## 26.10.5 — 2026-10-05
 
 ### English

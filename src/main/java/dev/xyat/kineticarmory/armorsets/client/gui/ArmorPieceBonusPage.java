@@ -132,15 +132,15 @@ ui().button(valueX + 98, controlY, 74).text(KineticI18n.translatable("gui.kineti
     private void rebuildEffects() {
         String keepKey = selectedEffect == null ? null : selectedEffect.key();
         effects.clear();
-        if (config.potionEffects != null) for (ArmorDataConfig.PotionEffectData d : config.potionEffects) effects.add(PieceEffectEntry.potion(config.keyOf(d), ArmorTipGenerator.genPotTip(d), d.amplifier, true, d.effectId));
-        if (config.attributes != null) for (ArmorDataConfig.AttributeModifierData d : config.attributes) effects.add(new PieceEffectEntry(config.keyOf(d), ArmorTipGenerator.genAttrTip(d), d.amount, true));
-        if (config.damageImmunities != null) for (ArmorDataConfig.DamageImmunityData d : config.damageImmunities) effects.add(new PieceEffectEntry(config.keyOf(d), ArmorTipGenerator.genImmTip(d), d.multiplier, true));
-        if (config.effectImmunities != null) for (ArmorDataConfig.EffectImmunityData d : config.effectImmunities) effects.add(PieceEffectEntry.potion(config.keyOf(d), ArmorTipGenerator.genEffImmTip(d), 0.0, false, d.effectId));
-        if (config.attackEffects != null) for (ArmorDataConfig.AttackEffectData d : config.attackEffects) effects.add(PieceEffectEntry.potion(config.keyOf(d), ArmorTipGenerator.genAtkTip(d), d.amplifier, true, d.effectId));
-        if (config.damageConversions != null) for (ArmorDataConfig.DamageConversionData d : config.damageConversions) effects.add(new PieceEffectEntry(config.keyOf(d), ArmorTipGenerator.genConvTip(d), d.ratio, true));
-        if (config.damageMultipliers != null) for (ArmorDataConfig.DamageMultiplierData d : config.damageMultipliers) effects.add(new PieceEffectEntry(config.keyOf(d), ArmorTipGenerator.genDmgMulTip(d), d.multiplier, true));
-        if (config.attackDamageMultipliers != null) for (ArmorDataConfig.AttackDamageMultiplierData d : config.attackDamageMultipliers) effects.add(new PieceEffectEntry(config.keyOf(d), ArmorTipGenerator.genAtkDmgTip(d), d.multiplier, true));
-        if (config.allowFlight) effects.add(new PieceEffectEntry(config.keyOfFlight(), ArmorTipGenerator.genFlightTip(config.flightConditions, config.flightConditionMatchMode, config.flightConditionMinCount), 0.0, false));
+        if (config.potionEffects != null) for (ArmorDataConfig.PotionEffectData d : config.potionEffects) effects.add(PieceEffectEntry.potion(config.keyOf(d), ArmorTipGenerator.singleLine(() -> ArmorTipGenerator.genPotTip(d)), d.amplifier, true, d.effectId));
+        if (config.attributes != null) for (ArmorDataConfig.AttributeModifierData d : config.attributes) effects.add(new PieceEffectEntry(config.keyOf(d), ArmorTipGenerator.singleLine(() -> ArmorTipGenerator.genAttrTip(d)), d.amount, true));
+        if (config.damageImmunities != null) for (ArmorDataConfig.DamageImmunityData d : config.damageImmunities) effects.add(new PieceEffectEntry(config.keyOf(d), ArmorTipGenerator.singleLine(() -> ArmorTipGenerator.genImmTip(d)), d.multiplier, true));
+        if (config.effectImmunities != null) for (ArmorDataConfig.EffectImmunityData d : config.effectImmunities) effects.add(PieceEffectEntry.potion(config.keyOf(d), ArmorTipGenerator.singleLine(() -> ArmorTipGenerator.genEffImmTip(d)), 0.0, false, d.effectId));
+        if (config.attackEffects != null) for (ArmorDataConfig.AttackEffectData d : config.attackEffects) effects.add(PieceEffectEntry.potion(config.keyOf(d), ArmorTipGenerator.singleLine(() -> ArmorTipGenerator.genAtkTip(d)), d.amplifier, true, d.effectId));
+        if (config.damageConversions != null) for (ArmorDataConfig.DamageConversionData d : config.damageConversions) effects.add(new PieceEffectEntry(config.keyOf(d), ArmorTipGenerator.singleLine(() -> ArmorTipGenerator.genConvTip(d)), d.ratio, true));
+        if (config.damageMultipliers != null) for (ArmorDataConfig.DamageMultiplierData d : config.damageMultipliers) effects.add(new PieceEffectEntry(config.keyOf(d), ArmorTipGenerator.singleLine(() -> ArmorTipGenerator.genDmgMulTip(d)), d.multiplier, true));
+        if (config.attackDamageMultipliers != null) for (ArmorDataConfig.AttackDamageMultiplierData d : config.attackDamageMultipliers) effects.add(new PieceEffectEntry(config.keyOf(d), ArmorTipGenerator.singleLine(() -> ArmorTipGenerator.genAtkDmgTip(d)), d.multiplier, true));
+        if (config.allowFlight) effects.add(new PieceEffectEntry(config.keyOfFlight(), ArmorTipGenerator.singleLine(() -> ArmorTipGenerator.genFlightTip(config.flightConditions, config.flightConditionMatchMode, config.flightConditionMinCount)), 0.0, false));
 
         selectedEffect = null;
         if (keepKey != null) {
