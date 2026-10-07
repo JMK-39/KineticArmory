@@ -86,13 +86,13 @@
 
 2026年10月03日 16时42分 — 26.10.3
 
-- Added NeoForge 1.21.1 support alongside Forge 1.20.1, using Java 21 and matching KineticCore 26.10.3+.
+- Added NeoForge 1.21.1 support alongside Forge 1.20.1, using matching KineticCore 26.10.3+.
 - The 1.21.1 set editor and matching rules use native item components (`componentMode` / `components`); legacy item-NBT syntax is rejected and is not converted. Forge retains its NBT rules.
 - Adapted attribute/potion bonuses, Curios equipment, and configuration synchronization for 1.21.1.
 - Both builds, Forge startup, and targeted NeoForge world/editor checks passed; all set combinations, script callbacks, and multiplayer servers have not been tested.
 - The 26.1.2 node is reserved and disabled; it is not a supported release.
 
-- 新增 NeoForge 1.21.1 支持，同时保留 Forge 1.20.1；使用 Java 21 和对应版本的 KineticCore 26.10.3+。
+- 新增 NeoForge 1.21.1 支持，同时保留 Forge 1.20.1；使用对应版本的 KineticCore 26.10.3+。
 - 1.21.1 套装编辑与匹配使用原生物品组件（`componentMode` / `components`），拒绝且不转换旧物品 NBT 写法；Forge 保留 NBT 规则。
 - 适配 1.21.1 属性与药水加成、Curios 装备和配置同步。
 - 两个版本构建、Forge 启动及针对性的 NeoForge 世界和编辑器检查通过；未测试所有套装组合、脚本回调和多人服务器。
