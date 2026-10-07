@@ -32,3 +32,6 @@ Thumbs.db
 
 run-*
 versions/*/logs/
+*.zip
+*.7z
+/wiki/
