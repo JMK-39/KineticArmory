@@ -196,6 +196,8 @@ ui().button(btnFilterX, y0 + 20, filterBtnW).text(getEntityFilterButtonText()).t
     /** 套装列表：每行 46px，右侧内嵌二次确认删除按钮 / Set list: 46px rows with an inline two-step delete button. */
     class SetListWidget extends KineticRowList<ArmorDataConfig> {
         private static final int ROW_H = 46;
+        private static final int PREVIEW_SIZE = 18;
+        private static final int PREVIEW_PITCH = PREVIEW_SIZE + 2;
         private static final int DELETE_BUTTON_W = 52;
         private static final int DELETE_BUTTON_H = KineticPage.CONTROL_HEIGHT;
 
@@ -279,8 +281,8 @@ ui().button(btnFilterX, y0 + 20, filterBtnW).text(getEntityFilterButtonText()).t
 
                 int labelX = left + 185;
                 int labelWidth = 70;
-                int curioY = top + 4;
-                int equipY = top + 24;
+                int curioY = top + 3;
+                int equipY = top + 23;
 
                 Component curioLabel = KineticI18n.translatable("gui.kineticarmory.armorsets.label.curios");
                 g.scrollingText(curioLabel, labelX, curioY + 4, labelWidth, 0xAAAAAA, false);
@@ -291,8 +293,8 @@ ui().button(btnFilterX, y0 + 20, filterBtnW).text(getEntityFilterButtonText()).t
                 g.scrollingText(equipLabel, equipLabelX, equipY + 4, labelWidth, 0xAAAAAA, false);
                 int equipStartX = equipLabelX + labelWidth + 4;
 
-                int maxIconsCurio = Math.max(0, (left + w - 4 - curioStartX) / 18);
-                int maxIconsEquip = Math.max(0, (delX - 4 - equipStartX) / 18);
+                int maxIconsCurio = Math.max(0, (delX - 4 - curioStartX + 2) / PREVIEW_PITCH);
+                int maxIconsEquip = Math.max(0, (delX - 4 - equipStartX + 2) / PREVIEW_PITCH);
 
                 if (data.curios != null) {
                     int drawn = 0;
@@ -303,7 +305,9 @@ ui().button(btnFilterX, y0 + 20, filterBtnW).text(getEntityFilterButtonText()).t
                             if (rl != null) {
                                 Item item = KineticRegistries.items().get(rl);
                                 if (item != null && item != net.minecraft.world.item.Items.AIR) {
-                                    g.item(new ItemStack(item), curioStartX + drawn * 18, curioY);
+                                    int iconX = curioStartX + drawn * PREVIEW_PITCH;
+                                    KineticTheme.itemSlot(g, iconX, curioY, PREVIEW_SIZE, false);
+                                    KineticTheme.item(g, new ItemStack(item), iconX, curioY, PREVIEW_SIZE, 0.75F, false);
                                     drawn++;
                                 }
                             }
@@ -323,11 +327,12 @@ ui().button(btnFilterX, y0 + 20, filterBtnW).text(getEntityFilterButtonText()).t
                             if (rl != null) {
                                 Item item = KineticRegistries.items().get(rl);
                                 if (item != null && item != net.minecraft.world.item.Items.AIR) {
-                                    int iconX = equipStartX + drawn * 18;
-                                    g.item(new ItemStack(item), iconX, equipY);
+                                    int iconX = equipStartX + drawn * PREVIEW_PITCH;
+                                    KineticTheme.itemSlot(g, iconX, equipY, PREVIEW_SIZE, false);
+                                    KineticTheme.item(g, new ItemStack(item), iconX, equipY, PREVIEW_SIZE, 0.75F, false);
                                     if (data.hasMultipleEquipmentVariants(slot)) {
-                                        KineticTheme.indicatorFill(g, iconX + 10, equipY + 10, 8, 8, KineticTheme.Indicator.SUCCESS, 0.80F);
-                                        g.text("+", iconX + 12, equipY + 9, 0xFF55FF55, false);
+                                        KineticTheme.indicatorFill(g, iconX + 9, equipY + 9, 6, 6, KineticTheme.Indicator.SUCCESS, 0.80F);
+                                        g.text("+", iconX + 9, equipY + 6, 0xFF55FF55, false);
                                     }
                                     drawn++;
                                 }

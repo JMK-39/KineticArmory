@@ -1,3 +1,13 @@
+## 2026-10-08 — Item preview slots / 物品预览格
+
+### English
+
+- Equipment and accessory previews in the set list, small item icons inside detail and tip rows, and item previews in hover tips all use the standard item-slot background. Slots stay clear of neighbouring icons and controls, and inline icons have their own space beside the tip text.
+
+### 简体中文
+
+- 套装列表中的装备与饰品预览、详情和提示行中的小物品图标，以及悬浮提示中的物品预览统一使用物品格背景。格子避开相邻图标和控件，行内图标在提示文字旁有独立空间。
+
 ## 26.10.6 — 2026-10-06
 
 ### English

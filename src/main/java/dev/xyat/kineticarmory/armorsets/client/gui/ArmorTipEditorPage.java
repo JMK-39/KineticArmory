@@ -431,13 +431,13 @@ public class ArmorTipEditorPage extends KineticPage {
         int lastEnd = 0;
         while (measure.find()) {
             contentWidth += KineticText.width(formattingBefore(text, lastEnd) + text.substring(lastEnd, measure.start()));
-            contentWidth += 12;
+            contentWidth += measure.group(1).equals("item") ? 20 : 12;
             lastEnd = measure.end();
         }
         contentWidth += KineticText.width(formattingBefore(text, lastEnd) + text.substring(lastEnd));
 
         int offset = KineticText.scrollOffset(contentWidth, maxWidth);
-        g.scissor(x, y - 2, x + maxWidth, y + KineticText.lineHeight() + 3);
+        g.scissor(x, y - 4, x + maxWidth, y + 12);
         try {
             Matcher matcher = pattern.matcher(text);
             int currentX = x - offset;
@@ -454,17 +454,14 @@ public class ArmorTipEditorPage extends KineticPage {
                     if (rl != null) {
                         net.minecraft.world.item.Item item = KineticRegistries.items().get(rl);
                         if (item != null && item != net.minecraft.world.item.Items.AIR) {
-                            g.push();
-                            g.translate(currentX, y - 2);
-                            g.scale(0.7f, 0.7f);
-                            g.item(new net.minecraft.world.item.ItemStack(item), 0, 0);
-                            g.pop();
+                            KineticTheme.itemSlot(g, currentX + 2, y - 4, 16, false);
+                            KineticTheme.item(g, new net.minecraft.world.item.ItemStack(item), currentX + 2, y - 4, 16, 0.625F, false);
                         }
                     }
                 }
 
                 lastEnd = matcher.end();
-                currentX += 12;
+                currentX += type.equals("item") ? 20 : 12;
             }
             g.text(formattingBefore(text, lastEnd) + text.substring(lastEnd), currentX, y, 0xFFFFFF, false);
         } finally {

@@ -6,6 +6,7 @@ import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
 import dev.xyat.kineticarmory.armorsets.data.ArmorTipGenerator;
 import dev.xyat.kineticcore.api.client.gui.render.KineticGraphics;
 import dev.xyat.kineticcore.api.client.gui.text.KineticText;
+import dev.xyat.kineticcore.api.client.gui.theme.KineticTheme;
 import dev.xyat.kineticcore.api.client.tooltip.KineticItemTooltips;
 import dev.xyat.kineticcore.api.client.tooltip.KineticTooltipComponent;
 import dev.xyat.kineticcore.api.registry.KineticRegistries;
@@ -273,60 +274,89 @@ public class ArmorTooltip {
     public record IconTipTooltipData(String rawText, boolean isActive, boolean anyActive) implements TooltipComponent {}
 
     public static class ClientIconTipComponent implements KineticTooltipComponent {
+        private static final int ICON_SLOT_SIZE = 16;
+        private static final int ICON_ADVANCE = ICON_SLOT_SIZE + 4;
         private final String rawText;
-        private final String cleanText;
         private final boolean isActive;
         private final boolean anyActive;
 
         public ClientIconTipComponent(IconTipTooltipData data) {
             this.rawText = data.rawText();
-            this.cleanText = data.rawText().replaceAll(ICON_REGEX, "");
             this.isActive = data.isActive();
             this.anyActive = data.anyActive();
         }
 
         @Override
         public int height() {
+            Matcher matcher = ICON_PATTERN.matcher(rawText);
+            while (matcher.find()) if (matcher.group(1).equals("item")) return ICON_SLOT_SIZE + 4;
             return 10;
         }
 
         @Override
         public int width() {
-            return KineticText.width(stripColor(cleanText)) + 14;
+            int width = 0;
+            int lastEnd = 0;
+            Matcher matcher = ICON_PATTERN.matcher(rawText);
+            while (matcher.find()) {
+                String plain = rawText.substring(lastEnd, matcher.start());
+                width += KineticText.width(activeFormatting(lastEnd) + (isActive ? plain : stripColor(plain)));
+                if (matcher.group(1).equals("item")) width += ICON_ADVANCE;
+                lastEnd = matcher.end();
+            }
+            String tail = rawText.substring(lastEnd);
+            width += KineticText.width(activeFormatting(lastEnd) + (isActive ? tail : stripColor(tail)));
+            return width;
         }
 
         @Override
         public void render(KineticGraphics g, int x, int y) {
-            String dispText = this.isActive ? this.cleanText : stripColor(this.cleanText);
             String prefix = this.isActive ? "§f" : (this.anyActive ? "§m" : "§f");
             int color = this.isActive ? -1 : (this.anyActive ? 0xFFBBBBBB : -1);
-            g.text(Component.literal(prefix + dispText), x, y, color, true);
-
             Matcher matcher = ICON_PATTERN.matcher(this.rawText);
+            int currentX = x;
+            int textY = y + (height() - KineticText.lineHeight()) / 2;
+            int lastEnd = 0;
             while (matcher.find()) {
+                String plain = rawText.substring(lastEnd, matcher.start());
+                String formatting = activeFormatting(lastEnd);
+                g.text(Component.literal(prefix + formatting + (isActive ? plain : stripColor(plain))), currentX, textY, color, true);
+                currentX += KineticText.width(formatting + (isActive ? plain : stripColor(plain)));
                 String type = matcher.group(1);
                 String id = matcher.group(2);
-                int iconX = x + KineticText.width(stripColor(this.rawText.substring(0, matcher.start()).replaceAll(ICON_REGEX, "")));
                 if (type.equals("item")) {
                     ResourceLocation rl = KineticResourceIds.tryParse(id);
                     if (rl != null) {
                         var item = KineticRegistries.items().get(rl);
                         if (item != null && item != net.minecraft.world.item.Items.AIR) {
-                            g.push();
-                            g.translate(iconX, y);
-                            g.scale(0.7f, 0.7f);
-                            g.item(new ItemStack(item), 0, 0);
-                            g.pop();
+                            KineticTheme.itemSlot(g, currentX + 2, y + 2, ICON_SLOT_SIZE, false);
+                            KineticTheme.item(g, new ItemStack(item), currentX + 2, y + 2, ICON_SLOT_SIZE, 0.625F, false);
                         }
                     }
                 }
+                if (type.equals("item")) currentX += ICON_ADVANCE;
+                lastEnd = matcher.end();
             }
+            String tail = rawText.substring(lastEnd);
+            g.text(Component.literal(prefix + activeFormatting(lastEnd) + (isActive ? tail : stripColor(tail))), currentX, textY, color, true);
+        }
+
+        private String activeFormatting(int end) {
+            if (!isActive) return "";
+            Matcher matcher = Pattern.compile(COLOR_CODE_REGEX).matcher(rawText.substring(0, end));
+            StringBuilder formatting = new StringBuilder();
+            while (matcher.find()) formatting.append(matcher.group());
+            return formatting.toString();
         }
     }
 
     public record RejectedTooltipData(List<String> itemIds) implements TooltipComponent {}
 
     public static class ClientRejectedTooltipComponent implements KineticTooltipComponent {
+        private static final int COLUMNS = 9;
+        private static final int SLOT_SIZE = 22;
+        private static final int SLOT_GAP = 2;
+        private static final int SLOT_PITCH = SLOT_SIZE + SLOT_GAP;
         private final List<ItemStack> stacks;
 
         public ClientRejectedTooltipComponent(RejectedTooltipData data) {
@@ -337,18 +367,23 @@ public class ArmorTooltip {
 
         @Override
         public int height() {
-            return ((stacks.size() - 1) / 9 + 1) * 18 + 2;
+            int rows = (stacks.size() + COLUMNS - 1) / COLUMNS;
+            return rows == 0 ? 0 : rows * SLOT_PITCH - SLOT_GAP;
         }
 
         @Override
         public int width() {
-            return Math.min(stacks.size(), 9) * 18;
+            int columns = Math.min(stacks.size(), COLUMNS);
+            return columns == 0 ? 0 : columns * SLOT_PITCH - SLOT_GAP;
         }
 
         @Override
         public void render(KineticGraphics g, int x, int y) {
             for (int i = 0; i < stacks.size(); i++) {
-                g.item(stacks.get(i), x + (i % 9) * 18, y + (i / 9) * 18 + 1);
+                int slotX = x + (i % COLUMNS) * SLOT_PITCH;
+                int slotY = y + (i / COLUMNS) * SLOT_PITCH;
+                KineticTheme.itemSlot(g, slotX, slotY, SLOT_SIZE, false);
+                KineticTheme.item(g, stacks.get(i), slotX, slotY, SLOT_SIZE, 1.0F, false);
             }
         }
     }
