@@ -281,11 +281,11 @@ public class ArmorDetailPage extends KineticPage {
             int contentWidth = 0;
             int lastEnd = 0;
             while (measure.find()) {
-                contentWidth += KineticText.width(text.substring(lastEnd, measure.start()));
+                contentWidth += KineticText.width(ArmorTipEditorPage.formattingBefore(text, lastEnd) + text.substring(lastEnd, measure.start()));
                 contentWidth += measure.group(1).equals("item") ? 20 : 12;
                 lastEnd = measure.end();
             }
-            contentWidth += KineticText.width(text.substring(lastEnd));
+            contentWidth += KineticText.width(ArmorTipEditorPage.formattingBefore(text, lastEnd) + text.substring(lastEnd));
 
             int offset = KineticText.scrollOffset(contentWidth, maxWidth);
             g.scissor(x, y - 4, x + maxWidth, y + 12);
@@ -294,7 +294,7 @@ public class ArmorDetailPage extends KineticPage {
                 int currentX = x - offset;
                 lastEnd = 0;
                 while (matcher.find()) {
-                    String plain = text.substring(lastEnd, matcher.start());
+                    String plain = ArmorTipEditorPage.formattingBefore(text, lastEnd) + text.substring(lastEnd, matcher.start());
                     g.text(plain, currentX, y, 0xFFFFFF, true);
                     currentX += KineticText.width(plain);
 
@@ -314,7 +314,7 @@ public class ArmorDetailPage extends KineticPage {
                     lastEnd = matcher.end();
                     currentX += type.equals("item") ? 20 : 12;
                 }
-                g.text(text.substring(lastEnd), currentX, y, 0xFFFFFF, true);
+                g.text(ArmorTipEditorPage.formattingBefore(text, lastEnd) + text.substring(lastEnd), currentX, y, 0xFFFFFF, true);
             } finally {
                 g.endScissor();
             }

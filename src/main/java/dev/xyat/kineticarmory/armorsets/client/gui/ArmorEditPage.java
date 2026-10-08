@@ -348,12 +348,12 @@ public class ArmorEditPage extends KineticPage {
         } else if (!isAir) {
             ItemStack stack = req.createDisplayStack();
             if (!stack.isEmpty()) {
-                g.item(stack, x + 1, y + 1);
+                KineticTheme.item(g, stack, x, y, SLOT_SIZE, 0.75F, false);
                 String nbtStr = "WEAK".equals(req.getDataMode()) ? "W" : ("STRONG".equals(req.getDataMode()) ? "S" : "");
-                if (!nbtStr.isEmpty()) g.itemDecorations(stack, x + 1, y + 1, nbtStr);
+                if (!nbtStr.isEmpty()) g.text(nbtStr, x + SLOT_SIZE - 3 - g.textWidth(nbtStr), y + SLOT_SIZE - 11, 0xFFFFFFFF, true);
                 if (variantCount > 1) {
-                    KineticTheme.indicatorFill(g, x + 10, y + 10, 8, 8, KineticTheme.Indicator.SUCCESS, 0.80F);
-                    g.text("+", x + 12, y + 9, 0xFF55FF55, false);
+                    KineticTheme.indicatorFill(g, x + SLOT_SIZE - 9, y + 3, 6, 8, KineticTheme.Indicator.SUCCESS, 0.80F);
+                    g.text("+", x + SLOT_SIZE - 9, y + 3, 0xFF55FF55, false);
                 }
                 if (hover) {
                     List<Component> t = new ArrayList<>();

@@ -470,7 +470,7 @@ public class ArmorTipEditorPage extends KineticPage {
     }
 
     // Retain legacy colors and font styles when an icon splits a single authored line.
-    private static String formattingBefore(String text, int end) {
+    static String formattingBefore(String text, int end) {
         Matcher formats = Pattern.compile("(?i)§[0-9a-fk-or]").matcher(text.substring(0, end));
         StringBuilder codes = new StringBuilder();
         while (formats.find()) codes.append(formats.group());

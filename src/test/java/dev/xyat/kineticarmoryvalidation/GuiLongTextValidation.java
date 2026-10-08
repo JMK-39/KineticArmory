@@ -26,11 +26,12 @@ import org.slf4j.LoggerFactory;
 public final class GuiLongTextValidation {
     private static final Logger LOG=LoggerFactory.getLogger(GuiLongTextValidation.class);
     private static final String ROOT=System.getProperty("kineticarmory.guiValidation.output","D:/IDEAWork/KineticArmory/.gradle/gui-long-text-20261004/");
-    private static final String[] NAMES={"armor-edit","bonus-empty","bonus","bonus-warning","variants","variants-empty-only","variants-any","variants-empty","tips","tips-edit","tips-drag","detail","commands","commands-edit","entity-global","entity-set","conditions-empty","conditions","condition-attr","condition-item","condition-time","condition-dimension","attribute","potion","immunity","attack-effect","effect-immunity","damage-conversion","attack-damage","components","components-invalid"};
+    private static final String[] NAMES={"armor-edit","bonus-empty","bonus","bonus-warning","variants","variants-empty-only","variants-any","variants-empty","tips","tips-edit","tips-drag","detail","commands","commands-edit","entity-global","entity-set","conditions-empty","conditions","condition-attr","condition-item","condition-time","condition-dimension","attribute","potion","immunity","attack-effect","effect-immunity","damage-conversion","attack-damage","components","components-invalid","set-list"};
     private static boolean installed,started,screenshot,finished,originalFullscreen;
     private static String originalLanguage;
     private static int originalScale,originalWidth,originalHeight,phase=-1,page=-1,captures,failures;
     private static long due;
+    private static final BitSet capturedPages = new BitSet();
     private static CompletableFuture<Void> reload;
     private static Language stressOriginal;
 
@@ -124,6 +125,12 @@ public final class GuiLongTextValidation {
             case 26 -> KineticGui.open(new PotionImmunityEditor(config,null));
             case 27 -> KineticGui.open(new DamageConversionEditor(config,null));
             case 28 -> KineticGui.open(new AttackDamageEditor(config,null));
+            case 31 -> {
+                for (int i=0;i<20;i++) config.curios.add(ArmorDataConfig.ItemReq.create(i%2==0?"minecraft:emerald":"minecraft:diamond_sword"));
+                var p=new ArmorListPage();
+                var entries=(List<ArmorDataConfig>)field(p,"allEntries");entries.clear();entries.add(config);
+                setField(p,"displayEntries",new ArrayList<>(entries));KineticGui.open(p);
+            }
             case 29,30 -> {
                 //? if >=1.21 {
                 /*dev.xyat.kineticcore.api.client.gui.selector.KineticSelectors.openNbtEditor(index==29?"[damage=1]":"[invalid=]",text->{try{dev.xyat.kineticarmory.armorsets.data.ArmorItemData.compile("minecraft:diamond_sword",text);return null;}catch(RuntimeException invalid){return String.valueOf(invalid.getMessage());}},value->{});
@@ -142,7 +149,7 @@ public final class GuiLongTextValidation {
         var attack=new ArmorDataConfig.AttackEffectData();attack.effectId="minecraft:slowness";c.attackEffects.add(attack);
         var command=new ArmorDataConfig.CommandData();command.command="say a deliberately long example command for bounded list text ".repeat(4);c.activationCommands.add(command);
         var inactive=new ArmorDataConfig.CommandData();inactive.command=command.command;c.deactivationCommands.add(inactive);
-        c.tipOverrides.put("attr:0", "A long overridden effect with [item:minecraft:diamond] followed by text ".repeat(5));
+        c.tipOverrides.put("attr:0", "§a§lA long overridden effect with [item:minecraft:diamond] followed by text ".repeat(5));
         c.manualTips=true;c.tipLayout.add(ArmorDataConfig.TipLineData.text("§aA deliberately long user-authored tip with item icons [item:minecraft:diamond] and additional words ".repeat(5)));
         c.flexiblePieces=true;var tier=ArmorDataConfig.PieceBonusGroup.create(2);tier.effectKeys.add("attr:0");tier.effectValues.put("attr:0",3.0);c.pieceBonusGroups.add(tier);
         c.entityWhitelistEnabled=true;c.allowedEntityTypes.add("minecraft:zombie");c.allowedEntityTypes.add("example:missing_entity");c.initNullFields();return c;
@@ -177,7 +184,7 @@ public final class GuiLongTextValidation {
     private static void capture(String frame)throws Exception {
         var mc=Minecraft.getInstance();Path path=Path.of(ROOT,String.format("%d-%02d-%s-%s.png",phase,page,NAMES[page],frame));Files.createDirectories(path.getParent());
         try(var image=Screenshot.takeScreenshot(mc.getMainRenderTarget())){image.writeToFile(path);}
-        captures++;LOG.info("ARMORY_GUI_CAPTURE phase={} case={} image={}x{}",phase,NAMES[page],mc.getWindow().getWidth(),mc.getWindow().getHeight());
+        capturedPages.set(page);captures++;LOG.info("ARMORY_GUI_CAPTURE phase={} case={} image={}x{}",phase,NAMES[page],mc.getWindow().getWidth(),mc.getWindow().getHeight());
     }
     /*** Logs controls of the open screen that overlap or sit closer than 2 px (Core layout check). */
     private static void layout() {
@@ -196,7 +203,7 @@ public final class GuiLongTextValidation {
         mc.setScreen(null);
         mc.getWindow().setWindowed(originalWidth,originalHeight);
         if(originalFullscreen && !mc.getWindow().isFullscreen())mc.getWindow().toggleFullScreen();
-        LOG.info("ARMORY_GUI_{} pages={} captures={} failures={} userSettingsRestored=true",failures==0?"PASS":"FAIL",NAMES.length,captures,failures);
+        LOG.info("ARMORY_GUI_{} pages={} captures={} failures={} userSettingsRestored=true",failures==0?"PASS":"FAIL",capturedPages.cardinality(),captures,failures);
         dev.xyat.kineticcore.api.runtime.KineticClientRuntime.stopClient();
     }
     private static final class StressLanguage extends Language {
