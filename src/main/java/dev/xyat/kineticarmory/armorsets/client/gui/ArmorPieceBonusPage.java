@@ -483,7 +483,7 @@ ui().button(valueX + 98, controlY, 74).text(KineticI18n.translatable("gui.kineti
                 textX += 20;
                 textWidth -= 20;
             }
-            drawTrimmedText(g, text, textX, y + 5, textWidth, selected ? 0xFFFFFFFF : 0xFFDDDDDD);
+            drawTrimmedText(g, text, textX, y + 5, textWidth, 0xFFFFFFFF);
             String summary = buildEffectSummary(effect);
             if (!summary.isEmpty()) drawTrimmedText(g, summary, textX, y + 16, textWidth, 0xFF55FF55);
         }
@@ -545,7 +545,7 @@ ui().button(valueX + 98, controlY, 74).text(KineticI18n.translatable("gui.kineti
             int valueRight = rightX + rightW - 18;
             int valueWidth = Math.min(TIER_VALUE_W, Math.max(0, valueRight - labelX - TEXT_GAP));
             int labelRight = selectedEffect == null ? valueRight : valueRight - valueWidth;
-            g.scrollingText(label, labelX, y + 9, Math.max(0, labelRight - labelX - TEXT_GAP), rowSelected ? 0xFFFFFFFF : 0xFFDDDDDD, false);
+            g.scrollingText(label, labelX, y + 9, Math.max(0, labelRight - labelX - TEXT_GAP), 0xFFFFFFFF, false);
             if (selectedEffect != null) {
                 String valueText = getTierValueText(group, selectedEffect);
                 g.scrollingTextRight(Component.literal(valueText), valueRight, y + 9, valueWidth, enabled ? 0xFFFFFF55 : 0xFFAAAAAA, false);
