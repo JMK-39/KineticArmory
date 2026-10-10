@@ -113,7 +113,7 @@ public class ConditionListPage extends KineticPage {
                 }).build();
         updateModeUI(modeBtn);
 
-        ui.button(startX + (btnW + gap) * 2, bottomY, btnW).text(KineticI18n.translatable("gui.kineticarmory.predicate.back")).onClick(b -> navigateBack()).build();
+        ui.button(cx - guiW / 2, y0, btnW).text(KineticI18n.translatable("gui.kineticarmory.predicate.back")).onClick(b -> navigateBack()).build();
     }
 
     private void refreshList() {
@@ -154,7 +154,10 @@ public class ConditionListPage extends KineticPage {
         int guiW = GUI_WIDTH;
         int guiH = 220;
         KineticTheme.panel(g, cx - guiW / 2 - 10, cy - guiH / 2 - 10, guiW + 20, guiH + 20);
-        g.scrollingTextCentered(title(), cx, cy - guiH / 2 + 5, guiW - 4, 0xFFFFFF, true);
+        int titleLeft = cx - guiW / 2 + 90 + 2;
+        int titleRight = cx + guiW / 2 - 2;
+        g.scrollingTextCentered(title(), (titleLeft + titleRight) / 2, cy - guiH / 2 + 5,
+                Math.max(0, titleRight - titleLeft), 0xFFFFFF, true);
     }
 
     @Override

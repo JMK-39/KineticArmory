@@ -70,7 +70,7 @@ public class PotionEditor extends KineticPage {
             oldTip = newTip;
         }).build();
 
-        ui().button(cx + 5, p.buttonY(), 55).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> { navigateBack(); }).build();
+        ui().button(p.backX(), p.backY(), 55).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> { navigateBack(); }).build();
     }
 
     private boolean syncToData() {

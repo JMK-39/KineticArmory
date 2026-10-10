@@ -75,7 +75,8 @@ public class ArmorListPage extends KineticPage {
         int btnSaveX = btnBackX - gap - btnW;
         int btnNewX = btnSaveX - gap - btnW;
         int btnFilterX = btnNewX - gap - filterBtnW;
-        this.searchBox = ui().textField(x0 + padding, y0 + 20, btnFilterX - gap - (x0 + padding)).firstShownTextAsDefault().build();
+        int searchX = x0 + padding + btnW + 2;
+        this.searchBox = ui().textField(searchX, y0 + 20, btnFilterX - gap - searchX).firstShownTextAsDefault().build();
         this.searchBox.setPlaceholder(KineticI18n.translatable("gui.kineticarmory.armorsets.search"));
         this.searchBox.limitTextLength(1024);
         this.searchBox.setTextValue(lastSearch);
@@ -84,7 +85,7 @@ ui().button(btnFilterX, y0 + 20, filterBtnW).text(getEntityFilterButtonText()).t
                 ArmorNetwork.requestEntityFilter()).build();
         ui().button(btnNewX, y0 + 20, btnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.btn_new")).onClick(b -> createNewSet()).build();
         ui().button(btnSaveX, y0 + 20, btnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.save")).onClick(b -> savePendingDeletes()).build();
-        ui().button(btnBackX, y0 + 20, btnW).text(KineticI18n.translatable("gui.kineticarmory.common.back")).onClick(b -> close()).build();
+        ui().button(x0 + padding, y0 + 20, btnW).text(KineticI18n.translatable("gui.kineticarmory.common.back")).onClick(b -> close()).build();
 
         int listTop = y0 + 45;
         int listBottom = y0 + guiH - 2;

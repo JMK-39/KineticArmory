@@ -39,14 +39,21 @@ final class EditorPanel {
         return top + PADDING + TITLE_HEIGHT + TITLE_GAP + row * ROW_STEP;
     }
 
-    /** Top of the Save / Back button row. */
+    /** Top of the Save button row. */
     int buttonY() {
         return rowY(rows) - (ROW_STEP - CONTROL_HEIGHT) + BUTTON_GAP;
     }
 
-    /** Draws the panel and its centred title, which keeps 4 px from either side. */
+    int backX() { return left + PADDING; }
+
+    int backY() { return rowY(0) - CONTROL_HEIGHT - 2; }
+
+    /** Draws the title within the header space to the right of Back. */
     void render(KineticGraphics graphics, Component title) {
         KineticTheme.panel(graphics, left, top, width, height);
-        graphics.scrollingTextCentered(title, centerX, top + PADDING, width - 8, 0xFFFFFF, true);
+        int textLeft = backX() + 55 + 2;
+        int textRight = left + width - PADDING;
+        graphics.scrollingTextCentered(title, (textLeft + textRight) / 2, top + PADDING,
+                Math.max(0, textRight - textLeft), 0xFFFFFF, true);
     }
 }

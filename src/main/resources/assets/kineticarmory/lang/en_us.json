@@ -65,7 +65,7 @@
   "gui.kineticarmory.armorsets.player_only.true": "Entity: Player Only",
   "gui.kineticarmory.armorsets.player_only.false": "Entity: All Allowed",
   "gui.kineticarmory.armorsets.save": "Save",
-  "gui.kineticarmory.armorsets.back": "§cGo Back",
+  "gui.kineticarmory.armorsets.back": "§fGo Back",
   "gui.kineticarmory.armorsets.detail.add_dmg_convert": "Add Dmg Convert",
   "gui.kineticarmory.armorsets.editor.dmg_convert.title": "Edit Damage Conversion",
   "gui.kineticarmory.armorsets.input.source_type": "Original (Supports #tag):",

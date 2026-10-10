@@ -89,7 +89,6 @@ public class ArmorPieceBonusPage extends KineticPage {
         int panelH = height() - PANEL_PADDING * 2;
         int controlY = PANEL_PADDING + 36;
         int inputX = PANEL_PADDING + 12;
-        int doneX = PANEL_PADDING + panelW - 92;
 
         if (selectedEffect == null && !effects.isEmpty()) selectedEffect = effects.get(0);
         if (selectedPieces < 2) selectedPieces = findFirstConfiguredPiecesForSelectedEffect();
@@ -112,7 +111,7 @@ int saveTierX = inputX + 62;
         if (tempValueInput != null) valueInput.setTextValue(tempValueInput);
 ui().button(valueX + 98, controlY, 74).text(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.value_save")).tooltip(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.tooltip.value_save")).layer(1).onClick(this::saveSelectedValue).build();
         ui().button(valueX + 178, controlY, 74).text(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.value_clear")).tooltip(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.tooltip.value_clear")).layer(1).onClick(this::clearSelectedValue).build();
-        ui().button(doneX, controlY, 80).text(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.confirm")).tooltip(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.tooltip.confirm")).layer(1).onClick(this::closeToParent).build();
+        ui().button(inputX, PANEL_PADDING + 8, 80).text(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.confirm")).tooltip(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.tooltip.confirm")).layer(1).onClick(this::closeToParent).build();
 
         leftX = PANEL_PADDING + 12;
         leftY = controlY + 36;
@@ -418,7 +417,10 @@ ui().button(valueX + 98, controlY, 74).text(KineticI18n.translatable("gui.kineti
     @Override
     protected void renderBackground(KineticGraphics g, int mx, int my, float pt) {
         KineticTheme.panel(g, PANEL_PADDING, PANEL_PADDING, width() - PANEL_PADDING * 2, height() - PANEL_PADDING * 2);
-        g.scrollingTextCentered(title(), width() / 2, PANEL_PADDING + 10, width() - 2 * (PANEL_PADDING + TEXT_GAP), 0xFFFFFF, true);
+        int titleLeft = PANEL_PADDING + 12 + 80 + 2;
+        int titleRight = width() - PANEL_PADDING - TEXT_GAP;
+        g.scrollingTextCentered(title(), (titleLeft + titleRight) / 2, PANEL_PADDING + 10,
+                Math.max(0, titleRight - titleLeft), 0xFFFFFF, true);
         KineticTheme.panelAlt(g, leftX, leftY, leftW, leftH);
         KineticTheme.panelAlt(g, rightX, rightY, rightW, rightH);
         renderEffectRows(g, mx, my);

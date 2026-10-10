@@ -254,7 +254,7 @@ entityPreviewRenderer.setRotationSpeedPercent(rotationSpeedPercent);
         int backW = 64;
 
         if (global) {
-            ui().button(8, topY, modeW).text(getGlobalModeText()).tooltip(getGlobalModeTooltip()).onClick(b -> {
+            ui().button(8 + backW + 2, topY, modeW).text(getGlobalModeText()).tooltip(getGlobalModeTooltip()).onClick(b -> {
                         globalMode = "WHITELIST".equalsIgnoreCase(globalMode)
                                 ? "BLACKLIST"
                                 : "WHITELIST";
@@ -263,7 +263,7 @@ entityPreviewRenderer.setRotationSpeedPercent(rotationSpeedPercent);
                         b.setTooltip(getGlobalModeTooltip());
                     }).build();
 } else {
-            ui().button(8, topY, modeW).text(getSetFilterText()).tooltip(getSetFilterTooltip()).onClick(b -> {
+            ui().button(8 + backW + 2, topY, modeW).text(getSetFilterText()).tooltip(getSetFilterTooltip()).onClick(b -> {
                         setFilterEnabled = !setFilterEnabled;
                         b.setText(getSetFilterText());
                         b.setTooltip(getSetFilterTooltip());
@@ -292,7 +292,7 @@ ui().button(356, topY, speedButtonW).text(getRotationDirectionText()).tooltip(Ki
                                         : "gui.kineticarmory.armorsets.entity_filter.save_set.tooltip"
                         )).onClick(b -> save()).build();
 
-        ui().button(568, topY, backW).text(KineticI18n.translatable("gui.kineticarmory.common.back")).tooltip(KineticI18n.translatable(
+        ui().button(8, topY, backW).text(KineticI18n.translatable("gui.kineticarmory.common.back")).tooltip(KineticI18n.translatable(
                                 "gui.kineticarmory.armorsets.entity_filter.back.tooltip"
                         )).onClick(b -> backWithoutSave()).build();
 

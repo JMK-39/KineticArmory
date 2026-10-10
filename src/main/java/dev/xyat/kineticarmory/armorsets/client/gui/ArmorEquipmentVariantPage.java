@@ -97,7 +97,7 @@ public class ArmorEquipmentVariantPage extends KineticPage {
 addItemButton = ui().button(startX + (btnW + gap), controlY, btnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.variant.add_item")).onClick(b -> addFromSelector()).build();
 addEquippedButton = ui().button(startX + (btnW + gap) * 2, controlY, btnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.variant.add_equipped")).onClick(b -> addEquipped()).build();
 clearButton = ui().button(startX + (btnW + gap) * 3, controlY, btnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.variant.clear")).onClick(b -> clearAll()).build();
-backButton = ui().button(startX + (btnW + gap) * 4, controlY, btnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> navigateBack()).build();
+backButton = ui().button(panelX + 12, panelY + 7, btnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> navigateBack()).build();
 createRowButtons();
         clampSelectionAndScroll();
         updateActionButtons();
@@ -484,7 +484,10 @@ KineticButton delete = ui().button(deleteX, buttonY, ROW_BUTTON_W).text(KineticI
 
     @Override
     protected void renderForeground(KineticGraphics g, int mx, int my, float pt) {
-        g.scrollingTextCentered(title(), width() / 2, panelY + 11, panelW - 2 * (listX - panelX), 0xFFFFFFFF, true);
+        int titleLeft = panelX + 12 + 96 + 2;
+        int titleRight = panelX + panelW - (listX - panelX);
+        g.scrollingTextCentered(title(), (titleLeft + titleRight) / 2, panelY + 11,
+                Math.max(0, titleRight - titleLeft), 0xFFFFFFFF, true);
     }
 
     @Override

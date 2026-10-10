@@ -72,6 +72,9 @@ public final class GuiLongTextValidation {
     private static void nextPhase() {
         if(stressOriginal!=null){Language.inject(stressOriginal);stressOriginal=null;}
         phase++;page=-1;
+        if (Boolean.getBoolean("kineticarmory.guiValidation.fullHdOnly")) {
+            while (phase < 5 && phase != 1 && phase != 3) phase++;
+        }
         if(phase>=5){finish();return;}
         var mc=Minecraft.getInstance();
         mc.setScreen(null);

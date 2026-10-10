@@ -65,7 +65,7 @@
   "gui.kineticarmory.armorsets.player_only.true": "实体: 仅限玩家",
   "gui.kineticarmory.armorsets.player_only.false": "实体: 所有可用",
   "gui.kineticarmory.armorsets.save": "保存配置",
-  "gui.kineticarmory.armorsets.back": "§c返回",
+  "gui.kineticarmory.armorsets.back": "§f返回",
   "gui.kineticarmory.armorsets.detail.add_dmg_convert": "添加伤害转换",
   "gui.kineticarmory.armorsets.editor.dmg_convert.title": "编辑伤害转换规则",
   "gui.kineticarmory.armorsets.input.source_type": "原伤害(支持#标签):",

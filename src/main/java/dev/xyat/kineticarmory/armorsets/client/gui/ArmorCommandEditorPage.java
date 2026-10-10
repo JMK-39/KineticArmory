@@ -72,7 +72,7 @@ public class ArmorCommandEditorPage extends KineticPage {
         int actionBtnW = 80;
         int bottomBtnY = height() - 25;
         ui().button(cx - actionBtnW - 5, bottomBtnY, actionBtnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.save")).onClick(b -> KineticOverlays.toast(KineticI18n.translatable("msg.kineticarmory.common.saved"))).build();
-        ui().button(cx + 5, bottomBtnY, actionBtnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> navigateBack()).build();
+        ui().button(x0 + 10, 3, actionBtnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> navigateBack()).build();
 
         commandSuggestions = KineticCommandAssist.attach(input, width(), height(), false, 10, null);
     }
@@ -163,7 +163,10 @@ public class ArmorCommandEditorPage extends KineticPage {
         int y0 = 20;
 
         KineticTheme.panel(graphics, x0, y0, guiW, guiH);
-        graphics.scrollingTextCentered(title(), cx, 5, guiW - 20, 0xFFFFFF, true);
+        int titleLeft = x0 + 10 + 80 + 2;
+        int titleRight = x0 + guiW - 10;
+        graphics.scrollingTextCentered(title(), (titleLeft + titleRight) / 2, 5,
+                Math.max(0, titleRight - titleLeft), 0xFFFFFF, true);
         graphics.scrollingTextCentered(KineticI18n.translatable("gui.kineticarmory.armorsets.commands.activation_label"), x0 + guiW / 4, y0 + 10, guiW / 2 - 20, 0xFFFFFF, true);
         graphics.scrollingTextCentered(KineticI18n.translatable("gui.kineticarmory.armorsets.commands.deactivation_label"), x0 + guiW * 3 / 4, y0 + 10, guiW / 2 - 20, 0xFFFFFF, true);
         KineticTheme.verticalSeparator(graphics, cx, y0 + 25, guiH - 60);

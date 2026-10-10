@@ -125,7 +125,7 @@ public class ArmorTipEditorPage extends KineticPage {
         int bottomBtnY = this.height() - 25;
 
         ui().button(cx - actionBtnW - 5, bottomBtnY, actionBtnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.save")).onClick(b -> KineticOverlays.toast(KineticI18n.translatable("msg.kineticarmory.common.saved"))).build();
-        ui().button(cx + 5, bottomBtnY, actionBtnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> {
+        ui().button(x0, actionY, actionBtnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> {
             navigateBack();
         }).build();
     }
@@ -359,11 +359,12 @@ public class ArmorTipEditorPage extends KineticPage {
 
         KineticTheme.panel(g, x0 - 5, 5, guiW + 10, this.height() - 10);
         int textRight = btnAdd.controlX() - TEXT_GAP;
-        int titleWidth = Math.max(0, Math.min(cx - x0, textRight - cx) * 2);
-        g.scrollingTextCentered(title(), cx, 8, titleWidth, 0xFFFFFF, true);
+        int textLeft = x0 + 80 + 2;
+        int titleWidth = Math.max(0, textRight - textLeft);
+        g.scrollingTextCentered(title(), (textLeft + textRight) / 2, 8, titleWidth, 0xFFFFFF, true);
 
         g.scrollingText(KineticI18n.translatable("gui.kineticarmory.armorsets.tips.drag_hint"),
-                x0 + 5, 20, Math.max(0, textRight - x0 - 5), 0xFFFFFF, true);
+                textLeft, 20, Math.max(0, textRight - textLeft), 0xFFFFFF, true);
 
     }
 

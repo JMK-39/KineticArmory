@@ -173,7 +173,7 @@ public class ArmorEditPage extends KineticPage {
 
         int bottomBtnY = topY + 225; int actionBtnW = 80;
         ui().button(cx - actionBtnW - 5, bottomBtnY, actionBtnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.save")).onClick(b -> save()).build();
-        ui().button(cx + 5, bottomBtnY, actionBtnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> {
+        ui().button(leftX, topY - 23, actionBtnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> {
             this.navigateBack();
         }).build();
     }
@@ -291,7 +291,10 @@ public class ArmorEditPage extends KineticPage {
             g.scrollingTextCentered(this.warningMessage, cx, titleY - 12, panelTextWidth, 0xFFFFFF, true);
         }
 
-        g.scrollingTextCentered(title(), cx, titleY, panelTextWidth, 0xFFFFFF, true);
+        int titleLeft = cx - Math.min(this.width() - 40, 360) / 2 + 80 + 2;
+        int titleRight = cx + Math.min(this.width() - 40, 360) / 2 - TEXT_GAP;
+        g.scrollingTextCentered(title(), (titleLeft + titleRight) / 2, titleY,
+                Math.max(0, titleRight - titleLeft), 0xFFFFFF, true);
 
         int vanillaStartX = cx - ((18 + 2) * 6 - 2) / 2;
         int extStartX = cx - ((18 + 2) * 18 - 2) / 2;

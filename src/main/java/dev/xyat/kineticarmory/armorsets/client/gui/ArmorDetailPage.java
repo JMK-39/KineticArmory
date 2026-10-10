@@ -107,7 +107,7 @@ public class ArmorDetailPage extends KineticPage {
 
         listWidget = ui.add(new DetailListWidget(cx - listWidth / 2, listTop, listWidth, listBottom - listTop));
 
-        ui().button(cx - 50, height() - padding - 25, 100).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> {
+        ui().button(padding + 4, padding + 3, 100).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> {
             navigateBack();
         }).build();
 
@@ -202,7 +202,10 @@ public class ArmorDetailPage extends KineticPage {
         int panelHeight = height() - padding * 2;
 
         KineticTheme.panel(g, cx - panelWidth / 2, padding, panelWidth, panelHeight);
-        g.scrollingTextCentered(title(), cx, padding + 10, panelWidth - TEXT_GAP * 2, 0xFFFFFF, true);
+        int titleLeft = padding + 4 + 100 + 2;
+        int titleRight = width() - padding - TEXT_GAP;
+        g.scrollingTextCentered(title(), (titleLeft + titleRight) / 2, padding + 10,
+                Math.max(0, titleRight - titleLeft), 0xFFFFFF, true);
 
     }
 

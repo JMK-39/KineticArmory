@@ -1,3 +1,17 @@
+## 2026-10-10 — Editor navigation / 编辑器返回位置
+
+### English
+
+- The set list, set editor, equipment variants, piece bonuses, tips, commands, effects, entity filters, and condition dialogs now place their return control at the upper left.
+- Titles and instructions scroll within the header space beside navigation. Equipment grids, lists, input rows, and save actions keep their existing layout and behavior.
+- Back labels use white text in English and Chinese, consistent with the other return controls.
+
+### 简体中文
+
+- 套装列表、套装编辑器、装备候选、件数加成、提示、命令、效果、实体过滤与条件界面的返回控件统一放在左上角。
+- 标题与说明在返回按钮旁的顶部区域内滚动；装备网格、列表、输入行及保存操作保留既有布局与行为。
+- 英文与中文的返回按钮统一使用白色文字，与其他返回控件保持一致。
+
 ## 2026-10-08 — Item preview slots / 物品预览格
 
 ### English
