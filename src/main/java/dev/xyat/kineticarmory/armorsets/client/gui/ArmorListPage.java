@@ -308,7 +308,7 @@ ui().button(btnFilterX, y0 + 20, filterBtnW).text(getEntityFilterButtonText()).t
                                 if (item != null && item != net.minecraft.world.item.Items.AIR) {
                                     int iconX = curioStartX + drawn * PREVIEW_PITCH;
                                     KineticTheme.itemSlot(g, iconX, curioY, PREVIEW_SIZE, false);
-                                    KineticTheme.item(g, new ItemStack(item), iconX, curioY, PREVIEW_SIZE, 0.75F, false);
+                                    KineticTheme.item(g, new ItemStack(item), iconX, curioY, PREVIEW_SIZE, 1.0F, false);
                                     drawn++;
                                 }
                             }
@@ -330,7 +330,7 @@ ui().button(btnFilterX, y0 + 20, filterBtnW).text(getEntityFilterButtonText()).t
                                 if (item != null && item != net.minecraft.world.item.Items.AIR) {
                                     int iconX = equipStartX + drawn * PREVIEW_PITCH;
                                     KineticTheme.itemSlot(g, iconX, equipY, PREVIEW_SIZE, false);
-                                    KineticTheme.item(g, new ItemStack(item), iconX, equipY, PREVIEW_SIZE, 0.75F, false);
+                                    KineticTheme.item(g, new ItemStack(item), iconX, equipY, PREVIEW_SIZE, 1.0F, false);
                                     if (data.hasMultipleEquipmentVariants(slot)) {
                                         KineticTheme.indicatorFill(g, iconX + 9, equipY + 9, 6, 6, KineticTheme.Indicator.SUCCESS, 0.80F);
                                         g.text("+", iconX + 9, equipY + 6, 0xFF55FF55, false);

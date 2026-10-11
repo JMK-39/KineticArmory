@@ -1,3 +1,10 @@
+## 2026-10-11 — Item preview size / 物品预览大小
+
+- Set editors and set-list equipment previews render item icons at their normal 1.0 scale.
+- 套装编辑器及套装列表的装备预览统一使用 1.0 大小的物品图标。
+
+---
+
 ## 2026-10-10 — Editor navigation / 编辑器返回位置
 
 ### English

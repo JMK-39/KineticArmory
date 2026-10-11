@@ -351,7 +351,7 @@ public class ArmorEditPage extends KineticPage {
         } else if (!isAir) {
             ItemStack stack = req.createDisplayStack();
             if (!stack.isEmpty()) {
-                KineticTheme.item(g, stack, x, y, SLOT_SIZE, 0.75F, false);
+                KineticTheme.item(g, stack, x, y, SLOT_SIZE, 1.0F, false);
                 String nbtStr = "WEAK".equals(req.getDataMode()) ? "W" : ("STRONG".equals(req.getDataMode()) ? "S" : "");
                 if (!nbtStr.isEmpty()) g.text(nbtStr, x + SLOT_SIZE - 3 - g.textWidth(nbtStr), y + SLOT_SIZE - 11, 0xFFFFFFFF, true);
                 if (variantCount > 1) {
