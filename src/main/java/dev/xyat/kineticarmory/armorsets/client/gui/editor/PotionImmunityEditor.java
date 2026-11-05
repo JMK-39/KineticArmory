@@ -16,7 +16,7 @@ import dev.xyat.kineticcore.api.text.KineticI18n;
 
 public class PotionImmunityEditor extends KineticPage {
     // The panel width bounds the centered title with 4 px padding on either side.
-    private static final int PANEL_WIDTH = 240;
+    private static final int PANEL_WIDTH = 400;
     private final ArmorDataConfig config;
     private final ArmorDataConfig.EffectImmunityData data; private boolean isNew;
     private KineticAutoCompleteField idInput; private String oldTip = null;
@@ -35,15 +35,16 @@ public class PotionImmunityEditor extends KineticPage {
 
     @Override protected void build(KineticUi ui) {
         EditorPanel p = panel(); int cx = p.centerX;
-        idInput = ui().autoComplete(cx - 100, p.rowY(0), 200, KineticSearch::potionDictionary).placeholder(KineticI18n.translatable("gui.kineticarmory.armorsets.input.id")).firstShownTextAsDefault().build();
+        idInput = ui().autoComplete(p.left + 4, p.rowY(0), p.width - 8, KineticSearch::potionDictionary).placeholder(KineticI18n.translatable("gui.kineticarmory.armorsets.input.id")).firstShownTextAsDefault().build();
         idInput.setTextValue(tempId != null ? tempId : (isNew ? "" : (data.effectId != null ? data.effectId : "")));
+        idInput.setSuggestionPopupMaxWidth(PANEL_WIDTH - 8);
 
-        ui().button(cx - 100, p.rowY(1), 200).text(KineticI18n.translatable("gui.kineticarmory.armorsets.editor.conditions", data.conditions.size())).onClick(b -> {
+        ui().button(p.left + 4, p.rowY(1), 96).text(KineticI18n.translatable("gui.kineticarmory.armorsets.editor.conditions", data.conditions.size())).onClick(b -> {
             syncToData();
             openChild(new ConditionListPage(data));
         }).build();
 
-        ui().button(cx - 60, p.buttonY(), 55).text(KineticI18n.translatable("gui.kineticarmory.armorsets.save")).onClick(b -> {
+        ui().button(p.saveX(), p.buttonY(), 40).text(KineticI18n.translatable("gui.kineticarmory.armorsets.save")).onClick(b -> {
             syncToData();
             if (data.effectId.isEmpty()) { KineticOverlays.toast(KineticI18n.translatable("msg.kineticarmory.armorsets.empty_field")); return; }
             if (oldTip != null) config.tips.remove(oldTip);
@@ -55,7 +56,7 @@ public class PotionImmunityEditor extends KineticPage {
             config.tips.add(newTip);
             oldTip = newTip;
         }).build();
-        ui().button(p.backX(), p.backY(), 55).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> { navigateBack(); }).build();
+        ui().button(p.backX(), p.backY(), 40).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> { navigateBack(); }).build();
     }
 
     private void syncToData() {

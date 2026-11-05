@@ -72,9 +72,11 @@ public class ArmorEquipmentVariantPage extends KineticPage {
 
     public ArmorEquipmentVariantPage(ArmorDataConfig config, String slotKey, Component slotName) {
         super(KineticI18n.translatable("gui.kineticarmory.armorsets.variant.title", slotName));
+        useCanvas(CANVAS_WIDTH, CANVAS_HEIGHT, 4);
         this.config = config;
         this.slotKey = slotKey;
         this.selectedIndex = 0;
+        bindDeleteAction(() -> selectedReq() != null && !isSpecialSlotMode(), () -> deleteAt(selectedIndex));
     }
 
     @Override
@@ -88,16 +90,16 @@ public class ArmorEquipmentVariantPage extends KineticPage {
         config.getEquipmentVariants(slotKey);
         calculateLayout();
 
-        int btnW = 96;
-        int gap = 6;
-        int controlY = panelY + 36;
-        int startX = width() / 2 - (btnW * 5 + gap * 4) / 2;
+        int btnW = 112;
+        int gap = 4;
+        int controlY = 4;
+        int startX = 48;
 
         slotModeButton = ui().button(startX, controlY, btnW).text(getSlotModeButtonText()).onClick(b -> toggleSlotRequirementMode()).build();
 addItemButton = ui().button(startX + (btnW + gap), controlY, btnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.variant.add_item")).onClick(b -> addFromSelector()).build();
 addEquippedButton = ui().button(startX + (btnW + gap) * 2, controlY, btnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.variant.add_equipped")).onClick(b -> addEquipped()).build();
 clearButton = ui().button(startX + (btnW + gap) * 3, controlY, btnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.variant.clear")).onClick(b -> clearAll()).build();
-backButton = ui().button(panelX + 12, panelY + 7, btnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> navigateBack()).build();
+backButton = ui().button(4, controlY, 40).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> navigateBack()).build();
 createRowButtons();
         clampSelectionAndScroll();
         updateActionButtons();
@@ -122,23 +124,23 @@ createRowButtons();
             modeButtons.add(mode);
 KineticButton nbt = ui().button(nbtX, buttonY, ROW_BUTTON_W).text(KineticI18n.translatable("gui.kineticarmory.armorsets.variant.nbt")).onClick(b -> editVisibleRowNbt(row)).build();
             nbtButtons.add(nbt);
-KineticButton replace = ui().button(replaceX, buttonY, ROW_BUTTON_W).text(KineticI18n.translatable("gui.kineticarmory.armorsets.variant.edit")).onClick(b -> replaceVisibleRowFromSelector(row)).build();
+KineticButton replace = ui().button(replaceX, buttonY, 40).text(KineticI18n.translatable("gui.kineticarmory.armorsets.variant.edit")).onClick(b -> replaceVisibleRowFromSelector(row)).build();
             replaceButtons.add(replace);
-KineticButton delete = ui().button(deleteX, buttonY, ROW_BUTTON_W).text(KineticI18n.translatable("gui.kineticarmory.armorsets.delete")).onClick(b -> deleteVisibleRow(row)).build();
+KineticButton delete = ui().button(deleteX, buttonY, 40).text(KineticI18n.translatable("gui.kineticarmory.armorsets.delete")).onClick(b -> deleteVisibleRow(row)).build();
             deleteButtons.add(delete);
 }
     }
 
     private void calculateLayout() {
-        panelW = Math.min(width() - 30, 620);
-        panelH = height() - 32;
-        panelX = width() / 2 - panelW / 2;
-        panelY = 16;
+        panelW = width();
+        panelH = height();
+        panelX = 0;
+        panelY = 0;
 
-        listX = panelX + 18;
-        listY = panelY + 66;
-        listW = panelW - 36;
-        listH = panelH - 84;
+        listX = 4;
+        listY = 28;
+        listW = panelW - 8;
+        listH = panelH - listY - 4;
         rowW = listW - SCROLL_W - 12;
 
         scrollX = listX + listW - SCROLL_W - 5;
@@ -426,7 +428,7 @@ KineticButton delete = ui().button(deleteX, buttonY, ROW_BUTTON_W).text(KineticI
         int shift = listScroll.visualShift(ROW_H + ROW_GAP);
         for (int i = 0; i < modeButtons.size(); i++) {
             int buttonY = rowY(i) - shift + (ROW_H - ROW_BUTTON_H) / 2;
-            boolean inside = buttonY >= listY + 2 && buttonY + ROW_BUTTON_H <= listY + listH - 2;
+            boolean inside = buttonY >= listY + 6 && buttonY + ROW_BUTTON_H <= listY + listH - 6;
             setRowButtonY(modeButtons, i, buttonY, inside);
             setRowButtonY(nbtButtons, i, buttonY, inside);
             setRowButtonY(replaceButtons, i, buttonY, inside);
@@ -484,20 +486,29 @@ KineticButton delete = ui().button(deleteX, buttonY, ROW_BUTTON_W).text(KineticI
 
     @Override
     protected void renderForeground(KineticGraphics g, int mx, int my, float pt) {
-        int titleLeft = panelX + 12 + 96 + 2;
-        int titleRight = panelX + panelW - (listX - panelX);
-        g.scrollingTextCentered(title(), (titleLeft + titleRight) / 2, panelY + 11,
+        int titleLeft = 512;
+        int titleRight = width() - 4;
+        g.scrollingTextCentered(title(), (titleLeft + titleRight) / 2, 8,
                 Math.max(0, titleRight - titleLeft), 0xFFFFFFFF, true);
     }
 
     @Override
     protected void renderTooltips(int mouseX, int mouseY) {
+        int index = getRowIndexAt(mouseX, mouseY);
+        if (index >= 0 && index < variants().size()) {
+            int top = rowY(index - listScroll.smoothIndexOffset()) - listScroll.visualShift(ROW_H + ROW_GAP);
+            if (KineticTheme.hovering(mouseX, mouseY, listX + 14, top + 6, ICON_BOX, ICON_BOX)) {
+                ItemStack stack = variants().get(index).createDisplayStack();
+                if (!stack.isEmpty()) {showItemTooltip(stack);return;}
+            }
+        }
         List<Component> tooltip = getTooltipAt(mouseX, mouseY);
         if (!tooltip.isEmpty()) showTooltip(tooltip);
     }
 
     private void renderListArea(KineticGraphics g, int mx, int my) {
-        KineticTheme.panelAlt(g, listX, listY, listW, listH);
+        KineticTheme.surface(g, listX, listY, listW, listH, KineticTheme.Surface.PANEL_ALT);
+        KineticTheme.separator(g, listX, listY - 2, listW);
 
         SlotRequirementMode mode = getSlotRequirementMode();
         if (mode == SlotRequirementMode.EMPTY) {
@@ -661,7 +672,7 @@ for (int index = start; index < end; index++) {
         int step = ROW_H + ROW_GAP;
         int localY = (int)(my - listY - 6) + listScroll.visualShift(step);
         int visibleRow = localY / step;
-        if (visibleRow < 0 || visibleRow >= visibleRows) return -1;
+        if (visibleRow < 0 || visibleRow > visibleRows) return -1;
         if (localY % step >= ROW_H) return -1;
         return listScroll.smoothIndexOffset() + visibleRow;
     }

@@ -1,6 +1,5 @@
 package dev.xyat.kineticarmory.armorsets.client.gui;
 
-import dev.xyat.kineticcore.api.client.gui.input.KeyInput;
 import dev.xyat.kineticcore.api.client.gui.input.ScrollInput;
 import dev.xyat.kineticcore.api.client.gui.input.MouseDragInput;
 import dev.xyat.kineticcore.api.client.gui.input.MouseInput;
@@ -18,7 +17,6 @@ import dev.xyat.kineticcore.api.client.input.KineticMouseButtons;
 import dev.xyat.kineticcore.api.client.gui.input.MouseButton;
 import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
 import dev.xyat.kineticarmory.armorsets.data.ArmorTipGenerator;
-import dev.xyat.kineticcore.api.client.input.KineticKeyBindings;
 import dev.xyat.kineticcore.api.text.KineticI18n;
 import net.minecraft.network.chat.Component;
 import dev.xyat.kineticcore.api.registry.KineticRegistries;
@@ -35,7 +33,7 @@ import java.util.regex.Pattern;
 public class ArmorPieceBonusPage extends KineticPage {
     private static final Pattern ICON_PATTERN = Pattern.compile("\\[(item|effect):([^]]+)]");
     private static final Pattern COLOR_PATTERN = Pattern.compile("§[0-9a-fk-or]", Pattern.CASE_INSENSITIVE);
-    private static final int PANEL_PADDING = 14;
+    private static final int PANEL_PADDING = 4;
     private static final int ROW_H = 25;
     private static final int VISIBLE_ROWS = 10;
     private static final int SCROLL_W = 4;
@@ -68,9 +66,11 @@ public class ArmorPieceBonusPage extends KineticPage {
 
     public ArmorPieceBonusPage(ArmorDataConfig config) {
         super(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.title"));
+        useCanvas(CANVAS_WIDTH, CANVAS_HEIGHT, 4);
         this.config = config;
         this.config.initNullFields();
         this.config.preparePieceBonusData();
+        bindDeleteAction(() -> selectedEffect != null && groupContainsSelectedEffect(findSelectedGroup()), this::clearSelectedValue);
     }
 
     @Override
@@ -88,7 +88,7 @@ public class ArmorPieceBonusPage extends KineticPage {
         int panelW = width() - PANEL_PADDING * 2;
         int panelH = height() - PANEL_PADDING * 2;
         int controlY = PANEL_PADDING + 36;
-        int inputX = PANEL_PADDING + 12;
+        int inputX = PANEL_PADDING;
 
         if (selectedEffect == null && !effects.isEmpty()) selectedEffect = effects.get(0);
         if (selectedPieces < 2) selectedPieces = findFirstConfiguredPiecesForSelectedEffect();
@@ -111,17 +111,17 @@ int saveTierX = inputX + 62;
         if (tempValueInput != null) valueInput.setTextValue(tempValueInput);
 ui().button(valueX + 98, controlY, 74).text(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.value_save")).tooltip(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.tooltip.value_save")).layer(1).onClick(this::saveSelectedValue).build();
         ui().button(valueX + 178, controlY, 74).text(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.value_clear")).tooltip(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.tooltip.value_clear")).layer(1).onClick(this::clearSelectedValue).build();
-        ui().button(inputX, PANEL_PADDING + 8, 80).text(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.confirm")).tooltip(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.tooltip.confirm")).layer(1).onClick(this::closeToParent).build();
+        ui().button(inputX, PANEL_PADDING, 40).text(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.confirm")).tooltip(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.tooltip.confirm")).layer(1).onClick(this::closeToParent).build();
 
-        leftX = PANEL_PADDING + 12;
+        leftX = PANEL_PADDING;
         leftY = controlY + 36;
-        leftW = 250;
-        int listBottom = PANEL_PADDING + panelH - 10;
+        leftW = 304;
+        int listBottom = height() - PANEL_PADDING;
         int maxListH = Math.max(ROW_H * 4, listBottom - leftY);
-        leftH = Math.min(ROW_H * VISIBLE_ROWS, maxListH);
-        rightX = leftX + leftW + 18;
+        leftH = maxListH;
+        rightX = leftX + leftW + 4;
         rightY = leftY;
-        rightW = panelW - leftW - 42;
+        rightW = panelW - leftW - 4;
         rightH = leftH;
 
         loadSelectedValue();
@@ -416,13 +416,17 @@ ui().button(valueX + 98, controlY, 74).text(KineticI18n.translatable("gui.kineti
 
     @Override
     protected void renderBackground(KineticGraphics g, int mx, int my, float pt) {
-        KineticTheme.panel(g, PANEL_PADDING, PANEL_PADDING, width() - PANEL_PADDING * 2, height() - PANEL_PADDING * 2);
-        int titleLeft = PANEL_PADDING + 12 + 80 + 2;
+        KineticTheme.panel(g, 0, 0, width(), height());
+        int titleLeft = 48;
         int titleRight = width() - PANEL_PADDING - TEXT_GAP;
-        g.scrollingTextCentered(title(), (titleLeft + titleRight) / 2, PANEL_PADDING + 10,
+        g.scrollingTextCentered(title(), (titleLeft + titleRight) / 2, 8,
                 Math.max(0, titleRight - titleLeft), 0xFFFFFF, true);
-        KineticTheme.panelAlt(g, leftX, leftY, leftW, leftH);
-        KineticTheme.panelAlt(g, rightX, rightY, rightW, rightH);
+        KineticTheme.surface(g, leftX, leftY, leftW, leftH, KineticTheme.Surface.PANEL_ALT);
+        KineticTheme.surface(g, rightX, rightY, rightW, rightH, KineticTheme.Surface.PANEL_ALT);
+        KineticTheme.separator(g, leftX, leftY - 2, leftW);
+        KineticTheme.separator(g, rightX, rightY - 2, rightW);
+        g.vLine((leftX + leftW + rightX) / 2, Math.min(leftY, rightY),
+                Math.max(leftY + leftH, rightY + rightH), KineticTheme.current().accentHover());
         renderEffectRows(g, mx, my);
         renderTierRows(g, mx, my);
     }
@@ -454,8 +458,9 @@ ui().button(valueX + 98, controlY, 74).text(KineticI18n.translatable("gui.kineti
             g.scrollingTextCentered(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.empty_effects"), leftX + leftW / 2, leftY + 16, leftW - 2 * TEXT_GAP, 0xFFAAAAAA, true);
             return;
         }
-        int first = effectScroll.smoothIndexOffset();
-        int shift = effectScroll.visualShift(ROW_H);
+        int offset = pixelOffset(effectScroll, effects.size(), leftH);
+        int first = offset / ROW_H;
+        int shift = offset % ROW_H;
         int count = Math.min(visible + 1, effects.size() - first);
         g.scissor(leftX, leftY, leftX + leftW - 10, leftY + leftH);
         for (int i = 0; i < count; i++) {
@@ -506,8 +511,9 @@ ui().button(valueX + 98, controlY, 74).text(KineticI18n.translatable("gui.kineti
             g.scrollingTextCentered(KineticI18n.translatable("gui.kineticarmory.armorsets.piece.bonus.empty_tiers"), rightX + rightW / 2, rightY + 16, rightW - 2 * TEXT_GAP, 0xFFAAAAAA, true);
             return;
         }
-        int first = tierScroll.smoothIndexOffset();
-        int shift = tierScroll.visualShift(ROW_H);
+        int offset = pixelOffset(tierScroll, tiers.size(), rightH);
+        int first = offset / ROW_H;
+        int shift = offset % ROW_H;
         int count = Math.min(visible + 1, tiers.size() - first);
         g.scissor(rightX, rightY, rightX + rightW - 10, rightY + rightH);
         for (int i = 0; i < count; i++) {
@@ -604,21 +610,9 @@ ui().button(valueX + 98, controlY, 74).text(KineticI18n.translatable("gui.kineti
         );
     }
 
-    @Override
-    protected boolean onKeyPress(KeyInput input) {
-        int keyCode = input.keyCode(), scanCode = input.scanCode(), modifiers = input.modifiers();
-        if (KineticKeyBindings.matchesKeyCode(KineticKeyBindings.Key.ENTER, keyCode)
-                || KineticKeyBindings.matchesKeyCode(KineticKeyBindings.Key.KP_ENTER, keyCode)) {
-            if (pieceInput != null && isFocused(pieceInput)) {
-                saveTierForSelectedEffect();
-                return true;
-            }
-            if (valueInput != null && isFocused(valueInput)) {
-                saveSelectedValue();
-                return true;
-            }
-        }
-        return false;
+    private int pixelOffset(KineticScrollController controller, int rows, int viewportHeight) {
+        return Math.min((int) Math.round(controller.smoothOffset() * ROW_H),
+                Math.max(0, rows * ROW_H - viewportHeight));
     }
 
     @Override
@@ -628,8 +622,7 @@ ui().button(valueX + 98, controlY, 74).text(KineticI18n.translatable("gui.kineti
         if (tryStartScrollDrag(mx, my, input.button(), rightX + rightW - SCROLL_W - 2, rightY + 2, rightH - 4, false)) return true;
 
         if (isInside(mx, my, leftX, leftY, leftW - 10, leftH)) {
-            int row = effectScroll.smoothIndexOffset()
-                    + (int) ((my - leftY + effectScroll.visualShift(ROW_H)) / ROW_H);
+            int row = (int) (my - leftY + pixelOffset(effectScroll, effects.size(), leftH)) / ROW_H;
             if (row >= 0 && row < effects.size()) {
                 selectEffect(effects.get(row));
                 return true;
@@ -638,8 +631,7 @@ ui().button(valueX + 98, controlY, 74).text(KineticI18n.translatable("gui.kineti
 
         if (isInside(mx, my, rightX, rightY, rightW - 10, rightH)) {
             List<TierOption> tiers = buildTierOptions();
-            int row = tierScroll.smoothIndexOffset()
-                    + (int) ((my - rightY + tierScroll.visualShift(ROW_H)) / ROW_H);
+            int row = (int) (my - rightY + pixelOffset(tierScroll, tiers.size(), rightH)) / ROW_H;
             if (row >= 0 && row < tiers.size()) {
                 TierOption option = tiers.get(row);
                 selectTier(option);

@@ -36,8 +36,8 @@ public class ConditionEditPage extends KineticPage {
     private static final int PARAM_FIELD_OFFSET = 12;
     private static final int BOTTOM_PADDING = 10;
     private static final int PANEL_WIDTH = 280;
-    private static final int BACK_WIDTH = 55;
-    private static final int BACK_Y = TYPE_LABEL_Y - 20 - 2;
+    private static final int BACK_WIDTH = 40;
+    private static final int BACK_Y = 4;
     private final List<ConditionData> parentList;
     private final ConditionData data;
     private boolean isNew;
@@ -69,8 +69,8 @@ public class ConditionEditPage extends KineticPage {
         typeInput = ui().autoComplete(cx - FIELD_WIDTH / 2, panelTop() + TYPE_FIELD_Y, FIELD_WIDTH, ConditionTypeUtil::getSuggestions).firstShownTextAsDefault().build();
         typeInput.setTextValue((data.type != null && !data.type.isEmpty()) ? data.type.toUpperCase() : "");
 
-        saveBtn = ui().button(cx - 60, panelTop() + buttonsOffset(currentSchema.size()), 55).text(KineticI18n.translatable("gui.kineticarmory.predicate.save")).onClick(b -> save()).build();
-        backBtn = ui().button(cx - PANEL_WIDTH / 2 + 12, panelTop() + BACK_Y, BACK_WIDTH).text(KineticI18n.translatable("gui.kineticarmory.predicate.back")).onClick(b -> {
+        saveBtn = ui().button(cx + PANEL_WIDTH / 2 - 44, panelTop() + BACK_Y, 40).text(KineticI18n.translatable("gui.kineticarmory.predicate.save")).onClick(b -> save()).build();
+        backBtn = ui().button(cx - PANEL_WIDTH / 2 + 4, panelTop() + BACK_Y, 40).text(KineticI18n.translatable("gui.kineticarmory.predicate.back")).onClick(b -> {
             navigateBack();
         }).build();
         lastTickType = ConditionTypeUtil.getRawType(typeInput.textValue());
@@ -153,7 +153,7 @@ public class ConditionEditPage extends KineticPage {
             currentY += PARAM_STEP;
         }
 
-        saveBtn.moveControlY(top + buttonsOffset(currentSchema.size()));
+        saveBtn.moveControlY(top + BACK_Y);
         backBtn.moveControlY(top + BACK_Y);
         dynamicPanelHeight = panelHeight(currentSchema.size());
     }
@@ -194,13 +194,8 @@ public class ConditionEditPage extends KineticPage {
         }
     }
 
-    /** Offset of the Save / Back row from the panel top: 10 px below the last field, or below the type field. */
-    private static int buttonsOffset(int params) {
-        return params == 0 ? TYPE_FIELD_Y + 30 : FIRST_PARAM_Y + (params - 1) * PARAM_STEP + PARAM_FIELD_OFFSET + 30;
-    }
-
     private static int panelHeight(int params) {
-        return buttonsOffset(params) + 20 + BOTTOM_PADDING;
+        return (params == 0 ? TYPE_FIELD_Y : FIRST_PARAM_Y + (params - 1) * PARAM_STEP + PARAM_FIELD_OFFSET) + 24;
     }
 
     private int panelTop() {
@@ -212,8 +207,8 @@ public class ConditionEditPage extends KineticPage {
         int panelY = panelTop();
         KineticTheme.panel(g, cx - PANEL_WIDTH / 2, panelY, PANEL_WIDTH, dynamicPanelHeight);
 
-        int titleLeft = cx - PANEL_WIDTH / 2 + 12 + BACK_WIDTH + 2;
-        int titleRight = cx + PANEL_WIDTH / 2 - 12;
+        int titleLeft = cx - PANEL_WIDTH / 2 + 48;
+        int titleRight = cx + PANEL_WIDTH / 2 - 48;
         g.scrollingTextCentered(title(), (titleLeft + titleRight) / 2, panelY + TITLE_Y,
                 Math.max(0, titleRight - titleLeft), 0xFFFFFF, true);
         g.scrollingText(KineticI18n.translatable("gui.kineticarmory.predicate.type"), cx - FIELD_WIDTH / 2, panelY + TYPE_LABEL_Y, FIELD_WIDTH, 0xAAAAAA, true);

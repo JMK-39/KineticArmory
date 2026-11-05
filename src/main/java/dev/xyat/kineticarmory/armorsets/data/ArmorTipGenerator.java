@@ -197,7 +197,8 @@ public class ArmorTipGenerator {
                 }
             }
 
-            if (count >= 32) {
+            // A remnant of a few characters, such as a closing bracket, stays on its line instead of forming its own.
+            if (count >= 32 && visibleLength(text, i) > 3) {
                 result.append("\n  ").append(lastColor);
                 count = 0;
                 if (text.charAt(i) == ' ') {
@@ -211,6 +212,15 @@ public class ArmorTipGenerator {
             i++;
         }
         return result.toString();
+    }
+
+    private static int visibleLength(String text, int from) {
+        int count = 0;
+        for (int i = from; i < text.length(); i++) {
+            if (text.charAt(i) == '§' && i + 1 < text.length()) i++;
+            else count++;
+        }
+        return count;
     }
 
     public static String genAttrTip(ArmorDataConfig.AttributeModifierData d) {

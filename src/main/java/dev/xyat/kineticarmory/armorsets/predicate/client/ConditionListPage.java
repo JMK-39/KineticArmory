@@ -21,6 +21,7 @@ public class ConditionListPage extends KineticPage {
     private final IConditionOwner owner;
     private final List<ConditionData> conditions;
     private KineticToggleActionList listWidget;
+    private ConditionData selectedCondition;
 
     private KineticTextField minCountInput;
 
@@ -28,6 +29,8 @@ public class ConditionListPage extends KineticPage {
         super(KineticI18n.translatable("gui.kineticarmory.predicate.list_title"));
         this.owner = owner;
         this.conditions = owner.getConditions();
+        bindDeleteAction(() -> selectedCondition != null && conditions.contains(selectedCondition),
+                () -> deleteCondition(selectedCondition));
     }
 
     private void updateModeUI(KineticButton modeBtn) {
@@ -57,38 +60,41 @@ public class ConditionListPage extends KineticPage {
         int guiH = 220;
         int y0 = cy - guiH / 2;
 
-        this.listWidget = ui.toggleActionList(cx - guiW / 2, y0 + 30, guiW, guiH - 60, listItems())
+        this.listWidget = ui.toggleActionList(cx - guiW / 2, y0 + 30, guiW, guiH - 34, listItems())
                 .selected(-1)
                 .toggleWidth(35)
-                .actionWidth(35)
+                .actionWidth(40)
                 .onSelect(index -> {
                     if (index < 0 || index >= conditions.size()) return;
+                    selectedCondition = conditions.get(index);
                     listWidget.setSelectedIndex(-1);
                     openChild(new ConditionEditPage(conditions, conditions.get(index), false));
                 })
                 .onToggle((index, value) -> {
                     if (index < 0 || index >= conditions.size()) return;
+                    selectedCondition = conditions.get(index);
                     conditions.get(index).invert = value;
                     refreshList();
                 })
                 .onAction(index -> {
                     if (index < 0 || index >= conditions.size()) return;
-                    conditions.remove((int) index);
-                    refreshList();
+                    deleteCondition(conditions.get(index));
                 })
                 .build();
 
-        int btnW = 90;
-        int gap = 15;
-        int startX = cx - (btnW * 3 + gap * 2) / 2;
-        int bottomY = y0 + guiH - 25;
+        int btnW = 40;
+        // "Add Condition" and "添加条件" need more than the 40 px of the mode button.
+        int addW = 64;
+        int gap = 4;
+        int startX = cx - guiW / 2 + 44;
+        int bottomY = y0;
 
-        ui.button(startX, bottomY, btnW).text(KineticI18n.translatable("gui.kineticarmory.predicate.add")).onClick(b -> {
+        ui.button(startX, bottomY, addW).text(KineticI18n.translatable("gui.kineticarmory.predicate.add")).onClick(b -> {
             ConditionData newCond = new ConditionData();
             openChild(new ConditionEditPage(conditions, newCond, true));
         }).build();
 
-        this.minCountInput = ui.textField(startX + btnW + gap + 65, bottomY, 25).firstShownTextAsDefault().build();
+        this.minCountInput = ui.textField(startX + addW + gap + 65, bottomY, 25).firstShownTextAsDefault().build();
         this.minCountInput.setTextValue(String.valueOf(owner.getMinCount()));
         this.minCountInput.onTextChange(s -> {
             try {
@@ -98,7 +104,7 @@ public class ConditionListPage extends KineticPage {
             }
         });
 
-        KineticButton modeBtn = ui.button(startX + btnW + gap, bottomY, btnW).text(Component.empty())
+        KineticButton modeBtn = ui.button(startX + addW + gap, bottomY, btnW).text(Component.empty())
                 .tooltip(KineticI18n.translatable("gui.kineticarmory.predicate.mode.tooltip"))
                 .onClick(b -> {
                     String currentMode = owner.getMatchMode();
@@ -113,7 +119,13 @@ public class ConditionListPage extends KineticPage {
                 }).build();
         updateModeUI(modeBtn);
 
-        ui.button(cx - guiW / 2, y0, btnW).text(KineticI18n.translatable("gui.kineticarmory.predicate.back")).onClick(b -> navigateBack()).build();
+        ui.button(cx - guiW / 2, y0, 40).text(KineticI18n.translatable("gui.kineticarmory.predicate.back")).onClick(b -> navigateBack()).build();
+    }
+
+    private void deleteCondition(ConditionData condition) {
+        conditions.remove(condition);
+        if (selectedCondition == condition) selectedCondition = null;
+        refreshList();
     }
 
     private void refreshList() {
@@ -154,7 +166,7 @@ public class ConditionListPage extends KineticPage {
         int guiW = GUI_WIDTH;
         int guiH = 220;
         KineticTheme.panel(g, cx - guiW / 2 - 10, cy - guiH / 2 - 10, guiW + 20, guiH + 20);
-        int titleLeft = cx - guiW / 2 + 90 + 2;
+        int titleLeft = cx - guiW / 2 + 240;
         int titleRight = cx + guiW / 2 - 2;
         g.scrollingTextCentered(title(), (titleLeft + titleRight) / 2, cy - guiH / 2 + 5,
                 Math.max(0, titleRight - titleLeft), 0xFFFFFF, true);

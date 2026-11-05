@@ -1,3 +1,68 @@
+## 26.10.26 — 2026-10-26
+- Saving the set list says whether anything was saved.
+- 套装列表点击保存后会提示是否有修改被保存。
+- 套装生效实体页的过滤模式按钮缩短，搜索框加长；各效果编辑器的“编辑触发条件”按钮缩短为文字所需宽度。
+
+## 26.10.24 — 2026-10-24
+- Tip editor: Back, the colour squares with a Reset (§r) button and Add/Save in one header row; no second Back while editing (Back ends the edit); long tips scroll only while hovered. The attack-effect line no longer colours the bracket after the effect name. The armor edit slots use the standard size.
+- 文本提示编辑：返回、颜色方块与重置（§r）、添加/保存同在顶栏；编辑时不再出现第二个返回（返回即结束编辑）；长提示仅悬停时滚动。攻击特效一行中效果名后的括号不再被染色。套装编辑物品格改为标准尺寸。
+
+## 26.10.20 — 2026-10-20
+
+- The delete confirmation for an armour set says Back instead of Cancel.
+- 删除套装的确认弹窗中“取消”改为“返回”。
+
+- The set-bonus page's top-left Done and the tip editor's Cancel read Back.
+- 套装加成页左上角的“完成”与提示编辑器的“取消”改为“返回”。
+- The condition list's Add Condition button is wide enough for its label.
+- 条件列表的“添加条件”按钮加宽，文字完整显示。
+- Equipment and effect editors use one white outer frame, with borderless content regions and gray-white dividers between lists. Item cards, controls, selection outlines and dialogs retain their own interaction states.
+- 装备与效果编辑器统一保留一层白色外框，内容区改为无边框底色，列表之间使用灰白分隔线；物品卡片、控件、选中描边及弹窗保留各自的交互状态。
+- Set rows open their editor only on left click. Enter and keypad Enter are reserved for active confirmation dialogs, and row tooltips describe the actual controls.
+- 套装行仅通过左键进入编辑，回车与小键盘回车仅用于已有二次确认框，悬浮提示与实际操作保持一致。
+- Partially visible equipment-variant rows remain clickable during smooth scrolling; their buttons use the same content clip. Piece-bonus lists meet the real content bottom and no longer save values on Enter.
+- 装备候选列表平滑滚动时露出的半行仍可点击，行内按钮使用相同的内容裁剪范围；件数加成列表按实际内容末端停止，回车不再直接保存数值。
+
+## 26.10.16 — 2026-10-16
+- Entity filtering uses one Core entity grid with standard 50-pixel cards and two-pixel gaps. Selected entities stay green; global whitelist/blacklist and per-set enable controls remain in the top toolbar. Tag, mod and unknown entity rules can be managed from the Rules menu.
+- Effect overview actions share one top row, leaving the full width for effect rows and their scrollbar. Effect, command, tip and predicate editors keep their actions in compact headers.
+- Potion and effect-immunity selectors are wider so icons, IDs and translated names have more room.
+
+- 实体过滤改为一个 Core 实体网格，使用标准 50 像素卡片与 2 像素间距，已选实体保持绿色；顶部保留全局白黑名单模式和套装启用开关，标签、模组及未知实体规则可在“规则”菜单管理。
+- 效果总览的操作集中到顶部同一行，内容区向两侧扩宽并为滚动条留出空间；效果、指令、提示和谓词编辑器的操作均移至紧凑顶栏。
+- 药水与药水免疫选择列表加宽，为图标、ID 和本地化名称提供更多空间。
+
+- Large set editors and browsers use the full 640 by 360 canvas with four-pixel insets. Search fields are wider, equipment and accessory previews have more room, and hovering them uses the original item tooltip with its stack data.
+- Set rows open deletion confirmation on right click instead of reserving an inline Delete button. Delete follows the page's selected-entry operation, and Enter confirms Core dialogs while text fields retain normal editing.
+- 大型套装编辑与浏览页统一使用 640×360 画布和四像素边距；搜索框加宽，装备与饰品预览扩展空间，悬停显示保留原物品数据的原生提示。
+- 套装行改为右键弹出删除确认，不再占用右侧删除按钮的位置；Delete 复用页面已有删除操作，Enter 确认核心弹窗，输入框仍按正常文本编辑处理。
+
+## 2026-10-14 — Variant badge and entity cards / 变体标记与生物卡片
+
+- An equipment slot that accepts several items shows a gold # in its upper-left corner, in the set list and the set editor, instead of a green + in the corner.
+- The entity rule lists use the same model card size as the other mob lists and show six columns and five rows. Headers, search fields, grids and scrollbars share one margin on both sides of each panel.
+- The Accessory and Rejected Accessory sections of the set editor scroll when a set lists more accessories than their two rows hold; one empty slot always follows the list for adding another.
+- 可接受多种物品的装备槽位在套装列表与编辑页的左上角显示金色 #，不再在角落显示绿色 +。
+- 实体规则列表的生物模型卡片与其他生物列表大小一致，每屏 6 列 5 行；标题、搜索框、网格与滚动条在面板两侧使用相同边距。
+- 套装编辑页的饰品与排除饰品区域在超出两行时可以滚动浏览，列表末尾始终保留一个空槽位用于继续添加。
+
+---
+
+## 2026-10-13 — Editor layout fixes / 编辑器排版修复
+
+- Dragging a hover tip keeps the row over the list it reorders, with an opaque background, and the insertion line starts at the row edge.
+- The set command editor frames its header and Save button, and its title lines up with Go Back.
+- The entity rule search fields are labelled for the list they filter: added mobs on the left, available mobs on the right.
+- The set list keeps a two-pixel gap to the window frame.
+- Generated hover tips no longer wrap a few leftover characters, such as a closing bracket, onto a line of their own.
+- 拖动悬停提示时，被拖动的行停留在所排序的列表上方并使用不透明背景，插入线从行边缘开始。
+- 套装指令编辑页的顶部与保存按钮位于边框内，标题与返回按钮对齐。
+- 实体规则的搜索框提示与所筛选的列表对应：左侧为已添加生物，右侧为可添加生物。
+- 套装列表与窗口边框保持两像素间距。
+- 自动生成的悬停提示不再把右括号等少量剩余字符单独换成一行。
+
+---
+
 ## 2026-10-11 — Item preview size / 物品预览大小
 
 - Set editors and set-list equipment previews render item icons at their normal 1.0 scale.

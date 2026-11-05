@@ -26,6 +26,7 @@ public class ArmorCommandEditorPage extends KineticPage {
     private KineticCommandAssist commandSuggestions;
     private CommandListWidget activeList;
     private CommandListWidget deactiveList;
+    private CommandListWidget selectedCommandList;
 
     private KineticButton btnPrimary;
     private KineticButton btnSecondary;
@@ -37,42 +38,44 @@ public class ArmorCommandEditorPage extends KineticPage {
     public ArmorCommandEditorPage(ArmorDataConfig config) {
         super(KineticI18n.translatable("gui.kineticarmory.armorsets.commands.title"));
         this.config = config;
+        useCanvas(CANVAS_WIDTH, CANVAS_HEIGHT, 4);
+        bindDeleteAction(() -> selectedCommandList != null && selectedCommandList.selectedItem() != null,
+                () -> selectedCommandList.deleteEntry(selectedCommandList.selectedItem().index()));
     }
 
     @Override
     protected void onTick() {
         if (input != null) tempInput = input.textValue();
-        // 原 setCanLoseFocus(false)：输入框始终保持焦点 / Former setCanLoseFocus(false): keep the input focused.
-        if (input != null && focusedControl() != input) focus(input);
+
     }
 
     @Override
     protected void build(KineticUi ui) {
         int cx = width() / 2;
-        int guiW = Math.min(width() - 20, 800);
-        int guiH = height() - 55;
+        int guiW = width() - 8;
+        int guiH = height() - 28;
         int x0 = cx - guiW / 2;
-        int y0 = 20;
-        int inputY = y0 + guiH - 28;
+        int y0 = 24;
+        int inputY = 28;
 
-        input = ui().textField(x0 + 10, inputY, guiW - 160).firstShownTextAsDefault().build();
+        input = ui().textField(x0, inputY, guiW - 138).firstShownTextAsDefault().build();
         input.setPlaceholder(KineticI18n.translatable("gui.kineticarmory.armorsets.commands.hint"));
         input.limitTextLength(2048);
         input.setTextValue(tempInput == null || tempInput.isBlank() ? "/" : tempInput);
         focus(input);
 
-        btnPrimary = ui().button(x0 + guiW - 145, inputY, 65).text(KineticI18n.translatable("gui.kineticarmory.armorsets.commands.add_active")).onClick(b -> handlePrimaryAction()).build();
-        btnSecondary = ui().button(x0 + guiW - 75, inputY, 65).text(KineticI18n.translatable("gui.kineticarmory.armorsets.commands.add_deactive")).onClick(b -> handleSecondaryAction()).build();
+        btnPrimary = ui().button(x0 + guiW - 134, inputY, 65).text(KineticI18n.translatable("gui.kineticarmory.armorsets.commands.add_active")).onClick(b -> handlePrimaryAction()).build();
+        btnSecondary = ui().button(x0 + guiW - 65, inputY, 65).text(KineticI18n.translatable("gui.kineticarmory.armorsets.commands.add_deactive")).onClick(b -> handleSecondaryAction()).build();
         updateButtonMode();
 
-        int listW = guiW / 2 - 15;
-        activeList = ui().add(new CommandListWidget(x0 + 10, y0 + 25, listW, guiH - 60, config.activationCommands));
-        deactiveList = ui().add(new CommandListWidget(cx + 5, y0 + 25, listW, guiH - 60, config.deactivationCommands));
+        int listW = (guiW - 4) / 2;
+        activeList = ui().add(new CommandListWidget(x0, 66, listW, height() - 70, config.activationCommands));
+        deactiveList = ui().add(new CommandListWidget(cx + 2, 66, listW, height() - 70, config.deactivationCommands));
 
         int actionBtnW = 80;
         int bottomBtnY = height() - 25;
-        ui().button(cx - actionBtnW - 5, bottomBtnY, actionBtnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.save")).onClick(b -> KineticOverlays.toast(KineticI18n.translatable("msg.kineticarmory.common.saved"))).build();
-        ui().button(x0 + 10, 3, actionBtnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> navigateBack()).build();
+        ui().button(x0 + guiW - 40, 4, 40).text(KineticI18n.translatable("gui.kineticarmory.armorsets.save")).onClick(b -> KineticOverlays.toast(KineticI18n.translatable("msg.kineticarmory.common.saved"))).build();
+        ui().button(x0, 4, 40).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> navigateBack()).build();
 
         commandSuggestions = KineticCommandAssist.attach(input, width(), height(), false, 10, null);
     }
@@ -157,19 +160,20 @@ public class ArmorCommandEditorPage extends KineticPage {
     @Override
     protected void renderBackground(KineticGraphics graphics, int mouseX, int mouseY, float partialTick) {
         int cx = width() / 2;
-        int guiW = Math.min(width() - 20, 800);
-        int guiH = height() - 55;
+        int guiW = width() - 8;
+        int guiH = height() - 28;
         int x0 = cx - guiW / 2;
-        int y0 = 20;
+        int y0 = 24;
 
-        KineticTheme.panel(graphics, x0, y0, guiW, guiH);
-        int titleLeft = x0 + 10 + 80 + 2;
-        int titleRight = x0 + guiW - 10;
-        graphics.scrollingTextCentered(title(), (titleLeft + titleRight) / 2, 5,
+        // The outer frame holds the header (Go Back, title) and Save; the inner one holds the two command lists.
+        KineticTheme.panel(graphics, 0, 0, width(), height());
+        int titleLeft = 48;
+        int titleRight = x0 + guiW - 44;
+        graphics.scrollingTextCentered(title(), (titleLeft + titleRight) / 2, 7,
                 Math.max(0, titleRight - titleLeft), 0xFFFFFF, true);
-        graphics.scrollingTextCentered(KineticI18n.translatable("gui.kineticarmory.armorsets.commands.activation_label"), x0 + guiW / 4, y0 + 10, guiW / 2 - 20, 0xFFFFFF, true);
-        graphics.scrollingTextCentered(KineticI18n.translatable("gui.kineticarmory.armorsets.commands.deactivation_label"), x0 + guiW * 3 / 4, y0 + 10, guiW / 2 - 20, 0xFFFFFF, true);
-        KineticTheme.verticalSeparator(graphics, cx, y0 + 25, guiH - 60);
+        graphics.scrollingTextCentered(KineticI18n.translatable("gui.kineticarmory.armorsets.commands.activation_label"), x0 + guiW / 4, 54, guiW / 2 - 20, 0xFFFFFF, true);
+        graphics.scrollingTextCentered(KineticI18n.translatable("gui.kineticarmory.armorsets.commands.deactivation_label"), x0 + guiW * 3 / 4, 54, guiW / 2 - 20, 0xFFFFFF, true);
+        KineticTheme.verticalSeparator(graphics, cx, 66, height() - 70);
     }
 
     @Override
@@ -192,6 +196,7 @@ public class ArmorCommandEditorPage extends KineticPage {
         private static final int ROW_H = 24;
         private static final int ROW_BUTTON_Y = 3;
         private static final int ROW_BUTTON_W = 42;
+        private static final int DELETE_BUTTON_W = 40;
         private static final int ROW_BUTTON_GAP = 2;
 
         private final List<ArmorDataConfig.CommandData> commandList;
@@ -210,22 +215,16 @@ public class ArmorCommandEditorPage extends KineticPage {
             setItems(rows);
         }
 
-        @Override
-        protected boolean isFocusable() {
-            // 输入框始终保持焦点 / The command input keeps focus.
-            return false;
-        }
-
         private int deleteX(int left, int rowWidth) {
-            return left + rowWidth - ROW_BUTTON_W - 5;
+            return left + rowWidth - DELETE_BUTTON_W - 5;
         }
 
         private int conditionsX(int left, int rowWidth) {
             return deleteX(left, rowWidth) - ROW_BUTTON_W - ROW_BUTTON_GAP;
         }
 
-        private boolean over(int x, int y) {
-            return mouseX() >= x && mouseX() < x + ROW_BUTTON_W && mouseY() >= y && mouseY() < y + KineticPage.CONTROL_HEIGHT;
+        private boolean over(int x, int y, int width) {
+            return mouseX() >= x && mouseX() < x + width && mouseY() >= y && mouseY() < y + KineticPage.CONTROL_HEIGHT;
         }
 
         @Override
@@ -245,9 +244,9 @@ public class ArmorCommandEditorPage extends KineticPage {
             int buttonY = top + ROW_BUTTON_Y;
 
             KineticTheme.button(graphics, conditionsX, buttonY, ROW_BUTTON_W, KineticPage.CONTROL_HEIGHT,
-                    KineticI18n.translatable("gui.kineticarmory.armorsets.conditions"), over(conditionsX, buttonY), true, false);
-            KineticTheme.button(graphics, deleteX, buttonY, ROW_BUTTON_W, KineticPage.CONTROL_HEIGHT,
-                    KineticI18n.translatable("gui.kineticarmory.armorsets.delete"), over(deleteX, buttonY), true, false);
+                    KineticI18n.translatable("gui.kineticarmory.armorsets.conditions"), over(conditionsX, buttonY, ROW_BUTTON_W), true, false);
+            KineticTheme.button(graphics, deleteX, buttonY, DELETE_BUTTON_W, KineticPage.CONTROL_HEIGHT,
+                    KineticI18n.translatable("gui.kineticarmory.armorsets.delete"), over(deleteX, buttonY, DELETE_BUTTON_W), true, false);
         }
 
         private void deleteEntry(int index) {
@@ -269,9 +268,10 @@ public class ArmorCommandEditorPage extends KineticPage {
             if (input.y() < top || input.y() >= top + ROW_H - 2) return false;
             int buttonY = top + ROW_BUTTON_Y;
             if (!input.isLeft()) return false;
+            selectedCommandList = this;setSelectedIndex(index);
             int left = controlX();
             int rowWidth = rowsWidth();
-            if (input.inside(deleteX(left, rowWidth), buttonY, ROW_BUTTON_W, KineticPage.CONTROL_HEIGHT)) {
+            if (input.inside(deleteX(left, rowWidth), buttonY, DELETE_BUTTON_W, KineticPage.CONTROL_HEIGHT)) {
                 deleteEntry(row.index());
                 return true;
             }

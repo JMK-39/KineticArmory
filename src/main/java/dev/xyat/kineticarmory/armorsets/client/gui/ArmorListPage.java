@@ -12,11 +12,8 @@ import dev.xyat.kineticarmory.armorsets.data.ArmorDataConfig;
 import dev.xyat.kineticarmory.armorsets.client.ArmorClientSnapshot;
 import dev.xyat.kineticarmory.armorsets.Network.ArmorNetwork;
 import dev.xyat.kineticcore.api.client.search.KineticSearch;
-import dev.xyat.kineticcore.api.registry.KineticRegistries;
-import dev.xyat.kineticcore.api.resource.KineticResourceIds;
 import dev.xyat.kineticcore.api.text.KineticI18n;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 import java.text.SimpleDateFormat;
@@ -44,6 +41,7 @@ public class ArmorListPage extends KineticPage {
 
     public ArmorListPage() {
         super(KineticI18n.translatable("gui.kineticarmory.armorsets.list.title"));
+        useCanvas(CANVAS_WIDTH, CANVAS_HEIGHT, 4);
 
         this.allEntries = new ArrayList<>(ArmorClientSnapshot.configs());
         this.allEntries.sort(Comparator.comparing(a -> a.id));
@@ -52,6 +50,8 @@ public class ArmorListPage extends KineticPage {
                 () -> new LinkedHashSet<>(pendingDeletedIds),
                 this::restorePendingDeletes
         );
+        bindDeleteAction(() -> listWidget != null && listWidget.selectedItem() != null,
+                () -> confirmDelete(listWidget.selectedItem()));
     }
 
     @Override
@@ -60,37 +60,63 @@ public class ArmorListPage extends KineticPage {
         return false;
     }
 
+    /**
+     * The pages and effect editors of the first set, for screenshot tools; the effect editors open in "new" mode and
+     * nothing is saved unless the player saves. None while there are no sets.
+     */
+    @Override
+    public List<ReviewView> reviewViews() {
+        if (allEntries.isEmpty()) return List.of();
+        ArmorDataConfig first = allEntries.get(0);
+        return List.of(
+                new ReviewView("set", () -> openEditor(first)),
+                new ReviewView("tips", () -> openChild(new ArmorTipEditorPage(first))),
+                new ReviewView("detail", () -> openChild(new ArmorDetailPage(first))),
+                new ReviewView("commands", () -> openChild(new ArmorCommandEditorPage(first))),
+                new ReviewView("bonus", () -> openChild(new ArmorPieceBonusPage(first))),
+                new ReviewView("entity-filter", () -> openChild(new ArmorEntityFilterPage(first))),
+                new ReviewView("variants", () -> openChild(new ArmorEquipmentVariantPage(first, "head",
+                        KineticI18n.translatable("gui.kineticarmory.armorsets.slot.head")))),
+                new ReviewView("attribute", () -> openChild(new dev.xyat.kineticarmory.armorsets.client.gui.editor.AttributeEditor(first, null))),
+                new ReviewView("potion", () -> openChild(new dev.xyat.kineticarmory.armorsets.client.gui.editor.PotionEditor(first, null))),
+                new ReviewView("immunity", () -> openChild(new dev.xyat.kineticarmory.armorsets.client.gui.editor.ImmunityEditor(first, null))),
+                new ReviewView("attack-effect", () -> openChild(new dev.xyat.kineticarmory.armorsets.client.gui.editor.AttackEffectEditor(first, null))),
+                new ReviewView("effect-immunity", () -> openChild(new dev.xyat.kineticarmory.armorsets.client.gui.editor.PotionImmunityEditor(first, null))),
+                new ReviewView("damage-conversion", () -> openChild(new dev.xyat.kineticarmory.armorsets.client.gui.editor.DamageConversionEditor(first, null))),
+                new ReviewView("attack-damage", () -> openChild(new dev.xyat.kineticarmory.armorsets.client.gui.editor.AttackDamageEditor(first, null))));
+    }
+
     @Override
     protected void build(KineticUi ui) {
-        int padding = 10;
-        this.guiW = this.width() - padding * 2;
-        this.guiH = this.height() - padding * 2;
-        this.x0 = padding;
-        this.y0 = padding;
+        int padding = 4;
+        this.guiW = this.width();
+        this.guiH = this.height();
+        this.x0 = 0;
+        this.y0 = 0;
 
-        int btnW = 60;
+        int btnW = 40;
         int filterBtnW = 120;
-        int gap = 5;
-        int btnBackX = x0 + guiW - padding - btnW;
-        int btnSaveX = btnBackX - gap - btnW;
+        int gap = 4;
+        int toolbarY = padding;
+        int btnSaveX = guiW - padding - 40;
         int btnNewX = btnSaveX - gap - btnW;
         int btnFilterX = btnNewX - gap - filterBtnW;
-        int searchX = x0 + padding + btnW + 2;
-        this.searchBox = ui().textField(searchX, y0 + 20, btnFilterX - gap - searchX).firstShownTextAsDefault().build();
+        int searchX = padding + 40 + gap;
+        this.searchBox = ui().textField(searchX, toolbarY, 368).firstShownTextAsDefault().build();
         this.searchBox.setPlaceholder(KineticI18n.translatable("gui.kineticarmory.armorsets.search"));
         this.searchBox.limitTextLength(1024);
         this.searchBox.setTextValue(lastSearch);
         this.searchBox.onTextChange(val -> { updateSearch(val); if (listWidget != null) listWidget.setScrollOffset(0); });
-ui().button(btnFilterX, y0 + 20, filterBtnW).text(getEntityFilterButtonText()).tooltip(getEntityFilterButtonTooltip()).onClick(b ->
+        ui().button(btnFilterX, toolbarY, filterBtnW).text(getEntityFilterButtonText()).tooltip(getEntityFilterButtonTooltip()).onClick(b ->
                 ArmorNetwork.requestEntityFilter()).build();
-        ui().button(btnNewX, y0 + 20, btnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.btn_new")).onClick(b -> createNewSet()).build();
-        ui().button(btnSaveX, y0 + 20, btnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.save")).onClick(b -> savePendingDeletes()).build();
-        ui().button(x0 + padding, y0 + 20, btnW).text(KineticI18n.translatable("gui.kineticarmory.common.back")).onClick(b -> close()).build();
+        ui().button(btnNewX, toolbarY, btnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.btn_new")).onClick(b -> createNewSet()).build();
+        ui().button(btnSaveX, toolbarY, 40).text(KineticI18n.translatable("gui.kineticarmory.armorsets.save")).onClick(b -> savePendingDeletes()).build();
+        ui().button(padding, toolbarY, 40).text(KineticI18n.translatable("gui.kineticarmory.common.back")).onClick(b -> close()).build();
 
-        int listTop = y0 + 45;
-        int listBottom = y0 + guiH - 2;
-        int listLeft = x0 + padding;
-        int listRight = x0 + guiW - 2;
+        int listTop = toolbarY + CONTROL_HEIGHT + 4;
+        int listBottom = guiH - padding;
+        int listLeft = padding;
+        int listRight = guiW - padding;
 
         this.listWidget = ui.add(new SetListWidget(listLeft, listTop, listRight - listLeft, listBottom - listTop));
 
@@ -175,6 +201,14 @@ ui().button(btnFilterX, y0 + 20, filterBtnW).text(getEntityFilterButtonText()).t
         updateSearch(searchBox == null ? lastSearch : searchBox.textValue());
     }
 
+    private void confirmDelete(ArmorDataConfig config) {
+        if (config == null) return;
+        openDialog(KineticI18n.translatable("gui.kineticarmory.armorsets.delete"),
+                KineticI18n.translatable("gui.kineticarmory.confirm_delete", config.displayName == null || config.displayName.isBlank() ? config.id : config.displayName),
+                KineticI18n.translatable("gui.kineticarmory.armorsets.delete"), KineticI18n.translatable("gui.back"),
+                () -> deleteSet(config), () -> {});
+    }
+
     private void savePendingDeletes() {
         if (!pendingDeletedIds.isEmpty()) {
             for (String id : new ArrayList<>(pendingDeletedIds)) {
@@ -184,6 +218,10 @@ ui().button(btnFilterX, y0 + 20, filterBtnW).text(getEntityFilterButtonText()).t
             pendingDeletedIds.clear();
             rebuildEntriesFromSnapshot();
             updateSearch(searchBox == null ? lastSearch : searchBox.textValue());
+            dev.xyat.kineticcore.api.client.gui.overlay.KineticOverlays.toast(KineticI18n.translatable("msg.kineticarmory.common.saved"));
+        } else {
+            // Edits inside a set are saved on its own page; say so instead of staying silent.
+            dev.xyat.kineticcore.api.client.gui.overlay.KineticOverlays.toast(KineticI18n.translatable("msg.kineticarmory.common.nothing_to_save"));
         }
         commitDraft();
     }
@@ -191,34 +229,28 @@ ui().button(btnFilterX, y0 + 20, filterBtnW).text(getEntityFilterButtonText()).t
     @Override
     protected void renderBackground(KineticGraphics g, int mx, int my, float pt) {
         KineticTheme.panel(g, x0, y0, guiW, guiH);
-        g.scrollingTextCentered(title(), this.width() / 2, y0 + 6, Math.max(0, guiW - 20), 0xFFFFFF, false);
     }
 
-    /** 套装列表：每行 46px，右侧内嵌二次确认删除按钮 / Set list: 46px rows with an inline two-step delete button. */
+    @Override
+    protected void renderTooltips(int mouseX, int mouseY) {
+        if (listWidget == null) return;
+        ItemStack stack = listWidget.previewAt(mouseX, mouseY);
+        if (!stack.isEmpty()) showItemTooltip(stack);
+    }
+
+    private record ItemPreview(ItemStack stack, int x, int y, boolean variants) { }
+
+    /** Set rows expose editing and confirmed deletion without reserving a trailing button. */
     class SetListWidget extends KineticRowList<ArmorDataConfig> {
         private static final int ROW_H = 46;
         private static final int PREVIEW_SIZE = 18;
         private static final int PREVIEW_PITCH = PREVIEW_SIZE + 2;
-        private static final int DELETE_BUTTON_W = 52;
-        private static final int DELETE_BUTTON_H = KineticPage.CONTROL_HEIGHT;
-
-        private String deleteConfirmId;
-        private long confirmTime;
-
         SetListWidget(int x, int y, int width, int height) {
             super(x, y, width, height, ROW_H);
         }
 
         public void refresh() {
             setItems(displayEntries);
-        }
-
-        private int deleteX(int left, int w) {
-            return left + w - DELETE_BUTTON_W - 4;
-        }
-
-        private int deleteY(int top) {
-            return top + (44 - DELETE_BUTTON_H) / 2;
         }
 
         @Override
@@ -230,26 +262,14 @@ ui().button(btnFilterX, y0 + 20, filterBtnW).text(getEntityFilterButtonText()).t
         @Override
         protected boolean onRowClick(ArmorDataConfig data, int index, MouseInput input) {
             int top = rowTop(index);
-            int delX = deleteX(controlX(), rowsWidth());
-            if (input.isLeft() && input.inside(delX, deleteY(top), DELETE_BUTTON_W, DELETE_BUTTON_H)) {
-                handleDelete(data);
-                return true;
-            }
-            if (input.isLeft() && input.y() >= top && input.y() < top + 44) {
+            if (input.y() < top || input.y() >= top + 44) return false;
+            setSelectedIndex(index);
+            if (input.isRight()) {confirmDelete(data);return true;}
+            if (input.isLeft()) {
                 openEditor(data);
                 return true;
             }
             return false;
-        }
-
-        private void handleDelete(ArmorDataConfig data) {
-            if (data.id != null && data.id.equals(deleteConfirmId)) {
-                deleteConfirmId = null;
-                deleteSet(data);
-                return;
-            }
-            deleteConfirmId = data.id;
-            confirmTime = System.currentTimeMillis();
         }
 
         @Override
@@ -268,80 +288,58 @@ ui().button(btnFilterX, y0 + 20, filterBtnW).text(getEntityFilterButtonText()).t
                 int maxInfoW = textMaxW + 10;
                 g.scrollingText(Component.literal(infoStrRaw), left + 5, top + 29, maxInfoW, 0x55FF55, false);
 
-                int delX = deleteX(left, w);
-                int delY = deleteY(top);
-                if (deleteConfirmId != null && System.currentTimeMillis() - confirmTime > 3000) {
-                    deleteConfirmId = null;
-                }
-                boolean confirming = data.id != null && data.id.equals(deleteConfirmId);
-                boolean delHovered = mouseX() >= delX && mouseX() < delX + DELETE_BUTTON_W
-                        && mouseY() >= delY && mouseY() < delY + DELETE_BUTTON_H;
-                KineticTheme.button(g, delX, delY, DELETE_BUTTON_W, DELETE_BUTTON_H, KineticI18n.translatable(confirming
-                        ? "gui.kineticarmory.armorsets.btn_delete_confirm"
-                        : "gui.kineticarmory.armorsets.btn_delete"), delHovered, true, false);
-
                 int labelX = left + 185;
                 int labelWidth = 70;
-                int curioY = top + 3;
-                int equipY = top + 23;
-
-                Component curioLabel = KineticI18n.translatable("gui.kineticarmory.armorsets.label.curios");
-                g.scrollingText(curioLabel, labelX, curioY + 4, labelWidth, 0xAAAAAA, false);
-                int curioStartX = labelX + labelWidth + 4;
-
-                int equipLabelX = labelX + 18;
-                Component equipLabel = KineticI18n.translatable("gui.kineticarmory.armorsets.label.equipment");
-                g.scrollingText(equipLabel, equipLabelX, equipY + 4, labelWidth, 0xAAAAAA, false);
-                int equipStartX = equipLabelX + labelWidth + 4;
-
-                int maxIconsCurio = Math.max(0, (delX - 4 - curioStartX + 2) / PREVIEW_PITCH);
-                int maxIconsEquip = Math.max(0, (delX - 4 - equipStartX + 2) / PREVIEW_PITCH);
-
-                if (data.curios != null) {
-                    int drawn = 0;
-                    for (ArmorDataConfig.ItemReq req : data.curios) {
-                        if (drawn >= maxIconsCurio) break;
-                        if (req != null && !req.id.equals("minecraft:air") && !req.id.equals("EMPTY") && !req.id.equals("ANY")) {
-                            var rl = KineticResourceIds.tryParse(req.id);
-                            if (rl != null) {
-                                Item item = KineticRegistries.items().get(rl);
-                                if (item != null && item != net.minecraft.world.item.Items.AIR) {
-                                    int iconX = curioStartX + drawn * PREVIEW_PITCH;
-                                    KineticTheme.itemSlot(g, iconX, curioY, PREVIEW_SIZE, false);
-                                    KineticTheme.item(g, new ItemStack(item), iconX, curioY, PREVIEW_SIZE, 1.0F, false);
-                                    drawn++;
-                                }
-                            }
-                        }
-                    }
+                g.scrollingText(KineticI18n.translatable("gui.kineticarmory.armorsets.label.curios"),
+                        labelX, top + 7, labelWidth, 0xAAAAAA, false);
+                g.scrollingText(KineticI18n.translatable("gui.kineticarmory.armorsets.label.equipment"),
+                        labelX + 18, top + 27, labelWidth, 0xAAAAAA, false);
+                for (ItemPreview preview : previews(data, left, top, w)) {
+                    KineticTheme.itemSlot(g, preview.x(), preview.y(), PREVIEW_SIZE, false);
+                    KineticTheme.item(g, preview.stack(), preview.x(), preview.y(), PREVIEW_SIZE, 1.0F, false);
+                    if (preview.variants()) ArmorVariantMarker.draw(g, preview.x(), preview.y());
                 }
+        }
 
-                data.normalizeEquipmentVariants();
-                if (data.equipmentVariants != null) {
-                    String[] slots = {"head", "chest", "legs", "feet", "mainhand", "offhand"};
-                    int drawn = 0;
-                    for (String slot : slots) {
-                        if (drawn >= maxIconsEquip) break;
-                        ArmorDataConfig.ItemReq req = data.getDisplayedEquipmentReq(slot, System.currentTimeMillis());
-                        if (req != null && req.id != null && !req.id.equals("minecraft:air") && !req.id.equals("EMPTY") && !req.id.equals("ANY")) {
-                            var rl = KineticResourceIds.tryParse(req.id);
-                            if (rl != null) {
-                                Item item = KineticRegistries.items().get(rl);
-                                if (item != null && item != net.minecraft.world.item.Items.AIR) {
-                                    int iconX = equipStartX + drawn * PREVIEW_PITCH;
-                                    KineticTheme.itemSlot(g, iconX, equipY, PREVIEW_SIZE, false);
-                                    KineticTheme.item(g, new ItemStack(item), iconX, equipY, PREVIEW_SIZE, 1.0F, false);
-                                    if (data.hasMultipleEquipmentVariants(slot)) {
-                                        KineticTheme.indicatorFill(g, iconX + 9, equipY + 9, 6, 6, KineticTheme.Indicator.SUCCESS, 0.80F);
-                                        g.text("+", iconX + 9, equipY + 6, 0xFF55FF55, false);
-                                    }
-                                    drawn++;
-                                }
-                            }
-                        }
-                    }
+        @Override
+        protected Component rowTooltip(ArmorDataConfig data, int index) {
+            return previewAt(mouseX(), mouseY()).isEmpty()
+                    ? KineticI18n.translatable("gui.kineticarmory.armorsets.list.row.tooltip") : null;
+        }
+
+        private List<ItemPreview> previews(ArmorDataConfig data, int left, int top, int width) {
+            List<ItemPreview> result = new ArrayList<>();
+            int curioStart = left + 259, equipmentStart = left + 277;
+            int right = left + width - 4;
+            if (data.curios != null) {
+                int x = curioStart;
+                for (ArmorDataConfig.ItemReq req : data.curios) {
+                    if (x + PREVIEW_SIZE > right) break;
+                    ItemStack stack = req == null ? ItemStack.EMPTY : req.createDisplayStack();
+                    if (stack.isEmpty()) continue;
+                    result.add(new ItemPreview(stack, x, top + 3, false));x += PREVIEW_PITCH;
                 }
             }
+            data.normalizeEquipmentVariants();
+            int x = equipmentStart;
+            for (String slot : new String[]{"head", "chest", "legs", "feet", "mainhand", "offhand"}) {
+                if (x + PREVIEW_SIZE > right) break;
+                ArmorDataConfig.ItemReq req = data.getDisplayedEquipmentReq(slot, System.currentTimeMillis());
+                ItemStack stack = req == null ? ItemStack.EMPTY : req.createDisplayStack();
+                if (stack.isEmpty()) continue;
+                result.add(new ItemPreview(stack, x, top + 23, data.hasMultipleEquipmentVariants(slot)));x += PREVIEW_PITCH;
+            }
+            return result;
+        }
+
+        private ItemStack previewAt(double mouseX, double mouseY) {
+            int index = rowAt(mouseX, mouseY);
+            if (index < 0) return ItemStack.EMPTY;
+            for (ItemPreview preview : previews(items().get(index), controlX(), rowTop(index), rowsWidth())) {
+                if (KineticTheme.hovering(mouseX, mouseY, preview.x(), preview.y(), PREVIEW_SIZE, PREVIEW_SIZE)) return preview.stack();
+            }
+            return ItemStack.EMPTY;
+        }
 
         private String getInfo(ArmorDataConfig data) {
                 int attr = data.attributes == null ? 0 : data.attributes.size();

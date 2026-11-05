@@ -35,7 +35,10 @@ public class ArmorDetailPage extends KineticPage {
 
     public ArmorDetailPage(ArmorDataConfig config) {
         super(KineticI18n.translatable("gui.kineticarmory.armorsets.detail.title"));
+        useCanvas(CANVAS_WIDTH, CANVAS_HEIGHT, 4);
         this.config = config;
+        bindDeleteAction(() -> listWidget != null && listWidget.selectedItem() != null,
+                () -> listWidget.selectedItem().onDelete().run());
     }
 
     @Override
@@ -48,15 +51,15 @@ public class ArmorDetailPage extends KineticPage {
     @Override
     protected void build(KineticUi ui) {
         int cx = width() / 2;
-        int padding = 15;
+        int padding = 4;
 
-        int btnW = 105;
-        int gap = 6;
+        int btnW = 70;
+        int gap = 4;
 
-        int y0 = padding + 25;
-        int row2Y = y0 + 24;
+        int y0 = padding;
+        int row2Y = y0;
 
-        int startX1 = cx - (btnW * 5 + gap * 4) / 2;
+        int startX1 = 48;
 
         ui().button(startX1, y0, btnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.detail.add_attr")).onClick(b -> {
             openChild(new AttributeEditor(config, null));
@@ -78,7 +81,7 @@ public class ArmorDetailPage extends KineticPage {
             openChild(new PotionImmunityEditor(config, null));
         }).build();
 
-        int startX2 = cx - (btnW * 3 + gap * 2) / 2;
+        int startX2 = startX1 + (btnW + gap) * 5;
 
         ui().button(startX2, row2Y, btnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.detail.add_dmg_convert")).onClick(b -> {
             openChild(new DamageConversionEditor(config, null));
@@ -101,13 +104,13 @@ public class ArmorDetailPage extends KineticPage {
             openChild(new ConditionListPage(flightOwner));
         }).build();
 
-        int listTop = row2Y + 30;
-        int listBottom = height() - padding - 35;
-        int listWidth = (width() - padding * 2) - 20;
+        int listTop = 28;
+        int listBottom = height() - padding;
+        int listWidth = width() - padding * 2;
 
         listWidget = ui.add(new DetailListWidget(cx - listWidth / 2, listTop, listWidth, listBottom - listTop));
 
-        ui().button(padding + 4, padding + 3, 100).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> {
+        ui().button(padding, padding, 40).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> {
             navigateBack();
         }).build();
 
@@ -196,16 +199,7 @@ public class ArmorDetailPage extends KineticPage {
 
     @Override
     protected void renderBackground(KineticGraphics g, int mx, int my, float pt) {
-        int cx = width() / 2;
-        int padding = 15;
-        int panelWidth = width() - padding * 2;
-        int panelHeight = height() - padding * 2;
-
-        KineticTheme.panel(g, cx - panelWidth / 2, padding, panelWidth, panelHeight);
-        int titleLeft = padding + 4 + 100 + 2;
-        int titleRight = width() - padding - TEXT_GAP;
-        g.scrollingTextCentered(title(), (titleLeft + titleRight) / 2, padding + 10,
-                Math.max(0, titleRight - titleLeft), 0xFFFFFF, true);
+        KineticTheme.panel(g, 0, 0, width(), height());
 
     }
 
@@ -223,7 +217,7 @@ public class ArmorDetailPage extends KineticPage {
     }
 
     class DetailListWidget extends KineticRowList<DetailEntry> {
-        private static final int DELETE_BUTTON_W = 44;
+        private static final int DELETE_BUTTON_W = 40;
         private static final int DELETE_BUTTON_H = 16;
         private static final int ROW_TEXT_INSET = 5;
         // Row frames are ROW_FRAME_H tall; icon, text and Delete button are centred, 3 px clear of the frame lines.
@@ -265,6 +259,7 @@ public class ArmorDetailPage extends KineticPage {
         protected boolean onRowClick(DetailEntry entry, int index, MouseInput input) {
             int t = rowTop(index);
             if (input.y() < t || input.y() >= t + ROW_FRAME_H) return false;
+            setSelectedIndex(index);
             if (input.isLeft() && input.inside(deleteX(controlX(), rowsWidth()), t + BUTTON_Y, DELETE_BUTTON_W, DELETE_BUTTON_H)) {
                 entry.onDelete().run();
                 return true;

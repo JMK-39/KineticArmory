@@ -44,11 +44,9 @@ public class ArmorTipEditorPage extends KineticPage {
 
     private KineticButton btnAdd;
     private KineticButton btnModify;
-    private KineticButton btnCancel;
 
     private static final int ADD_BUTTON_WIDTH = 55;
     private static final int EDIT_BUTTON_WIDTH = 55;
-    private static final int CANCEL_BUTTON_WIDTH = 55;
     private static final int ACTION_BUTTON_GAP = 4;
     // Keep header text clear of the action buttons and panel edges.
     private static final int TEXT_GAP = 4;
@@ -57,6 +55,9 @@ public class ArmorTipEditorPage extends KineticPage {
 
     public ArmorTipEditorPage(ArmorDataConfig config) {
         super(KineticI18n.translatable("gui.kineticarmory.armorsets.btn_edit_tips"));
+        useCanvas(CANVAS_WIDTH, CANVAS_HEIGHT, 4);
+        bindDeleteAction(() -> listWidget != null && listWidget.selectedItem() != null,
+                () -> listWidget.deleteRow(listWidget.selectedItem()));
         this.config = config;
         this.config.initNullFields();
         ensureManualTipLayout();
@@ -69,20 +70,18 @@ public class ArmorTipEditorPage extends KineticPage {
 
     @Override
     protected void build(KineticUi ui) {
-        int cx = this.width() / 2;
-        int guiW = this.width() - 20;
-        int x0 = cx - guiW / 2;
-        int y0 = 35;
-
-        int inputW = guiW;
-        int actionY = 9;
-
-        this.input = ui().textField(x0, y0, inputW).firstShownTextAsDefault().build();
-        this.input.limitTextLength(1024);
-        this.input.setPlaceholder(KineticI18n.translatable("gui.kineticarmory.armorsets.tips.edit_hint"));
-        if (tempInput != null) this.input.setTextValue(tempInput);
-        int actionRight = x0 + guiW + 1;
-        this.btnAdd = ui().button(actionRight - ADD_BUTTON_WIDTH, actionY, ADD_BUTTON_WIDTH).text(KineticI18n.translatable("gui.kineticarmory.armorsets.tips.add")).onClick(b -> {
+        // Header: Back, the colour squares and Reset centred on the screen, then Add (Save Edit while a row is being
+        // edited) and Save at the right. The text field sits under the header and the rows fill the rest.
+        int guiW = this.width() - 8;
+        int x0 = 4;
+        int actionY = 4;
+        ui().button(x0, actionY, 40).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> {
+            if (editingIndex >= 0) cancelEdit(); else navigateBack();
+        }).build();
+        int saveX = x0 + guiW - 40;
+        ui().button(saveX, actionY, 40).text(KineticI18n.translatable("gui.kineticarmory.armorsets.save")).onClick(b -> KineticOverlays.toast(KineticI18n.translatable("msg.kineticarmory.common.saved"))).build();
+        int actionX = saveX - ACTION_BUTTON_GAP - ADD_BUTTON_WIDTH;
+        this.btnAdd = ui().button(actionX, actionY, ADD_BUTTON_WIDTH).text(KineticI18n.translatable("gui.kineticarmory.armorsets.tips.add")).onClick(b -> {
             ensureManualTipLayout();
             if (!input.textValue().trim().isEmpty()) {
                 config.tipLayout.add(ArmorDataConfig.TipLineData.text(input.textValue()));
@@ -90,7 +89,7 @@ public class ArmorTipEditorPage extends KineticPage {
                 listWidget.refresh();
             }
         }).build();
-        this.btnModify = ui().button(actionRight - EDIT_BUTTON_WIDTH, actionY, EDIT_BUTTON_WIDTH).text(KineticI18n.translatable("gui.kineticarmory.armorsets.commands.save_edit")).onClick(b -> {
+        this.btnModify = ui().button(actionX, actionY, EDIT_BUTTON_WIDTH).text(KineticI18n.translatable("gui.kineticarmory.armorsets.commands.save_edit")).onClick(b -> {
             ensureManualTipLayout();
             String value = input.textValue().trim();
             if (value.isEmpty()) return;
@@ -102,32 +101,32 @@ public class ArmorTipEditorPage extends KineticPage {
                 KineticOverlays.toast(KineticI18n.translatable("msg.kineticarmory.common.saved"));
             }
         }).build();
-        this.btnCancel = ui().button(actionRight - CANCEL_BUTTON_WIDTH, actionY, CANCEL_BUTTON_WIDTH).text(KineticI18n.translatable("gui.kineticarmory.armorsets.commands.cancel_edit")).onClick(b -> cancelEdit()).build();
         updateActionButtonLayout();
+
         int swatchSize = KineticPage.CONTROL_HEIGHT;
         int swatchGap = 2;
-        int paletteWidth = COLORS.length * swatchSize + (COLORS.length - 1) * swatchGap;
-        int cX = cx - paletteWidth / 2;
-        int cY = y0 + 25;
+        int paletteWidth = (COLORS.length + 1) * (swatchSize + swatchGap) - swatchGap;
+        int cX = this.width() / 2 - paletteWidth / 2;
         for (int i = 0; i < COLORS.length; i++) {
             final String code = "§" + CODES[i];
-            int finalI = i;
-            ui().colorSwatch(cX + i * (swatchSize + swatchGap), cY, COLORS[finalI])
+            ui().colorSwatch(cX + i * (swatchSize + swatchGap), actionY, COLORS[i])
+                    .tooltip(net.minecraft.network.chat.Component.literal(code.replace("§", "&")))
                     .onClick(() -> insert(code))
                     .build();
         }
+        ui().button(cX + COLORS.length * (swatchSize + swatchGap), actionY, swatchSize).text(net.minecraft.network.chat.Component.literal("R"))
+                .tooltip(KineticI18n.translatable("gui.kineticarmory.armorsets.tips.reset_color")).onClick(b -> insert("§r")).build();
 
-        int listTop = cY + swatchSize + 10;
-        int listBottom = this.height() - 35;
+        int y0 = 28;
+        this.input = ui().textField(x0, y0, guiW).firstShownTextAsDefault().build();
+        this.input.limitTextLength(1024);
+        this.input.setTooltip(KineticI18n.translatable("gui.kineticarmory.armorsets.tips.drag_hint"));
+        this.input.setPlaceholder(KineticI18n.translatable("gui.kineticarmory.armorsets.tips.edit_hint"));
+        if (tempInput != null) this.input.setTextValue(tempInput);
+
+        int listTop = y0 + swatchSize + 4;
+        int listBottom = this.height() - 4;
         this.listWidget = ui().add(new TipListWidget(x0, listTop, guiW, listBottom - listTop));
-
-        int actionBtnW = 80;
-        int bottomBtnY = this.height() - 25;
-
-        ui().button(cx - actionBtnW - 5, bottomBtnY, actionBtnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.save")).onClick(b -> KineticOverlays.toast(KineticI18n.translatable("msg.kineticarmory.common.saved"))).build();
-        ui().button(x0, actionY, actionBtnW).text(KineticI18n.translatable("gui.kineticarmory.armorsets.back")).onClick(b -> {
-            navigateBack();
-        }).build();
     }
 
     private void ensureTips() {
@@ -280,29 +279,12 @@ public class ArmorTipEditorPage extends KineticPage {
         updateActionButtonLayout();
     }
 
+    /** Add and Save Edit share one place: Save Edit replaces Add while a row is being edited; Back ends the edit. */
     private void updateActionButtonLayout() {
-        if (btnAdd == null || btnModify == null || btnCancel == null) return;
-
-        int guiW = width() - 20;
-        int x0 = width() / 2 - guiW / 2;
-        int actionRight = x0 + guiW + 1;
+        if (btnAdd == null || btnModify == null) return;
         boolean editing = editingIndex >= 0;
-
-        btnAdd.moveControlX(editing
-                ? actionRight - ADD_BUTTON_WIDTH - 2 * EDIT_BUTTON_WIDTH - 2 * ACTION_BUTTON_GAP
-                : actionRight - ADD_BUTTON_WIDTH - EDIT_BUTTON_WIDTH - ACTION_BUTTON_GAP);
-        btnModify.moveControlX(editing
-                ? actionRight - CANCEL_BUTTON_WIDTH - ACTION_BUTTON_GAP - EDIT_BUTTON_WIDTH
-                : actionRight - EDIT_BUTTON_WIDTH);
-        btnCancel.moveControlX(editing
-                ? actionRight - CANCEL_BUTTON_WIDTH
-                : actionRight - ADD_BUTTON_WIDTH - EDIT_BUTTON_WIDTH - CANCEL_BUTTON_WIDTH - 2 * ACTION_BUTTON_GAP);
-
-        btnAdd.setControlVisible(true);
-        btnAdd.setEnabled(!editing);
-        btnModify.setControlVisible(true);
-        btnModify.setEnabled(editing);
-        btnCancel.setControlVisible(editing);
+        btnAdd.setControlVisible(!editing);
+        btnModify.setControlVisible(editing);
     }
 
     private void insert(String s) {
@@ -354,17 +336,13 @@ public class ArmorTipEditorPage extends KineticPage {
     @Override
     protected void renderBackground(KineticGraphics g, int mx, int my, float pt) {
         int cx = this.width() / 2;
-        int guiW = this.width() - 20;
+        int guiW = this.width() - 8;
         int x0 = cx - guiW / 2;
 
-        KineticTheme.panel(g, x0 - 5, 5, guiW + 10, this.height() - 10);
-        int textRight = btnAdd.controlX() - TEXT_GAP;
-        int textLeft = x0 + 80 + 2;
-        int titleWidth = Math.max(0, textRight - textLeft);
-        g.scrollingTextCentered(title(), (textLeft + textRight) / 2, 8, titleWidth, 0xFFFFFF, true);
+        KineticTheme.panel(g, 0, 0, width(), height());
+        KineticTheme.separator(g, 4, 24, width() - 8);
 
-        g.scrollingText(KineticI18n.translatable("gui.kineticarmory.armorsets.tips.drag_hint"),
-                textLeft, 20, Math.max(0, textRight - textLeft), 0xFFFFFF, true);
+
 
     }
 
@@ -400,13 +378,16 @@ public class ArmorTipEditorPage extends KineticPage {
                 } else {
                     lineY = listTop + 2;
                 }
-                KineticTheme.separator(g, listWidget.controlX(), lineY, listWidget.rowWidth());
+                KineticTheme.separator(g, listWidget.rowLeft(), lineY, listWidget.rowWidth());
             }
 
-            int w = Math.min(listWidget.rowWidth(), Math.max(0, width() - 2 * TEXT_GAP));
-            int floatX = Math.max(TEXT_GAP, Math.min(mx - 50, width() - w - TEXT_GAP));
-            int floatY = Math.max(TEXT_GAP, Math.min(my - 10, height() - 22 - TEXT_GAP));
+            // The dragged row stays over the list it reorders, and its opaque backing keeps the rows underneath
+            // from showing through the translucent surface.
+            int w = listWidget.rowWidth();
+            int floatX = listWidget.rowLeft();
+            int floatY = Math.max(listTop, Math.min(my - 10, listBottom - 22));
 
+            g.fill(floatX, floatY, floatX + w, floatY + 22, 0xFF000000 | KineticTheme.current().panelAlt());
             KineticTheme.stateSurface(
                     g,
                     floatX,
@@ -424,6 +405,10 @@ public class ArmorTipEditorPage extends KineticPage {
     }
 
     private void renderTextWithIcons(KineticGraphics g, String text, int x, int y, int maxWidth) {
+        renderTextWithIcons(g, text, x, y, maxWidth, true);
+    }
+
+    private void renderTextWithIcons(KineticGraphics g, String text, int x, int y, int maxWidth, boolean scroll) {
         text = text.replaceAll("\\n\\s*(§[0-9a-fk-or])?", "");
 
         Pattern pattern = Pattern.compile("\\[(item|effect):([^]]+)]");
@@ -437,7 +422,7 @@ public class ArmorTipEditorPage extends KineticPage {
         }
         contentWidth += KineticText.width(formattingBefore(text, lastEnd) + text.substring(lastEnd));
 
-        int offset = KineticText.scrollOffset(contentWidth, maxWidth);
+        int offset = scroll ? KineticText.scrollOffset(contentWidth, maxWidth) : 0;
         g.scissor(x, y - 4, x + maxWidth, y + 12);
         try {
             Matcher matcher = pattern.matcher(text);
@@ -492,8 +477,8 @@ public class ArmorTipEditorPage extends KineticPage {
         // Row frames are ROW_FRAME_H tall; the 16 px Delete button and the text sit centred, 3 px clear of the frame lines.
         private static final int ROW_H = 24;
         private static final int ROW_FRAME_H = 22;
-        private static final int ROW_INSET = 12;
-        private static final int DELETE_BUTTON_W = 44;
+        private static final int ROW_INSET = 0;
+        private static final int DELETE_BUTTON_W = 40;
         private static final int DELETE_BUTTON_H = KineticPage.CONTROL_HEIGHT;
 
         TipListWidget(int x, int y, int width, int height) {
@@ -513,7 +498,7 @@ public class ArmorTipEditorPage extends KineticPage {
 
         /** 行宽 / Row width. */
         int rowWidth() {
-            return Math.max(1, controlWidth() - 20);
+            return rowsWidth();
         }
 
         private int deleteX() {
@@ -555,7 +540,7 @@ public class ArmorTipEditorPage extends KineticPage {
 
             int deleteX = deleteX();
             int maxW = Math.max(0, deleteX - l - 8);
-            renderTextWithIcons(g, row.text(), l + 4, t + (ROW_FRAME_H - 8) / 2, maxW);
+            renderTextWithIcons(g, row.text(), l + 4, t + (ROW_FRAME_H - 8) / 2, maxW, hv);
 
             int deleteY = deleteY(t);
             boolean deleteHovered = mouseX() >= deleteX && mouseX() < deleteX + DELETE_BUTTON_W
@@ -580,6 +565,7 @@ public class ArmorTipEditorPage extends KineticPage {
         protected boolean onRowClick(TipRow row, int index, MouseInput input) {
             int t = rowTop(index);
             if (input.y() < t || input.y() >= t + ROW_FRAME_H) return false;
+            setSelectedIndex(index);
             if (input.isLeft() && input.inside(deleteX(), deleteY(t), DELETE_BUTTON_W, DELETE_BUTTON_H)) {
                 deleteRow(row);
                 return true;
