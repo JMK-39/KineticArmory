@@ -7,14 +7,15 @@ import dev.xyat.kineticarmory.armorsets.data.ArmorEntityRule;
 import dev.xyat.kineticarmory.armorsets.event.ArmorManager;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import dev.xyat.kineticcore.api.runtime.KineticPlatform;
+import dev.xyat.kineticcore.api.runtime.KineticPaths;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ArmorConfig {
-    private static final Path CONFIG_PATH = KineticPlatform.configDirectory().resolve("kineticcore/armorsets.toml");
+    private static final String CONFIG_FILE = "kineticcore/kineticarmory/armorsets.toml";
+    private static final Path CONFIG_PATH = KineticPaths.configFile(CONFIG_FILE);
     private static CommentedFileConfig configData;
     private static volatile ArmorEntityRule entityRuleCache = ArmorEntityRule.empty();
     private static volatile boolean entityFilterAllowAll = true;
@@ -30,6 +31,8 @@ public class ArmorConfig {
     public static void load() {
         ArmorManager.registerEvents();
         try {
+            KineticPaths.migrateConfigFile("kineticcore/armorsets.toml", CONFIG_FILE);
+            KineticPaths.ensureConfigDirectory("kineticcore/kineticarmory");
             configData = CommentedFileConfig.builder(CONFIG_PATH)
                     .sync()
                     .preserveInsertionOrder()

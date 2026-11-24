@@ -21,7 +21,7 @@ public final class ArmorClientConfig {
                 .translation("cfg.kineticarmory.armorsets.tip_key")
                 .defineEnum("defaultTipKey", TipKey.fromLegacy(legacyDefault));
         spec = builder.build();
-        KTClientConfigAdapter.registerSpec(spec, "kineticcore/armorsets_client.toml");
+        KTClientConfigAdapter.registerSpec(spec, "kineticcore/kineticarmory/armorsets_client.toml");
     }
 
     public static KTClientConfigSpec spec() {
