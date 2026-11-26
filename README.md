@@ -31,6 +31,8 @@ Required: Curios 5.10+ on Forge 1.20.1, 9.x on NeoForge 1.21.1, or 15+ on NeoFor
 
 KineticArmory 将已有装备组成可配置套装，让加成随穿戴件数、条件和战斗事件变化。
 
+<a name="zh-walkthrough"></a>
+
 ### 用实体卡片设置套装适用对象
 
 打开套装的实体白名单，搜索牛和猪，再点击对应的模型卡片。把筛选规则保存到套装草稿，返回并重新打开，核对两项选择。
