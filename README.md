@@ -8,14 +8,10 @@ KineticArmory turns existing equipment into configurable sets with bonuses trigg
 
 Turn on this set’s entity whitelist, find a cow and a pig, and click their preview cards. Save the filter to the set draft and reopen it to check both choices.
 
-![Enabling an equipment set’s whitelist and selecting cow and pig preview cards, then reopening the saved filter](https://raw.githubusercontent.com/wiki/JMK-39/KineticArmory/media/tutorials-20261126/en.gif)
+![Enabling an equipment set’s whitelist and selecting cow and pig preview cards, then reopening the saved filter](https://raw.githubusercontent.com/wiki/JMK-39/KineticArmory/media/bilingual-editors/KineticArmory/en.gif)
 
-<details>
-<summary>Full walkthrough with Mandarin narration</summary>
+[Watch with English narration](https://raw.githubusercontent.com/wiki/JMK-39/KineticArmory/media/bilingual-editors/KineticArmory/en.mp4) · [Download English subtitles](https://raw.githubusercontent.com/wiki/JMK-39/KineticArmory/media/bilingual-editors/KineticArmory/en.srt)
 
-https://github.com/user-attachments/assets/071a3bde-e4ec-409b-bf5f-b7e8093bdab0
-
-</details>
 
 [Editor guide](https://github.com/JMK-39/KineticArmory/wiki/Entities-and-Tooltips)
 
@@ -37,14 +33,10 @@ KineticArmory 将已有装备组成可配置套装，让加成随穿戴件数、
 
 打开套装的实体白名单，搜索牛和猪，再点击对应的模型卡片。把筛选规则保存到套装草稿，返回并重新打开，核对两项选择。
 
-![启用套装实体白名单，点选牛和猪的模型卡片，再重新打开筛选核对的实录](https://raw.githubusercontent.com/wiki/JMK-39/KineticArmory/media/tutorials-20261126/zh.gif)
+![启用套装实体白名单，点选牛和猪的模型卡片，再重新打开筛选核对的实录](https://raw.githubusercontent.com/wiki/JMK-39/KineticArmory/media/bilingual-editors/KineticArmory/zh.gif)
 
-<details>
-<summary>播放完整普通话讲解</summary>
+[观看中文配音版](https://raw.githubusercontent.com/wiki/JMK-39/KineticArmory/media/bilingual-editors/KineticArmory/zh.mp4) · [下载中文字幕](https://raw.githubusercontent.com/wiki/JMK-39/KineticArmory/media/bilingual-editors/KineticArmory/zh.srt)
 
-https://github.com/user-attachments/assets/071a3bde-e4ec-409b-bf5f-b7e8093bdab0
-
-</details>
 
 [编辑器使用指南](https://github.com/JMK-39/KineticArmory/wiki/%E5%AE%9E%E4%BD%93%E4%B8%8E%E7%89%A9%E5%93%81%E6%8F%90%E7%A4%BA)
 
